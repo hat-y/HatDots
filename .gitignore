@@ -1,0 +1,75 @@
+# ─────────────────────────────
+# OS / Sistema
+# ─────────────────────────────
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS (por si sincronizas)
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100/
+.Trashes
+
+# ─────────────────────────────
+# Editores / IDE
+# ─────────────────────────────
+.vscode/
+.idea/
+.history/
+*.code-workspace
+
+# ─────────────────────────────
+# Neovim / Vim (archivos temporales)
+# ─────────────────────────────
+*.swp
+*.swo
+*.swn
+*~
+*.un~
+Session.vim
+.netrwhist
+
+# Nota: NO ignores lazy-lock.json (es útil versionarlo con LazyVim)
+
+# ─────────────────────────────
+# Logs / dumps / cachés
+# ─────────────────────────────
+*.log
+*.tmp
+tmp/
+.cache/
+dist/
+build/
+
+# ─────────────────────────────
+# Node / JS (por si tienes scripts en el repo)
+# ─────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-lock.yaml # quítalo si quieres versionarlo
+
+# ─────────────────────────────
+# Python (por si guardas utilidades)
+# ─────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# ─────────────────────────────
+# Archivos grandes accidentales
+# ─────────────────────────────
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
