@@ -1,9 +1,116 @@
-add_newline = false
-format = "$all"
+# ---- Global ----
+add_newline = true
+command_timeout = 2000      # cuánto esperar a cada módulo (ms)
+scan_timeout = 35           # detección de archivos/carpetas (ms)
+palette = "kanagawa_dragon"
 
+# Línea izquierda
+format = """
+$directory$git_branch$git_status
+$character"""
+
+# Línea derecha (verdadero prompt derecho)
+right_format = "$nodejs$rust$golang$php$bun$java$c$conda$zig$cmd_duration$time"
+
+# ---- Paleta ----
+[palettes.kanagawa_dragon]
+directory = "#DCD7BA"
+git       = "#957FB8"
+nodejs    = "#98BB6C"
+rust      = "#FF5D62"
+golang    = "#7FB4CA"
+php       = "#E6C384"
+bun       = "#DCD7BA"
+java      = "#FF5D62"
+c         = "#7FB4CA"
+conda     = "#7AA89F"
+zig       = "#FFA066"
+duration  = "#E6C384"
+time      = "#7AA89F"
+text      = "#DCD7BA"
+error     = "#C34043"
+
+# ---- Prompt char ----
 [character]
-success_symbol = "[➜](bold green) "
-error_symbol   = "[➜](bold red) "
+success_symbol = "[ރ](bold fg:text) "
+error_symbol   = "[ރ](bold fg:error) "
 
+# ---- Usuario (siempre visible) ----
+[username]
+style_user = "bold fg:text"
+style_root = "bold fg:error"
+format = "[ރ user]($style)@"
+show_always = true
+
+# ---- Directorio ----
+[directory]
+format = "[$path]($style)[$read_only]($read_only_style) "
+style = "fg:directory"
+read_only_style = "fg:error"
+truncation_length = 2
+truncation_symbol = "…/"
+read_only = "  "
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music"     = " "
+"Pictures"  = " "
+
+# ---- Duración y hora (van a la derecha) ----
+[cmd_duration]
+min_time = 500
+style = "bold fg:duration"
+format = " took [ $duration]($style) "
+
+[time]
+disabled = false
+time_format = "%R"
+format = "[  $time ](fg:time)"
+
+# ---- Git ----
 [git_branch]
-symbol = " "
+style = "bold fg:git"
+format = "[ $branch]($style) "
+
+[git_status]
+format = "[$all_status$ahead_behind ](fg:text)"
+
+# ---- Runtimes (se muestran sólo si aplica) ----
+[nodejs]
+symbol = ""
+format = "[ $symbol ($version) ](fg:nodejs)"
+
+[rust]
+symbol = ""
+format = "[ $symbol ($version) ](fg:rust)"
+
+[golang]
+symbol = ""
+format = "[ $symbol ($version) ](fg:golang)"
+
+[php]
+symbol = ""
+format = "[ $symbol ($version) ](fg:php)"
+
+[bun]
+symbol = ""
+format = "[ $symbol ($version) ](fg:bun)"
+
+[java]
+symbol = ""
+format = "[ $symbol ($version) ](fg:java)"
+
+[c]
+symbol = ""
+format = "[ $symbol ($version) ](fg:c)"
+
+[conda]
+symbol = ""
+format = "[ $symbol $environment ](fg:conda)"
+
+[zig]
+symbol = ""
+format = "[ $symbol ($version) ](fg:zig)"
+
+[docker_context]
+disabled = true
