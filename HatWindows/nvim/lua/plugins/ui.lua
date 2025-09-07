@@ -1,5 +1,3 @@
--- UI plugins
-
 -- Modo compacto para lualine
 local mode = {
 	"mode",
