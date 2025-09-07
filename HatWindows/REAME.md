@@ -1,4 +1,4 @@
-# HatDot · Windows Starter Kit
+# HatDot to Windows
 
 Dotfiles para **Windows**: Neovim (LazyVim), WezTerm, PowerShell y Starship.
 
