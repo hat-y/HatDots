@@ -1,26 +1,11 @@
 return {
-	"obsidian-nvim/obsidian.nvim",
+	"epwalsh/obsidian.nvim",
 	version = "*",
-
-	-- Carga por COMANDOS y cuando abras .md dentro de HatNotes
-	cmd = {
-		"ObsidianOpen",
-		"ObsidianNew",
-		"ObsidianQuickSwitch",
-		"ObsidianSearch",
-		"ObsidianTemplate",
-		"ObsidianToday",
-		"ObsidianTomorrow",
-		"ObsidianDailies",
-	},
-	event = {
-		"BufReadPre " .. vim.fn.expand("~") .. "/HatNotes/**/*.md",
-		"BufNewFile " .. vim.fn.expand("~") .. "/HatNotes/**/*.md",
-	},
+	lazy = false, -- cargado siempre para evitar timings raros
 
 	dependencies = {
 		"nvim-lua/plenary.nvim",
-		-- "nvim-telescope/telescope.nvim",
+		"nvim-telescope/telescope.nvim", -- picker recomendado
 	},
 
 	opts = {
@@ -28,74 +13,135 @@ return {
 			{ name = "HatNotes", path = "~/HatNotes" },
 		},
 
-		-- Usa el motor de autocompletado que venís usando
-		completion = { nvim_cmp = true },
-
-		-- Picker estable sin deps extra
-		picker = { name = "snacks.pick" },
-
-		-- Dailies y templates según tu estructura 0–7
-		daily_notes = {
-			folder = "3-Logs",
-			template = "log-tmpl.md",
+		-- Compleción
+		completion = {
+			nvim_cmp = true, -- si usás blink.cmp, poné blink = true en vez de nvim_cmp
+			min_chars = 2,
+			create_new = true,
 		},
 
+		-- Templates & Dailies (tu estructura 0–7)
 		templates = {
 			folder = "7-Tmpl",
 			date_format = "%Y-%m-%d-%a",
 			time_format = "%H:%M",
 		},
+		daily_notes = {
+			folder = "3-Logs",
+			date_format = "%Y-%m-%d",
+			alias_format = "%B %-d, %Y",
+			default_tags = { "daily-notes" },
+			template = "log-tmpl.md", -- Debe existir: ~/HatNotes/7-Tmpl/log-tmpl.md
+		},
 
 		preferred_link_style = "wiki",
-		open_app_foreground = true,
+		picker = { name = "telescope.nvim" },
+
+		-- Abrir URLs/imagenes en Windows
+		follow_url_func = function(url)
+			vim.fn.jobstart({ "cmd.exe", "/c", "start", "", url }, { detach = true })
+		end,
+		follow_img_func = function(img)
+			vim.fn.jobstart({ "cmd.exe", "/c", "start", "", img }, { detach = true })
+		end,
+
+		sort_by = "modified",
+		sort_reversed = true,
+		open_notes_in = "current",
+
+		-- Dejo vacío para que los mappings los pongamos nosotros vía autocmd (más robusto)
+		mappings = {},
 	},
 
 	config = function(_, opts)
+		-- Fallback si sacaste telescope por accidente
 		if opts.picker and opts.picker.name == "telescope.nvim" then
-			local ok = pcall(require, "telescope.builtin")
+			local ok = pcall(require, "telescope")
 			if not ok then
-				vim.notify("[obsidian] Telescope no disponible; usando mini.pick", vim.log.levels.WARN)
+				vim.notify("[obsidian] telescope no encontrado; usando mini.pick", vim.log.levels.WARN)
 				opts.picker.name = "mini.pick"
 			end
 		end
 
 		require("obsidian").setup(opts)
 
-		-- Keymaps buffer-local en Markdown (reemplaza 'mappings' deprecado)
+		-- Opcional, si querés iconitos/conceal:
+		-- vim.opt.conceallevel = 1
+
+		-- ---- Mapeos buffer-locales SIEMPRE que el buffer sea markdown ----
+		local function attach_obsidian_buf(bufnr)
+			if not bufnr or not vim.api.nvim_buf_is_loaded(bufnr) then
+				return
+			end
+			if vim.bo[bufnr].filetype ~= "markdown" then
+				return
+			end
+
+			local ok, obs = pcall(require, "obsidian")
+			if not ok then
+				return
+			end
+			local util = obs.util
+
+			-- gf “passthrough” oficial (README): si hay link → follow; si no → gf
+			vim.keymap.set("n", "gf", function()
+				return util.gf_passthrough()
+			end, { buffer = bufnr, expr = true, noremap = false, silent = true, desc = "Obsidian follow (gf)" })
+
+			-- Toggle checkbox (comando del plugin: es lo más robusto y no depende de UI extra)
+			vim.keymap.set(
+				"n",
+				"<leader>ch",
+				"<cmd>ObsidianToggleCheckbox<CR>",
+				{ buffer = bufnr, silent = true, desc = "Obsidian: toggle checkbox" }
+			)
+
+			-- Enter inteligente (seguir link / togglear / etc.)
+			vim.keymap.set("n", "<CR>", function()
+				return util.smart_action()
+			end, { buffer = bufnr, expr = true, silent = true, desc = "Obsidian smart action" })
+		end
+
+		-- Autocmds: cuando el buffer sea markdown o entres al buffer → attach
 		vim.api.nvim_create_autocmd("FileType", {
 			pattern = "markdown",
 			callback = function(ev)
-				local buf = ev.buf
-				local util = require("obsidian").util
-
-				-- gf: seguir link (si no aplica, hace passthrough normal)
-				vim.keymap.set("n", "gf", function()
-					return util.gf_passthrough()
-				end, { buffer = buf, expr = true, desc = "Obsidian: goto link (gf)" })
-
-				-- Enter inteligente: link/tag/checkbox/fold
-				vim.keymap.set("n", "<CR>", function()
-					return util.smart_action()
-				end, { buffer = buf, expr = true, desc = "Obsidian: smart action" })
-
-				-- Checkbox toggle
-				vim.keymap.set(
-					"n",
-					"<leader>ch",
-					util.toggle_checkbox,
-					{ buffer = buf, desc = "Obsidian: toggle checkbox" }
-				)
+				attach_obsidian_buf(ev.buf)
 			end,
 		})
+		vim.api.nvim_create_autocmd("BufEnter", {
+			callback = function(ev)
+				if vim.bo[ev.buf].filetype == "markdown" then
+					attach_obsidian_buf(ev.buf)
+				end
+			end,
+		})
+
+		-- Attach inmediato por si ya estás en una nota
+		vim.schedule(function()
+			attach_obsidian_buf(vim.api.nvim_get_current_buf())
+		end)
 	end,
 
+	-- Atajos útiles
 	keys = {
-		{ "<leader>oo", "<cmd>ObsidianOpen<cr>", desc = "Obsidian: abrir app" },
-		{ "<leader>on", "<cmd>ObsidianNew<cr>", desc = "Obsidian: nueva nota" },
-		{ "<leader>oq", "<cmd>ObsidianQuickSwitch<cr>", desc = "Obsidian: quick switch" },
-		{ "<leader>os", "<cmd>ObsidianSearch<cr>", desc = "Obsidian: buscar" },
-		{ "<leader>ot", "<cmd>ObsidianTemplate<cr>", desc = "Obsidian: insertar template" },
-		{ "<leader>od", "<cmd>ObsidianToday<cr>", desc = "Obsidian: daily (hoy)" },
-		{ "<leader>oD", "<cmd>ObsidianTomorrow<cr>", desc = "Obsidian: daily (mañana)" },
+		-- Comandos del plugin
+		{ "<leader>oo", "<cmd>ObsidianOpen<cr>", desc = "Abrir en Obsidian app" },
+		{ "<leader>on", "<cmd>ObsidianNew<cr>", desc = "Nueva nota" },
+		{ "<leader>oq", "<cmd>ObsidianQuickSwitch<cr>", desc = "Quick switch" },
+		{ "<leader>os", "<cmd>ObsidianSearch<cr>", desc = "Buscar" },
+		{ "<leader>ot", "<cmd>ObsidianTemplate<cr>", desc = "Insertar template" },
+		{ "<leader>od", "<cmd>ObsidianToday<cr>", desc = "Daily (hoy)" },
+		{ "<leader>oD", "<cmd>ObsidianTomorrow<cr>", desc = "Daily (mañana)" },
+		{ "<leader>ob", "<cmd>ObsidianBacklinks<cr>", desc = "Backlinks" },
+		{ "<leader>ol", "<cmd>ObsidianLinks<cr>", desc = "Links del buffer" },
+
+		{
+			"<leader>oO",
+			function()
+				vim.fn.jobstart({ "cmd.exe", "/c", "start", "", "obsidian://open" }, { detach = true })
+			end,
+			desc = "Forzar abrir Obsidian (obsidian://)",
+		},
 	},
 }
