@@ -15,7 +15,7 @@ return {
 
 		-- Compleción
 		completion = {
-			nvim_cmp = true, -- si usás blink.cmp, poné blink = true en vez de nvim_cmp
+			nvim_cmp = false, -- si usás blink.cmp, poné blink = true en vez de nvim_cmp
 			min_chars = 2,
 			create_new = true,
 		},

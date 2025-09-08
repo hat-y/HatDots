@@ -1,7 +1,7 @@
 return {
 	{
 		"hrsh7th/nvim-cmp",
-		event = "InsertEnter",
+		lazy = false,
 		dependencies = {
 			"L3MON4D3/LuaSnip",
 			"saadparwaiz1/cmp_luasnip",
@@ -16,7 +16,6 @@ return {
 
 			require("luasnip.loaders.from_vscode").lazy_load()
 
-			-- mapeos tipo VSCode con Tab/Shift-Tab
 			opts.mapping = cmp.mapping.preset.insert({
 				["<C-Space>"] = cmp.mapping.complete(),
 				["<C-e>"] = cmp.mapping.abort(),
@@ -56,9 +55,7 @@ return {
 				{ name = "buffer", keyword_length = 3 },
 			})
 
-			-- rendimiento
 			opts.preselect = cmp.PreselectMode.None
-
 			return opts
 		end,
 		config = function(_, opts)
@@ -69,6 +66,17 @@ return {
 			if ok then
 				cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 			end
+
+			cmp.setup.filetype("markdown", {
+				sources = cmp.config.sources({
+					{ name = "obsidian" },
+					{ name = "nvim_lsp" },
+					{ name = "path" },
+					{ name = "luasnip" },
+				}, {
+					{ name = "buffer", keyword_length = 2 },
+				}),
+			})
 		end,
 	},
 }
