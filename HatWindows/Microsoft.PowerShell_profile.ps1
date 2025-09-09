@@ -12,7 +12,7 @@ try {
   Import-Module PSReadLine -ErrorAction Stop
 
   Set-PSReadLineOption -EditMode Windows
-  Set-PSReadLineOption -PredictionSource History
+ # Set-PSReadLineOption -PredictionSource History
   Set-PSReadLineOption -PredictionViewStyle ListView
   Set-PSReadLineOption -HistorySearchCursorMovesToEnd
   Set-PSReadLineOption -BellStyle None
@@ -65,3 +65,12 @@ Set-Alias -Name g   -Value git
 function gs { git status }
 function nv { nvim . }
 function reload-profile { . $PROFILE; Write-Host "Profile recargado" -ForegroundColor Green }
+
+
+function msvc64 {
+  $vswhere = "$env:ProgramFiles(x86)\Microsoft Visual Studio\Installer\vswhere.exe"
+  $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+  $bat = Join-Path $vs "VC\Auxiliary\Build\vcvarsall.bat"
+  cmd /k "`"$bat`" x64 && powershell -NoExit -Command Set-Location $PWD"
+}
+
