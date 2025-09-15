@@ -49,7 +49,6 @@ config.colors = {
 		"#7FC8C2", -- bright cyan
 		"#DCD7BA", -- bright white
 	},
-	-- Colores de la barra de tabs (opcionales, en la onda Dragon)
 	tab_bar = {
 		background = "#181616",
 		new_tab = { bg_color = "#181616", fg_color = "#C8C093" },
@@ -60,12 +59,14 @@ config.colors = {
 	},
 }
 
--- ===== Helpers: enviar Ctrl-h/l a (n)vim o cambiar workspace =====
+-- ===== Helpers: detectar (n)vim y enrutar teclas =====
 local function is_vim(pane)
 	local p = pane:get_foreground_process_name() or ""
 	return p:match("n?vim.exe") or p:match("n?vim$")
 end
 
+-- Si estás en Neovim -> enviar la tecla a Neovim
+-- Si NO -> ejecutar la acción de WezTerm (p.ej. cambiar workspace)
 local function pass_to_vim_or(action, key, mods)
 	return wezterm.action_callback(function(win, pane)
 		if is_vim(pane) then
@@ -77,28 +78,32 @@ local function pass_to_vim_or(action, key, mods)
 end
 
 -- ===== Keymaps =====
+-- Leader de WezTerm (como tmux): Ctrl+Space
+config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 1000 }
+
 config.keys = {
-	-- Splits
-	{ key = "+", mods = "ALT|SHIFT", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
-	{ key = "_", mods = "ALT|SHIFT", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
+	-- Debug overlay (para inspeccionar qué evento llega)
+	{ key = "F12", mods = "CTRL|SHIFT", action = act.ShowDebugOverlay },
 
-	-- Navegación panes
-	{ key = "LeftArrow", mods = "ALT|SHIFT", action = act.ActivatePaneDirection("Left") },
-	{ key = "RightArrow", mods = "ALT|SHIFT", action = act.ActivatePaneDirection("Right") },
-	{ key = "UpArrow", mods = "ALT|SHIFT", action = act.ActivatePaneDirection("Up") },
-	{ key = "DownArrow", mods = "ALT|SHIFT", action = act.ActivatePaneDirection("Down") },
+	-- Workspaces con LEADER (recomendado, cero conflictos con Neovim/Obsidian)
+	{ key = "h", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
+	{ key = "l", mods = "LEADER", action = act.SwitchWorkspaceRelative(1) },
 
-	-- Workspaces
+	-- Panes con LEADER + flechas
+	{ key = "LeftArrow", mods = "LEADER", action = act.ActivatePaneDirection("Left") },
+	{ key = "RightArrow", mods = "LEADER", action = act.ActivatePaneDirection("Right") },
+	{ key = "UpArrow", mods = "LEADER", action = act.ActivatePaneDirection("Up") },
+	{ key = "DownArrow", mods = "LEADER", action = act.ActivatePaneDirection("Down") },
+
+	{ key = "-", mods = "LEADER", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
+	{ key = "+", mods = "LEADER", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+
 	{ key = "9", mods = "ALT", action = act.ShowLauncherArgs({ flags = "FUZZY|WORKSPACES" }) },
-	{ key = "l", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(1), "l", "CTRL") },
+
+	-- ==== Ctrl+h / Ctrl+l "inteligentes" ====
 	{ key = "h", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(-1), "h", "CTRL") },
-
-	-- Copiar / Pegar (por compatibilidad)
-	{ key = "C", mods = "CTRL|SHIFT", action = act.CopyTo("Clipboard") },
-	{ key = "V", mods = "CTRL|SHIFT", action = act.PasteFrom("Clipboard") },
-
-	-- Overlay de debug
-	{ key = "D", mods = "CTRL|SHIFT", action = act.ShowDebugOverlay },
+	{ key = "Backspace", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(-1), "h", "CTRL") },
+	{ key = "l", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(1), "l", "CTRL") },
 }
 
 return config
