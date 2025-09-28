@@ -1,0 +1,139 @@
+format = """\
+($directory)\
+$os\
+$git_branch\
+$fill\
+$nodejs\
+$rust\
+$golang\
+$php\
+$bun\
+$java\
+$c\
+$conda\
+$zig\
+$cmd_duration\
+$time\
+\n$character\
+"""
+
+add_newline = true
+command_timeout = 2000
+palette = "kanagawa_dragon"
+
+[fill]
+symbol = " "   # sin puntos
+
+# --------- Kanagawa Dragon ---------
+[palettes.kanagawa_dragon]
+text      = "#DCD7BA"  # fujiWhite
+subtext0  = "#C8C093"  # oldWhite (suave)
+blue      = "#7E9CD8"  # crystalBlue
+mauve     = "#957FB8"  # oniViolet
+pink      = "#D27E99"  # sakuraPink
+teal      = "#7AA89F"  # waveAqua2
+aqua      = "#7FB4CA"  # springBlue (por si lo querés usar)
+green     = "#98BB6C"  # springGreen
+red       = "#C34043"  # autumnRed
+yellow    = "#FF9E3B"  # autumnYellow
+orange    = "#FFA066"  # surimiOrange
+peach     = "#E6C384"  # carpYellow (dorado cálido)
+timecol   = "#7AA89F" 
+
+# --------- PROMPT / USER / DIR ---------
+[character]
+success_symbol = "[ރ](fg:text)"
+error_symbol   = "[ރ](fg:red)"
+
+[username]
+style_user = "bold text"
+style_root = "bold red"
+format = "[$user]($style) "
+disabled = false
+show_always = true
+
+[directory]
+format = "[$path](bold $style)[$read_only]($read_only_style) "
+truncation_length = 2
+style = "bold fg:mauve"
+read_only_style = "fg:peach"
+before_repo_root_style = "fg:blue"
+truncation_symbol = "…/"
+truncate_to_repo = true
+read_only = "  "
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music"     = " "
+"Pictures"  = " "
+
+# --------- TIEMPO / DURACIÓN ---------
+[cmd_duration]
+format = " took [ $duration]($style) "
+style = "bold fg:peach"
+min_time = 500
+
+[time]
+disabled = false
+time_format = "%R"
+format = "[$time](fg:timecol)"
+
+# --------- GIT ---------
+[git_branch]
+format = "-> [$symbol$branch]($style) "
+style = "bold fg:mauve"
+symbol = " "
+
+[git_status]
+format = "[$all_status$ahead_behind ]($style)"
+style = "fg:text bg:pink"
+
+# --------- RUNTIMES (muestran solo cuando aplica) ---------
+[python]
+disabled = false
+format = "[$symbol$pyenv_prefix($version)( $virtualenv)](fg:peach)"
+symbol = " "
+version_format = "$raw"
+
+[java]
+format = "[ $symbol ($version) ](fg:red)"
+version_format = "$raw"
+symbol = " "
+disabled = false
+
+[c]
+format = "[ $symbol ($version) ](fg:blue)"
+symbol = " "
+version_format = "$raw"
+disabled = false
+
+[zig]
+format = "[ $symbol ($version) ](fg:orange)"
+version_format = "$raw"
+disabled = false
+
+[bun]
+version_format = "$raw"
+format = "[ $symbol ($version) ](fg:text)"
+disabled = false
+
+[nodejs]
+symbol = ""
+format = "[ $symbol ($version) ](fg:green)"
+
+[rust]
+symbol = ""
+format = "[ $symbol ($version) ](fg:red)"
+
+[golang]
+symbol = ""
+format = "[ $symbol ($version) ](fg:teal)"
+
+[php]
+symbol = ""
+format = "[ $symbol ($version) ](fg:peach)"
+
+[docker_context]
+disabled = true
+symbol = " "
