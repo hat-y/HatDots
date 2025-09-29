@@ -3,8 +3,8 @@ command = /usr/bin/zsh -l
 working-directory = ~/
 
 # --- Fuente y UI ---
-font-family = IosevkaTerm Nerd Font
-font-size = 18
+font-family = "IosevkaTerm Nerd Font Mono"
+font-size = 20
 window-padding-x = 0
 window-padding-y = 0
 background-opacity = 0.95
