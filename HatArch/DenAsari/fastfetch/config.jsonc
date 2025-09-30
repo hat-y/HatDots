@@ -1,0 +1,35 @@
+// ███████╗ █████╗ ███████╗████████╗███████╗███████╗████████╗ ██████╗██╗  ██╗
+// ██╔════╝██╔══██╗██╔════╝╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝██╔════╝██║  ██║
+// █████╗  ███████║███████╗   ██║   █████╗  █████╗     ██║   ██║     ███████║
+// ██╔══╝  ██╔══██║╚════██║   ██║   ██╔══╝  ██╔══╝     ██║   ██║     ██╔══██║
+// ██║     ██║  ██║███████║   ██║   ██║     ███████╗   ██║   ╚██████╗██║  ██║
+// ╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝     ╚══════╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
+
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "source": "/home/hat/Pictures/wallpapers/brown-g.jpg", 
+    "type": "kitty",
+    "height": 12,
+    "padding": { "top": 2, "left": 3 }
+  },
+  "display": { "separator": " " },
+  "modules": [
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[34mhat\u001b[0m\n"
+    },
+    { "type": "os",      "key": " ", "keyColor": "34" },
+    { "type": "kernel",  "key": " ", "keyColor": "34" },
+    { "type": "packages","key": " ", "keyColor": "34" },
+    { "type": "shell",   "key": " ", "keyColor": "34" },
+    { "type": "wm",      "key": " ", "keyColor": "34" },
+    { "type": "cursor",  "key": " ", "keyColor": "34" },
+    { "type": "terminalfont","key": " ", "keyColor": "34" },
+    { "type": "uptime",  "key": " ", "keyColor": "34" },
+    { "type": "media",   "key": "󰝚 ", "keyColor": "34" },
+    "break"
+  ]
+}
+

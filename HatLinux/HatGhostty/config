@@ -7,7 +7,7 @@ font-family = "IosevkaTerm Nerd Font Mono"
 font-size = 20
 window-padding-x = 0
 window-padding-y = 0
-background-opacity = 0.95
+background-opacity = 0.85
 window-decoration = none
 
 # --- Kanagawa Dragon-ish ---
