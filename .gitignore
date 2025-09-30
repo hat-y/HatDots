@@ -73,3 +73,7 @@ env/
 *.tar.gz
 *.7z
 
+
+# Vesktop / datos locales
+HatArch/DenAsari/vesktop/
+*.ldb
