@@ -36,6 +36,7 @@ link_dir "$ROOT/btop"      "$HOME/.config/btop"
 link_dir "$ROOT/wofi"      "$HOME/.config/wofi"
 link_dir "$ROOT/wlogout"   "$HOME/.config/wlogout"
 link_dir "$ROOT/yazi"      "$HOME/.config/yazi"
+link_dir "$ROOT/spicetify" "$HOME/.config/spicetify"
 
 # ~/.local/bin/*
 mkdir -p "$HOME/.local/bin"
