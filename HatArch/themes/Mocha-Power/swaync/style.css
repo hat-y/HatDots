@@ -4,30 +4,30 @@
 ======================================================================== */
 
 /* ========================================================================
-   COLOR PALETTE - Gruvbox Inspired
+   COLOR PALETTE - Catppuccin-esque (Migrated from Waybar)
 ======================================================================== */
-@define-color bg-primary #2C2A24;        /* Dark background - main canvas */
-@define-color bg-secondary #282828;      /* Secondary background - panels */
-@define-color bg-tertiary #3c3836;       /* Tertiary background - hover states */
-@define-color bg-selected #504945;       /* Selection background */
+@define-color bg-primary #151520;           /* Darkest background - Main canvas (@background2) */
+@define-color bg-secondary #202030;         /* Secondary background - Panels/Modules (@background1) */
+@define-color bg-tertiary #313244;          /* Tertiary background - Hover states/Separators (@sepepator) */
+@define-color bg-selected #45475a;          /* Selection background (@caution - gris medio) */
 
-@define-color fg-primary #ebdbb2;         /* Primary text - cream/off-white */
-@define-color fg-secondary #d5c4a1;      /* Secondary text - muted cream */
-@define-color fg-tertiary #bdae93;       /* Tertiary text - greyish cream */
-@define-color fg-disabled #665c54;       /* Disabled text - dark grey */
+@define-color fg-primary #bdae93;           /* Primary text - Usando un gris claro para contraste. (El @text original era negro, inadecuado para este fondo oscuro) */
+@define-color fg-secondary #94e2d5;         /* Secondary text - Muted Cian (@misc) */
+@define-color fg-tertiary #89b4fa;          /* Tertiary text - Azul Proceso (@process) */
+@define-color fg-disabled #45475a;          /* Disabled text - Gris medio (@caution) */
 
-@define-color accent-green #78997A;       /* Spotify green accent */
-@define-color accent-orange #D08B57;      /* Warm orange accent */
-@define-color accent-red #B05A5A;         /* Error/critical red */
-@define-color accent-blue #7699A3;        /* Info blue */
-@define-color accent-purple #8D7AAE;      /* Purple accent */
+@define-color accent-green #a6e3a1;         /* Green accent - Date/Time (@date) */
+@define-color accent-orange #f5c2e7;        /* Orange accent - Performance/Highlight (@performance) */
+@define-color accent-red #f38ba8;           /* Error/critical red (@warning) */
+@define-color accent-blue #b4befe;          /* Info blue - Window/Active State (@window) */
+@define-color accent-purple #cba6f7;        /* Purple accent - Audio (@audio) */
 
-@define-color border-primary #504945;     /* Primary border color */
-@define-color border-focus #b8bb26;       /* Focus border - green accent */
+@define-color border-primary #313244;       /* Primary border color (@sepepator) */
+@define-color border-focus #b4befe;         /* Focus border - Active State (@window) */
 
 /* Special Purpose Colors */
-@define-color mpris-album-art-overlay rgba(0, 0, 0, 0.55);
-@define-color mpris-button-hover rgba(0, 0, 0, 0.5);
+@define-color mpris-album-art-overlay rgba(32, 32, 48, 0.7); /* Usando @background1 con transparencia */
+@define-color mpris-button-hover rgba(180, 190, 254, 0.2); /* Usando @window con transparencia */
 
 /* ========================================================================
    GLOBAL STYLES
@@ -46,7 +46,7 @@
 .control-center {
     background-color: @bg-primary;
     box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.65);
-    border: 2px solid @accent-orange;
+    border: 2px solid @accent-blue; /* Usando azul como borde de la ventana principal */
     padding: 5px;
     border-radius: 4px;
 }
@@ -56,125 +56,9 @@
     margin-top: 5px;
 }
 
-.control-center .notification-row .notification-background .notification {
-    border-radius: 4px;
-}
-
-.control-center .notification-row .notification-background .close-button {
-    border-radius: 4px;
-}
-
-/* ========================================================================
-   NOTIFICATION STYLES
-======================================================================== */
-.notification {
-    background-color: @bg-primary;
-    border-radius: 4px;
-    border: 1px solid @fg-secondary;
-    margin: 8px 2px;
-}
-
-.notification > *:last-child > * {
-    margin: 5px;
-}
-
-/* Notification Content */
-.notification-content {
-    padding: 15px 10px 10px 20px;
-    border-radius: 4px;
-}
-
-/* Text Elements */
-.summary {
-    font-size: 1.1rem;
-}
-
-.time {
-    font-size: 0.8rem;
-}
-
-.body {
-    font-size: 1rem;
-}
-
-/* Notification Actions */
-.notification-action > button {
-    padding: unset;
-    margin: unset;
-    border-radius: 4px;
-}
-
-.notification-action > label {
-    font-size: 1rem;
-    font-weight: normal;
-}
-
-/* Notification Priority Styles */
-.notification.critical {
-    background-color: @accent-red;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.65);
-    border-radius: 4px;
-}
-
-.notification.low,
-.notification.normal {
-    background-color: @bg-primary;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.65);
-    border-radius: 4px;
-}
-
-/* Close Button */
-.close-button {
-    background-color: transparent;
-}
-
-.close-button:hover {
-    color: @accent-red;
-}
-
-/* ========================================================================
-   NOTIFICATION GROUPS
-======================================================================== */
-.notification-group-header,
-.notification-group-icon {
-    font-size: 0.9rem;
-}
-
-.notification-group-collapse-button,
-.notification-group-close-all-button {
-    box-shadow: 0 0 3px 0 rgba(0, 0, 0, 0.35);
-    background-color: @bg-tertiary;
-    border-radius: 4px;
-}
-
-.notification-group-collapse-button:hover {
-    background-color: @accent-blue;
-}
-
-.notification-group-close-all-button:hover {
-    background-color: @accent-red;
-}
-
-/* ========================================================================
-   SCROLLBARS & SLIDERS
-======================================================================== */
-trough highlight {
-    background: @accent-blue;
-    border-radius: 4px;
-}
-
-scale trough {
-    margin: 0rem 1rem;
-    background-color: @bg-tertiary;
-    min-height: 8px;
-    min-width: 70px;
-    border-radius: 4px;
-}
-
-slider {
-    background-color: @fg-primary;
-    border-radius: 4px;
-}
+.control-center .notification-row .notification-ba#custom-swaync { color: #cdd6f4; }          /* normal */
+#custom-swaync.unread { color: #f9e2af; }   /* cuando hay no leídas */
+#custom-swaync.dnd { opacity: .6; }
 
 tooltip {
     background-color: @bg-tertiary;
@@ -285,7 +169,7 @@ tooltip {
 
 .widget-volume > box > button {
     border: none;
-    background-color: #3A372F;
+    background-color: @bg-tertiary; /* Usando terciario para botones de volumen */
 }
 .widget-volume > box > button:hover {
     background-color: @accent-blue;
@@ -315,7 +199,7 @@ tooltip {
 
 /* DND text */
 .widget-dnd > label {
-    color: @accent-purple; /* Replace with your desired color */
+    color: @accent-purple;
 }
 .widget-dnd {
     font-weight: bold;
@@ -337,7 +221,7 @@ tooltip {
 }
 
 .widget-dnd > switch slider {
-    background: @bg-primary;
+    background: @bg-secondary; /* Slider en el color de fondo secundario */
     border-radius: 4px;
     min-width: 18px;
     min-height: 18px;

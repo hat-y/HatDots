@@ -9,13 +9,13 @@
     "layer-shell": true,
 
     "control-center-width": 400,
-    "control-center-height": 1100,
-    "control-center-margin-top": 10,
-    "control-center-margin-bottom": 10,
-    "control-center-margin-right": 10,
+    "control-center-height": 700,
+    "control-center-margin-top": 30,
+    "control-center-margin-bottom": 30,
+    "control-center-margin-right": 15,
     "control-center-margin-left": 0,
 
-    "notification-window-width": 380,
+    "notification-window-width": 400,
     "notification-icon-size": 50,
     "notification-body-image-height": 200,
     "notification-body-image-width": 200,

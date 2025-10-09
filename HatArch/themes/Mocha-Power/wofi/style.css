@@ -1,76 +1,92 @@
-@import '/home/hat/.config/wofi/gruvbox.css';
+/* ========================================================================
+   WOFI CSS Configuration - Catppuccin-esque (Waybar Palette)
+======================================================================== */
 
+/* Define Colors (Imported from Waybar Palette) */
+@define-color bg #151520;           /* Fondo principal oscuro (similar a @background2) */
+@define-color bg-secondary #202030; /* Fondo secundario de ventana (similar a @background1) */
+@define-color sepepator #313244;    /* Separador/Gris oscuro */
+@define-color txt #bdae93;          /* Texto principal legible (gris claro, no el negro original) */
+@define-color accent #b4befe;       /* Acento principal (Azul Lavanda @window) */
+@define-color accent2 #f5c2e7;      /* Acento secundario (Rosa/Morado @performance) */
+@define-color warning #f38ba8;      /* Advertencia/Error (Rosa/Rojo @warning) */
+
+/* Global Settings */
 * {
     font-family: 'Iosevka Nerd Font mono';
     font-size: 14px;
- }
+    color: @txt; /* Usamos el color de texto legible */
+}
 
- /* Window */
- window {
+/* Window */
+window {
     margin: 0px;
     padding: 10px;
-    border-radius: 0px;
+    border-radius: 8px; /* Redondeamos las esquinas para mejor estética */
     background-color: @bg;
- }
+    border: 2px solid @sepepator; /* Borde sutil */
+}
 
- /* Inner Box */
- #inner-box {
+/* Inner Box */
+#inner-box {
     margin: 5px;
     padding: 10px;
     border: none;
     border-radius: 5px;
-    background-color: @bg;
- }
+    background-color: @bg-secondary; /* Usamos el fondo secundario para mayor contraste */
+}
 
 
- /* Outer Box */
- #outer-box {
+/* Outer Box */
+#outer-box {
     margin: 5px;
     padding: 10px;
     border: none;
-    background-color: @bg;
+    background-color: @bg-secondary; /* Usamos el fondo secundario */
     border-radius: 5px;
- }
+}
 
- /* Scroll */
- #scroll {
+/* Scroll */
+#scroll {
     margin: 0px;
     padding: 10px;
     border: none;
- }
+}
 
- /* Input */
- #input {
-    margin: 10px 25px 10px 25px;
+/* Input (Caja de búsqueda) */
+#input {
+    margin: 10px 15px 10px 15px; /* Reduje un poco los márgenes laterales */
     padding: 10px;
     color: @accent;
-    background-color: @bg;
+    background-color: @bg; /* Fondo principal más oscuro */
     border: 2px solid @accent;
     border-radius: 5px;
- }
+}
 
- /* Text */
- #text {
+/* Text */
+#text {
     margin: 5px;
     padding: 10px;
     border: none;
     color: @txt;
- }
+}
 
 /* Selected Entry */
 #entry:selected {
-   background-color: @bg;
-   border: 1px solid @accent2;
-   border-radius: 5px;
+    background-color: @sepepator; /* El color del separador luce bien como fondo de selección */
+    border: 1px solid @accent;
+    border-radius: 5px;
 }
 
- #entry:selected #text {
-    color: @txt;
- }
- image {
-   margin-left: 10px;
- }
+#entry:selected #text {
+    color: @accent2; /* Cambiamos el color de texto a un acento secundario para que resalte */
+}
+
+image {
+    margin-left: 10px;
+}
 /*entfernen des anderen durch .left oder .right*/
 #input > image.right {
-        -gtk-icon-transform:scaleX(0);
-    }
+    -gtk-icon-transform:scaleX(0);
+}
+
