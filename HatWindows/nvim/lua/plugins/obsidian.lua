@@ -29,9 +29,7 @@ return {
 		daily_notes = {
 			folder = "3-Logs",
 			date_format = "%Y-%m-%d",
-			alias_format = "%B %-d, %Y",
-			default_tags = { "daily-notes" },
-			template = "log-tmpl.md", -- Debe existir: ~/HatNotes/7-Tmpl/log-tmpl.md
+			template = "log-tmpl.md",
 		},
 
 		preferred_link_style = "wiki",
@@ -65,8 +63,7 @@ return {
 
 		require("obsidian").setup(opts)
 
-		-- Opcional, si querés iconitos/conceal:
-		-- vim.opt.conceallevel = 1
+		vim.opt.conceallevel = 1
 
 		-- ---- Mapeos buffer-locales SIEMPRE que el buffer sea markdown ----
 		local function attach_obsidian_buf(bufnr)

@@ -1,6 +1,6 @@
 local wezterm = require("wezterm")
 local act = wezterm.action
-local config = {}
+local config = wezterm.config_builder and wezterm.config_builder() or {}
 
 -- ===== Básicos =====
 config.default_prog = { "pwsh.exe", "-NoLogo" }
@@ -81,11 +81,12 @@ end
 -- Leader de WezTerm (como tmux): Ctrl+Space
 config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 1000 }
 
+-- Atajos activos siempre
 config.keys = {
-	-- Debug overlay (para inspeccionar qué evento llega)
+	-- Debug overlay
 	{ key = "F12", mods = "CTRL|SHIFT", action = act.ShowDebugOverlay },
 
-	-- Workspaces con LEADER (recomendado, cero conflictos con Neovim/Obsidian)
+	-- Workspaces con LEADER
 	{ key = "h", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
 	{ key = "l", mods = "LEADER", action = act.SwitchWorkspaceRelative(1) },
 
@@ -98,12 +99,17 @@ config.keys = {
 	{ key = "-", mods = "LEADER", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
 	{ key = "+", mods = "LEADER", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
 
-	{ key = "9", mods = "ALT", action = act.ShowLauncherArgs({ flags = "FUZZY|WORKSPACES" }) },
-
-	-- ==== Ctrl+h / Ctrl+l "inteligentes" ====
+	-- Ctrl+h / Ctrl+l inteligentes
 	{ key = "h", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(-1), "h", "CTRL") },
-	{ key = "Backspace", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(-1), "h", "CTRL") },
 	{ key = "l", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(1), "l", "CTRL") },
 }
 
+config.key_tables = {
+	config_table = {
+		{ key = "Enter", mods = "SHIFT", action = act.SendString("\x1b\r") },
+	},
+	config_table2 = {
+		-- agrega entradas si realmente activarás esta tabla
+	},
+}
 return config
