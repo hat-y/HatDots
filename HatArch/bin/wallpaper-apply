@@ -1,0 +1,34 @@
+set -Eeuo pipefail
+
+CMD="${1:-random}"   # random | file <path> | <imagen>
+BASE="$HOME/.config/profile/current/wallpaper"
+[ -d "$BASE" ] || { echo "No existe $BASE"; exit 1; }
+
+pgrep -x swww-daemon >/dev/null || { swww-daemon & sleep 0.3; }
+
+pick_random() {
+  find "$BASE" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) | shuf -n1
+}
+
+IMG=""
+case "$CMD" in
+  random) IMG="$(pick_random)" ;;
+  file)   IMG="${2:-}";;
+  *)      if [ -f "$CMD" ]; then IMG="$CMD"; else echo "Uso: wallpaper-apply [random|file <imagen>|<imagen>]"; exit 2; fi ;;
+esac
+
+[ -n "${IMG:-}" ] && [ -f "$IMG" ] || { echo "Imagen inválida: $IMG"; exit 2; }
+
+# Outputs: swww query, si vacío usa hyprctl
+OUTS="$(swww query | awk '/^[A-Za-z0-9-]+/{print $1}')"
+[ -n "$OUTS" ] || OUTS="$(hyprctl monitors | awk '/Monitor/{print $2}')"
+
+for OUT in $OUTS; do
+  swww img -o "$OUT" "$IMG" \
+    --resize crop \
+    --transition-type wipe \
+    --transition-fps 60 \
+    --transition-step 90
+done
+
+echo "Wallpaper aplicado: $IMG"

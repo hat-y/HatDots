@@ -1,0 +1,78 @@
+set -euo pipefail
+
+# uso: desktop-profile <Perfil> [--only waybar|hypr|wofi|swaync[,...]] [--dry]
+P="${1:-}"; [ -z "$P" ] && { echo "Uso: desktop-profile <Perfil> [--only comp1,comp2] [--dry]"; exit 2; }
+shift || true
+
+ONLY=""
+DRY=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --only) ONLY="${2:-}"; shift 2 ;;
+    --only=*) ONLY="${1#*=}"; shift ;;
+    --dry) DRY=1; shift ;;
+    *) echo "Arg desconocido: $1"; exit 2 ;;
+  esac
+done
+
+ROOT="${PROFILE_ROOT:-$HOME/HatDots/HatArch/themes}"
+BASE="$ROOT/$P"; [ -d "$BASE" ] || { echo "No existe $BASE"; exit 1; }
+
+# mapa componente->destino
+MAP=(
+  "waybar:$HOME/.config/waybar"
+  "hypr:$HOME/.config/hypr"
+  "wofi:$HOME/.config/wofi"
+  "swaync:$HOME/.config/swaync"
+)
+
+in_only() {
+  [ -z "$ONLY" ] && return 0
+  IFS=',' read -r -a arr <<< "$ONLY"
+  for x in "${arr[@]}"; do [ "$x" = "$1" ] && return 0; done
+  return 1
+}
+
+link_dir() {
+  local src="$1" dst="$2"
+  [ -d "$src" ] || return 0
+  mkdir -p "$(dirname "$dst")"
+  if [ $DRY -eq 1 ]; then
+    echo "ln -sfn '$src' '$dst'"
+  else
+    [ -e "$dst" ] && [ ! -L "$dst" ] && mv -T "$dst" "${dst}.bak-$(date +%Y%m%d%H%M%S)"
+    ln -sfn "$src" "$dst"
+  fi
+}
+
+for pair in "${MAP[@]}"; do
+  comp="${pair%%:*}"; dst="${pair#*:}"
+  in_only "$comp" || continue
+  link_dir "$BASE/$comp" "$dst"
+done
+
+[ $DRY -eq 1 ] || ln -sfn "$BASE" "$HOME/.config/profile/current"
+
+# Arreglo de rutas duras en waybar
+if in_only waybar; then
+  for f in "$HOME/.config/waybar/config.jsonc" "$HOME/.config/waybar/style.css"; do
+    [ -f "$f" ] && sed -i "s#${HOME}/.config/hypr/themes/[^/]*#${HOME}/.config/waybar#g" "$f"
+  done
+fi
+
+# Recargas mínimas según componentes tocados
+if [ $DRY -eq 0 ]; then
+  if in_only waybar; then
+    pkill -x waybar 2>/dev/null || true
+    nohup waybar -c "$HOME/.config/waybar/config.jsonc" -s "$HOME/.config/waybar/style.css" >/dev/null 2>&1 &
+  fi
+  if in_only swaync; then
+    pkill -x swaync 2>/dev/null || true
+    command -v swaync >/dev/null && nohup swaync >/dev/null 2>&1 &
+  fi
+  if in_only hypr; then
+    command -v hyprctl >/dev/null && hyprctl reload >/dev/null 2>&1 || true
+  fi
+fi
+
+echo "Perfil aplicado: $P $( [ -n "$ONLY" ] && echo "(only: $ONLY)" ) desde $BASE"
