@@ -102,6 +102,9 @@
 #waybar.main #custom-weather,
 #waybar.main #custom-weather,
 #waybar.main #custom-battery,
+#custom-swaync { color: #cdd6f4; }          /* normal */
+#custom-swaync.unread { color: #f9e2af; }   /* cuando hay no leídas */
+#custom-swaync.dnd { opacity: .6; }
 #waybar.main #keyboard-state,
 #waybar.main #network,
 #waybar.main #battery,

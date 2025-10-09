@@ -30,8 +30,8 @@
       "custom/spacer3",
       "hyprland/language",
       "custom/battery",
-      // "custom/weather",    // activa solo si instalas wttrbar
       "custom/spacer4",
+      "custom/swaync",
       "clock"
     ],
 
@@ -80,14 +80,6 @@
       "modules": ["custom/battery"]
     },
 
-    // BACKLIGHT: desactívalo en desktop si no hay /sys/class/backlight
-    // "backlight": {
-    //   "device": "intel_backlight",
-    //   "format": "{icon} {percent}%",
-    //   "format-icons": ["󱩎", "󱩑", "󱩓", "󱩕", "󰛨"],
-    //   "scroll-step": 2
-    // },
-
     "custom/nvidia": {
       "interval": 5,
       "return-type": "json",
@@ -108,6 +100,17 @@
       "tooltip-format": "{alt}"
     },
 
+    "custom/swaync": {
+      "return-type": "json",
+      "exec": "swaync-client -swb",
+      "interval": 0,
+      "format": " {text}",
+      "on-click": "swaync-client --toggle-panel",
+      "on-click-right": "swaync-client --notification-close-all",
+      "on-click-middle": "swaync-client --toggle-dnd",
+      "tooltip": false
+    },
+ 
     "clock": {
       "interval": 1,
       "format": " {:%H:%M:%S    %a %d.%m}",
@@ -227,9 +230,6 @@
       "max-volume": 100,
       "tooltip-format": "{source_desc}"
     },
-
-    // no lo usas en desktop; déjalo comentado si quieres
-    // "temperature": { "critical-threshold": 90, "interval": 4, "format": "{icon} {temperatureC}°", "format-icons": ["","","","",""], "tooltip": false },
 
     "tray": { "icon-size": 18, "spacing": 8 },
 
