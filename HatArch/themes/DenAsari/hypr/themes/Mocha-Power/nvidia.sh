@@ -1,0 +1,1 @@
+/home/hat/.config/waybar-custom-modules/nvidia-smi/nvidia.sh

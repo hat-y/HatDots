@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+THEMES_SRC="${HOME}/HatDots/themes"
+HYPR_CFG="${HOME}/.config/hypr"
+WAYBAR_CFG="${HOME}/.config/waybar"
+WOFI_CFG="${HOME}/.config/wofi"
+
+usage() { echo "uso: themectl <nombre-tema> | --list | --current"; }
+
+list() { find "$THEMES_SRC" -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | sort; }
+
+current() {
+  if [[ -L "${HYPR_CFG}/theme" ]]; then
+    readlink -f "${HYPR_CFG}/theme" | awk -F'/' '{print $NF}'
+  else
+    echo "ninguno"
+  fi
+}
+
+activate() {
+  local name="$1"
+  local src="${THEMES_SRC}/${name}"
+  [[ -d "$src" ]] || { echo "tema no existe: $name"; exit 1; }
+
+  mkdir -p "${HYPR_CFG}" "${HOME}/.config"
+  mkdir -p "${HYPR_CFG}/themes"
+  # Opcional: tener copia local de todos los temas
+  rsync -a --delete "${THEMES_SRC}/" "${HYPR_CFG}/themes/"
+
+  ln -sfn "${HYPR_CFG}/themes/${name}" "${HYPR_CFG}/theme"
+
+  # Enlazar Waybar y Wofi/Rofi si existen en el tema
+  if [[ -d "${HYPR_CFG}/theme/waybar" ]]; then
+    ln -sfn "${HYPR_CFG}/theme/waybar" "${WAYBAR_CFG}"
+  fi
+  if [[ -d "${HYPR_CFG}/theme/wofi" ]]; then
+    ln -sfn "${HYPR_CFG}/theme/wofi" "${WOFI_CFG}"
+  fi
+
+  # Reiniciar Waybar si corre
+  pkill -x waybar >/dev/null 2>&1 || true
+  nohup waybar >/tmp/waybar.log 2>&1 &
+
+  # Recargar Hyprland si estás dentro
+  hyprctl reload >/dev/null 2>&1 || true
+
+  echo "tema activo: ${name}"
+}
+
+case "${1:-}" in
+  --list)    list ;;
+  --current) current ;;
+  "")        usage; exit 1 ;;
+  *)         activate "$1" ;;
+esac
+

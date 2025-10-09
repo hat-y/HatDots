@@ -75,5 +75,6 @@ env/
 
 
 # Vesktop / datos locales
-HatArch/DenAsari/vesktop/
+HatArch/themes/*/vesktop/*
+!HatArch/themes/*/vesktop/*.css
 *.ldb
