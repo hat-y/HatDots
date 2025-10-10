@@ -1,80 +1,112 @@
 return {
 	"yetone/avante.nvim",
-	-- ⚠️ En Windows usar el build de PowerShell (descarga binarios precompilados)
 	build = (vim.fn.has("win32") ~= 0) and "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false"
 		or "make",
 	event = "VeryLazy",
-	version = false, -- No uses "*" (el autor lo desaconseja)
+	version = false, -- no usar "*"
 	dependencies = {
 		"nvim-lua/plenary.nvim",
 		"MunifTanjim/nui.nvim",
-		-- selectores y UI (tenés ambos)
+
+		-- Selectores / UI (ya usás telescope y snacks)
 		"nvim-telescope/telescope.nvim",
 		"folke/snacks.nvim",
-		-- opcionales para inputs bonitos y devicons
+
+		-- UI nice-to-have
 		"stevearc/dressing.nvim",
 		"nvim-tree/nvim-web-devicons",
-		-- opcional: cmp sólo para completar comandos de Avante (no es autocompletado inline)
-		"hrsh7th/nvim-cmp",
-	},
-	opts = {
-		--- Dónde guardar prompt/políticas de tu proyecto
-		instructions_file = "avante.md",
 
-		--- Proveedor de LLM que vamos a usar
-		provider = "gemini",
-		providers = {
-			openai = {
-				endpoint = "https://api.openai.com/v1",
-				-- Elegí un modelo que tengas disponible. Estos suelen ser buenos compromisos costo/latencia:
-				model = "gpt-4o-mini",
-				timeout = 30000,
-				extra_request_body = {
-					temperature = 0.3,
-					-- max_tokens = 16384, -- si querés limitar
+		-- Opcional: solo para completar comandos de Avante (no “ghost text”)
+		"hrsh7th/nvim-cmp",
+
+		-- Pegar imágenes (opcional pero útil)
+		{
+			"HakonHarnes/img-clip.nvim",
+			event = "VeryLazy",
+			opts = {
+				default = {
+					embed_image_as_base64 = false,
+					prompt_for_file_name = false,
+					drag_and_drop = { insert_mode = true },
+					use_absolute_path = true, -- Windows
 				},
 			},
 		},
 
-		selector = {
-			provider = "telescope",
+		-- Markdown render en paneles de Avante (opcional)
+		{
+			"MeanderingProgrammer/render-markdown.nvim",
+			ft = { "markdown", "Avante" },
+			opts = { file_types = { "markdown", "Avante" } },
+		},
+	},
+
+	opts = {
+		-- Archivo con tus reglas y prompts del proyecto
+		instructions_file = "avante.md",
+
+		-- === Proveedor por defecto ===
+		provider = "gemini",
+
+		-- Config específica de Gemini
+		gemini = {
+			model = "gemini-2.5-flash",
+			-- Afinado de generación (opcional)
+			generationConfig = {
+				temperature = 0.3,
+				-- maxOutputTokens = 8192,
+			},
+			-- por defecto usa GEMINI_API_KEY
+			-- api_key_name = "GEMINI_API_KEY",
 		},
 
+		-- (Opcional) Dejar preconfigurado OpenAI por si cambiás en runtime con :AvanteModels
+		openai = {
+			endpoint = "https://api.openai.com/v1",
+			model = "gpt-4o-mini",
+			timeout = 30000,
+			extra_request_body = {
+				temperature = 0.3,
+			},
+			-- usa OPENAI_API_KEY
+		},
+
+		-- Pickers e inputs
+		selector = { provider = "telescope" },
 		input = { provider = "snacks" },
 
+		-- Sin autosugerencias “fantasma”: no configuramos nada tipo inline
+		-- (Avante no impone ghost text por defecto; se activa sólo si lo mapeás)
+
+		-- Atajos (presets) de acciones
 		shortcuts = {
 			{
 				name = "refactor",
 				description = "Refactor con buenas prácticas y claridad.",
-				prompt = "Refactor this code improving readability, maintainability, and keeping behavior. Explain the changes briefly.",
+				prompt = "Refactor this code improving readability, maintainability, and keeping behavior. Explain briefly.",
 			},
 			{
 				name = "tests",
 				description = "Generar tests con casos borde.",
-				prompt = "Generate comprehensive unit tests including edge cases and error conditions for the selected code.",
+				prompt = "Generate comprehensive unit tests including edge cases and error conditions.",
 			},
 			{
 				name = "docs-es",
-				description = "Documentar en español de manera clara y concisa.",
-				prompt = "Escribe documentación clara y concisa en español para el siguiente código: funciones, parámetros, retorno y ejemplos.",
+				description = "Documentar en español.",
+				prompt = "Escribe documentación clara en español: propósito, funciones, parámetros, retorno y ejemplos.",
 			},
 		},
 
 		behaviour = {
-			enable_fastapply = false,
+			enable_fastapply = false, -- aplicá cambios de forma revisada
 		},
 	},
 
 	keys = {
-		{ "<leader>aa", "<cmd>AvanteToggle<cr>", desc = "Avante: abrir/cerrar sidebar" },
+		{ "<leader>aa", "<cmd>AvanteToggle<cr>", desc = "Avante: abrir/cerrar panel" },
 		{ "<leader>an", "<cmd>AvanteAsk<cr>", desc = "Avante: preguntar (chat)" },
-		{ "<leader>ae", "<cmd>AvanteEdit<cr>", mode = { "v", "n" }, desc = "Avante: editar selección" },
+		{ "<leader>ae", "<cmd>AvanteEdit<cr>", mode = { "x", "n" }, desc = "Avante: editar selección/archivo" },
 		{ "<leader>am", "<cmd>AvanteModels<cr>", desc = "Avante: elegir modelo" },
-		{ "<leader>ah", "<cmd>AvanteHistory<cr>", desc = "Avante: sesiones previas" },
-		{
-			"<leader>as",
-			"<cmd>lua require('avante').keymaps.toggle_suggestion()<cr>",
-			desc = "Avante: toggle sugerencias",
-		},
+		{ "<leader>ah", "<cmd>AvanteHistory<cr>", desc = "Avante: historial sesiones" },
 	},
 }

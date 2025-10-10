@@ -1,7 +1,8 @@
 -- lua/plugins/lsp.lua
 return {
+
 	{
-		"williamboman/mason-lspconfig.nvim",
+		"mason-org/mason-lspconfig.nvim",
 		opts = {
 			ensure_installed = { "vtsls", "pyright", "ruff", "lua_ls" },
 			automatic_installation = true,
