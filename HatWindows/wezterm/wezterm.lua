@@ -13,6 +13,36 @@ config.enable_scroll_bar = false
 config.window_background_opacity = 0.95
 config.front_end = "OpenGL" -- estable en Windows
 
+-- ===== Comportamiento de Ventana =====
+config.window_close_confirmation = "AlwaysPrompt"
+config.window_decorations = "RESIZE"
+config.adjust_window_size_when_changing_font_size = false
+config.initial_rows = 30
+config.initial_cols = 120
+
+-- ===== Integración con Sistema =====
+config.launch_menu = {
+  {
+    label = "PowerShell",
+    args = { "pwsh.exe", "-NoLogo" },
+  },
+  {
+    label = "PowerShell (Admin)",
+    args = { "pwsh.exe", "-NoLogo", "-Command", "Start-Process pwsh.exe -Verb RunAs" },
+  },
+  {
+    label = "Command Prompt",
+    args = { "cmd.exe" },
+  },
+}
+
+-- ===== Animaciones y Transiciones =====
+config.animation_fps = 60
+config.cursor_blink_rate = 800
+
+-- ===== Auditory Feedback (opcional) =====
+config.audible_bell = "Disabled"
+
 -- Mostrar workspace activo a la derecha
 wezterm.on("update-right-status", function(window, _)
 	window:set_right_status(window:active_workspace())
@@ -21,7 +51,7 @@ end)
 -- ===== Kanagawa Dragon (colores) =====
 config.colors = {
 	foreground = "#DCD7BA", -- fujiWhite
-	background = "#000000",
+	background = "#1F1F28", -- waveBlack (consistente con tema Kanagawa)
 	cursor_bg = "#C8C093",
 	cursor_fg = "#181616",
 	cursor_border = "#C8C093",
@@ -62,7 +92,7 @@ config.colors = {
 -- ===== Helpers: detectar (n)vim y enrutar teclas =====
 local function is_vim(pane)
 	local p = pane:get_foreground_process_name() or ""
-	return p:match("n?vim.exe") or p:match("n?vim$")
+	return p:match("n?vim%.exe$") or p:match("n?vim$") or p:match("neovim") or p:match("nvim")
 end
 
 -- Si estás en Neovim -> enviar la tecla a Neovim
@@ -106,14 +136,32 @@ config.keys = { -- Debug overlay
 	-- Ctrl+h / Ctrl+l inteligentes
 	{ key = "h", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(-1), "h", "CTRL") },
 	{ key = "l", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(1), "l", "CTRL") },
-}
 
-config.key_tables = {
-	config_table = {
-		{ key = "Enter", mods = "SHIFT", action = act.SendString("\x1b\r") },
-	},
-	config_table2 = {
-		-- agrega entradas si realmente activarás esta tabla
-	},
+	-- Zoom y ajustes de fuente
+	{ key = "=", mods = "CTRL", action = act.IncreaseFontSize },
+	{ key = "-", mods = "CTRL", action = act.DecreaseFontSize },
+	{ key = "0", mods = "CTRL", action = act.ResetFontSize },
+
+	-- Copiado y pegado mejorado
+	{ key = "c", mods = "CTRL|SHIFT", action = act.CopyTo("Clipboard") },
+	{ key = "v", mods = "CTRL|SHIFT", action = act.PasteFrom("Clipboard") },
+
+	-- Navegación de tabs
+	{ key = "Tab", mods = "CTRL", action = act.ActivateTabRelative(1) },
+	{ key = "Tab", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
+	{ key = "t", mods = "CTRL|SHIFT", action = act.SpawnTab("CurrentPaneDomain") },
+	{ key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab({ confirm = true }) },
+
+	-- Pane management mejorado
+	{ key = "x", mods = "LEADER", action = act.CloseCurrentPane({ confirm = true }) },
+	{ key = "z", mods = "LEADER", action = act.TogglePaneZoomState },
+
+	-- Scrolling rápido
+	{ key = "PageUp", mods = "CTRL", action = act.ScrollByPage(-0.5) },
+	{ key = "PageDown", mods = "CTRL", action = act.ScrollByPage(0.5) },
+
+	-- Quick actions
+	{ key = "r", mods = "LEADER", action = act.ReloadConfiguration },
+	{ key = "f", mods = "LEADER", action = act.Search("CurrentPaneDomain") },
 }
 return config

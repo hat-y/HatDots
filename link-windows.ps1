@@ -1,4 +1,4 @@
-$Repo = "$HOME\HatDot\HatWindows"
+$Repo = "$HOME\HatDots\HatWindows"
 $Paths = @{
   NvimDir     = "$Repo\nvim"
   WeztermFile = "$Repo\wezterm\wezterm.lua"
