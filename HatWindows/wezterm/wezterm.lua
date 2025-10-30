@@ -82,9 +82,13 @@ end
 config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 1000 }
 
 -- Atajos activos siempre
-config.keys = {
-	-- Debug overlay
-	{ key = "F12", mods = "CTRL|SHIFT", action = act.ShowDebugOverlay },
+config.keys = { -- Debug overlay
+	{
+		key = "F12",
+		mods = "CTRL|SHIFT",
+		action = act.ShowDebugOverlay,
+	},
+	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
 
 	-- Workspaces con LEADER
 	{ key = "h", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
