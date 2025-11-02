@@ -5,7 +5,7 @@ local config = wezterm.config_builder and wezterm.config_builder() or {}
 -- ===== Básicos =====
 config.default_prog = { "pwsh.exe", "-NoLogo" }
 config.font = wezterm.font("IosevkaTerm Nerd Font Mono")
-config.font_size = 18.0
+config.font_size = 20
 config.window_padding = { top = 0, right = 0, left = 0, bottom = 0 }
 config.hide_tab_bar_if_only_one_tab = true
 config.max_fps = 120
@@ -22,18 +22,18 @@ config.initial_cols = 120
 
 -- ===== Integración con Sistema =====
 config.launch_menu = {
-  {
-    label = "PowerShell",
-    args = { "pwsh.exe", "-NoLogo" },
-  },
-  {
-    label = "PowerShell (Admin)",
-    args = { "pwsh.exe", "-NoLogo", "-Command", "Start-Process pwsh.exe -Verb RunAs" },
-  },
-  {
-    label = "Command Prompt",
-    args = { "cmd.exe" },
-  },
+	{
+		label = "PowerShell",
+		args = { "pwsh.exe", "-NoLogo" },
+	},
+	{
+		label = "PowerShell (Admin)",
+		args = { "pwsh.exe", "-NoLogo", "-Command", "Start-Process pwsh.exe -Verb RunAs" },
+	},
+	{
+		label = "Command Prompt",
+		args = { "cmd.exe" },
+	},
 }
 
 -- ===== Animaciones y Transiciones =====
@@ -51,7 +51,7 @@ end)
 -- ===== Kanagawa Dragon (colores) =====
 config.colors = {
 	foreground = "#DCD7BA", -- fujiWhite
-	background = "#1F1F28", -- waveBlack (consistente con tema Kanagawa)
+	background = "#080808", -- waveBlack (consistente con tema Kanagawa)
 	cursor_bg = "#C8C093",
 	cursor_fg = "#181616",
 	cursor_border = "#C8C093",
@@ -162,6 +162,6 @@ config.keys = { -- Debug overlay
 
 	-- Quick actions
 	{ key = "r", mods = "LEADER", action = act.ReloadConfiguration },
-	{ key = "f", mods = "LEADER", action = act.Search("CurrentPaneDomain") },
+	{ key = "f", mods = "LEADER", action = act.Search("CurrentSelectionOrEmptyString") },
 }
 return config
