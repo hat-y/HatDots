@@ -43,10 +43,17 @@ config.cursor_blink_rate = 800
 -- ===== Auditory Feedback (opcional) =====
 config.audible_bell = "Disabled"
 
--- Mostrar workspace activo a la derecha
+-- Mostrar workspace activo a la derecha con más información
 wezterm.on("update-right-status", function(window, _)
-	window:set_right_status(window:active_workspace())
+	local workspace = window:active_workspace()
+	local tab_count = #window:mux_tabs()
+	local pane_count = 0
+	for _, tab in ipairs(window:mux_tabs()) do
+		pane_count = pane_count + #tab:panes()
+	end
+	window:set_right_status(string.format("WS: %s | Tabs: %d | Panes: %d", workspace, tab_count, pane_count))
 end)
+
 
 -- ===== Kanagawa Dragon (colores) =====
 config.colors = {
@@ -111,6 +118,7 @@ end
 -- Leader de WezTerm (como tmux): Ctrl+Space
 config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 1000 }
 
+
 -- Atajos activos siempre
 config.keys = { -- Debug overlay
 	{
@@ -120,9 +128,64 @@ config.keys = { -- Debug overlay
 	},
 	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
 
-	-- Workspaces con LEADER
+	-- Workspaces con LEADER - navegación básica
 	{ key = "h", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
 	{ key = "l", mods = "LEADER", action = act.SwitchWorkspaceRelative(1) },
+
+	-- Workspaces con LEADER - gestión avanzada
+	{ key = "w", mods = "LEADER", action = act.ShowLauncherArgs({ flags = "FUZZY|WORKSPACES" }) },
+	{ key = "n", mods = "LEADER", action = act.SwitchToWorkspace({ name = "main" }) },
+	{ key = "d", mods = "LEADER", action = act.SwitchToWorkspace({ name = "dev" }) },
+	{ key = "s", mods = "LEADER", action = act.SwitchToWorkspace({ name = "scratch" }) },
+
+	
+	-- Crear nuevo workspace con prompt
+	{
+		key = "N",
+		mods = "LEADER",
+		action = act.PromptInputLine({
+			description = "Enter workspace name:",
+			action = wezterm.action_callback(function(window, pane, line)
+				if line then
+					window:perform_action(
+						act.SwitchToWorkspace({ name = line }),
+						pane
+					)
+				end
+			end),
+		}),
+	},
+
+	-- Mover pane actual a nuevo workspace
+	{
+		key = "m",
+		mods = "LEADER",
+		action = act.PromptInputLine({
+			description = "Move pane to workspace:",
+			action = wezterm.action_callback(function(window, pane, line)
+				if line then
+					window:perform_action(
+						act.MoveToNewWorkspace({ name = line }),
+						pane
+					)
+				end
+			end),
+		}),
+	},
+
+	-- Renombrar workspace actual
+	{
+		key = "r",
+		mods = "LEADER|SHIFT",
+		action = act.PromptInputLine({
+			description = "Rename current workspace:",
+			action = wezterm.action_callback(function(window, pane, line)
+				if line then
+					wezterm.mux.rename_workspace(window:active_workspace(), line)
+				end
+			end),
+		}),
+	},
 
 	-- Panes con LEADER + flechas
 	{ key = "LeftArrow", mods = "LEADER", action = act.ActivatePaneDirection("Left") },
