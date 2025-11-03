@@ -131,7 +131,7 @@ config.keys = { -- Debug overlay
 	{ key = "DownArrow", mods = "LEADER", action = act.ActivatePaneDirection("Down") },
 
 	{ key = "-", mods = "LEADER", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
-	{ key = "+", mods = "LEADER", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+	{ key = "=", mods = "LEADER", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
 
 	-- Ctrl+h / Ctrl+l inteligentes
 	{ key = "h", mods = "CTRL", action = pass_to_vim_or(act.SwitchWorkspaceRelative(-1), "h", "CTRL") },
