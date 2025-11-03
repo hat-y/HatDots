@@ -1,6 +1,7 @@
 return {
 	"zbirenbaum/copilot.lua",
-	optional = true,
+	cmd = "Copilot",
+	event = "InsertEnter",
 	opts = function()
 		require("copilot.api").status = require("copilot.status")
 		require("copilot.api").filetypes = {
