@@ -5,7 +5,7 @@ return {
 		"mason-org/mason-lspconfig.nvim",
 		dependencies = { "neovim/nvim-lspconfig", "mason-org/mason.nvim" },
 		opts = {
-			ensure_installed = { "lua_ls", "pyright", "rust_analyzer", "vtsls" },
+			ensure_installed = { "lua_ls" }, -- Dejar que LazyExtras maneje Python/TS/Rust
 		},
 		config = function(_, opts)
 			require("mason").setup()
@@ -63,7 +63,7 @@ return {
 				map(bufnr, "n", "[d", diag_prev, "Prev Diag")
 				map(bufnr, "n", "]d", diag_next, "Next Diag")
 
-				if client and (client.name == "vtsls" or client.name == "rust_analyzer" or client.name == "lua_ls") then
+				if client and (client.name == "lua_ls") then
 					enable_inlay(bufnr, true, "eol")
 				end
 			end
@@ -110,74 +110,8 @@ return {
 				},
 			})
 
-			-- vtsls (JS/TS)
-			if lsp.vtsls then
-				lsp.vtsls.setup({
-					on_attach = on_attach,
-					capabilities = capabilities,
-					settings = {
-						complete_function_calls = true,
-						vtsls = {
-							autoUseWorkspaceTsdk = true,
-							enableMoveToFileCodeAction = true,
-							experimental = {
-								completion = { enableServerSideFuzzyMatch = true },
-								maxInlayHintLength = 30,
-							},
-						},
-						typescript = {
-							inlayHints = {
-								parameterNames = { enabled = "literals" },
-								parameterTypes = { enabled = true },
-								variableTypes = { enabled = false },
-								propertyDeclarationTypes = { enabled = true },
-								functionLikeReturnTypes = { enabled = true },
-								enumMemberValues = { enabled = true },
-							},
-							suggest = { completeFunctionCalls = true },
-							updateImportsOnFileMove = { enabled = "always" },
-						},
-						javascript = {
-							inlayHints = {
-								parameterNames = { enabled = "literals" },
-								parameterTypes = { enabled = true },
-								variableTypes = { enabled = false },
-								propertyDeclarationTypes = { enabled = true },
-								functionLikeReturnTypes = { enabled = true },
-								enumMemberValues = { enabled = true },
-							},
-							suggest = { completeFunctionCalls = true },
-							updateImportsOnFileMove = { enabled = "always" },
-						},
-					},
-				})
-			end
-
-			-- pyright
-			lsp.pyright.setup({
-				on_attach = on_attach,
-				capabilities = capabilities,
-				settings = {
-					python = {
-						analysis = {
-							autoSearchPaths = true,
-							useLibraryCodeForTypes = true,
-							diagnosticMode = "openFilesOnly",
-						},
-					},
-				},
-			})
-
-			-- rust_analyzer
-			lsp.rust_analyzer.setup({
-				on_attach = on_attach,
-				capabilities = capabilities,
-				settings = {
-					["rust-analyzer"] = {
-						inlayHints = { enable = true },
-					},
-				},
-			})
+			-- vtsls, pyright, rust_analyzer son manejados por LazyExtras
+			-- Solo configuramos overrides si es necesario
 		end,
 	},
 }
