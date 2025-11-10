@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nvim:*)",
+      "Bash(git rm:*)",
+      "Bash(del:*)",
+      "Bash(timeout:*)",
+      "Bash(tree-sitter:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
