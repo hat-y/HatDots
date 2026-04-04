@@ -1,8 +1,7 @@
 {
   "extras": [
-    "lazyvim.plugins.extras.lang.markdown",
-    "lazyvim.plugins.extras.lang.prisma",
-    "lazyvim.plugins.extras.lang.yaml"
+    "lazyvim.plugins.extras.lang.angular",
+    "lazyvim.plugins.extras.lang.prisma"
   ],
   "install_version": 8,
   "news": {

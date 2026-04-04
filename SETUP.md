@@ -9,7 +9,7 @@ Este repositorio contiene dotfiles multiplataforma para **Linux** y **Windows** 
 # Clonar el repositorio
 git clone https://github.com/hat-y/HatDots.git $HOME\HatDots
 
-# Ejecutar script de instalación
+# Ejecutar script (instala dependencias + crea symlinks)
 cd $HOME\HatDots
 .\link-windows.ps1
 ```
@@ -19,7 +19,7 @@ cd $HOME\HatDots
 # Clonar el repositorio
 git clone https://github.com/hat-y/HatDots.git $HOME/HatDots
 
-# Ejecutar script de instalación
+# Ejecutar script (instala dependencias + crea symlinks)
 cd $HOME/HatDots
 chmod +x link-linux.sh
 ./link-linux.sh
@@ -29,27 +29,75 @@ chmod +x link-linux.sh
 
 ### Windows
 ```powershell
+# Herramientas principales
 winget install -e --id Git.Git
 winget install -e --id Neovim.Neovim
 winget install -e --id WezTerm.WezTerm
 winget install -e --id Starship.Starship
+
+# Búsqueda y navegación
 winget install -e --id BurntSushi.ripgrep.MSVC
 winget install -e --id sharkdp.fd
 winget install -e --id JesseDuffield.lazygit
+
+# Desarrollo (recomendado)
 winget install -e --id Zig.Zig
 winget install -e --id LLVM.LLVM
+
 # Opcional: para mejor experiencia
 winget install -e --id eza-community.eza
 winget install -e --id ajeetdsouza.zoxide
 ```
 
+### Linux (Fedora/KDE Plasma)
+```bash
+# Instalar dependencias
+sudo dnf install neovim git zsh ripgrep fd-find eza zoxide fzf atuin
+
+# Instalar Powerlevel10k
+sudo dnf install zsh-theme-powerlevel10k
+```
+
+### Linux (Debian/Ubuntu/Debian-based)
+```bash
+# Instalar dependencias
+sudo apt update
+sudo apt install neovim git zsh ripgrep fd-find eza zoxide fzf
+
+# Instalar Atuin
+curl -Ls https://github.com/atuinsh/atuin/releases/latest/download/atuin-x86_64-unknown-linux-musl.tar.gz | sudo tar xz -C /usr/local/bin/
+
+# Instalar Powerlevel10k
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.local/share/zsh/powerlevel10k
+```
+
+### Linux (NixOS/Home Manager)
+```nix
+# En your home.nix
+home.packages = with pkgs; [
+  neovim git zsh ripgrep fd eza zoxide fzf atuin
+];
+```
+
 ### Linux (Arch/derivados)
 ```bash
 # Paquetes principales
-sudo pacman -S neovim git wezterm zsh starship ripport fd lazygit zig llvm
+sudo pacman -S neovim git zsh ripgrep fd
 
 # Opcionales recomendados
 sudo pacman -S eza zoxide atuin fzf
+```
+
+### Linux (openSUSE)
+```bash
+# Instalar dependencias
+sudo zypper install neovim git zsh ripgrep fd
+
+# Instalar herramientas adicionales
+sudo zypper install eza zoxide fzf
+
+# Instalar Atuin
+curl -Ls https://github.com/atuinsh/atuin/releases/latest/download/atuin-x86_64-unknown-linux-musl.tar.gz | sudo tar xz -C /usr/local/bin/
 ```
 
 ## 🎨 Características Principales
@@ -59,11 +107,21 @@ sudo pacman -S eza zoxide atuin fzf
 - **Lenguajes**: TypeScript, Python, Rust soporte completo
 - **Productividad**: Telescope, Oil (navegador de archivos), LazyGit
 - **UI**: Tema Kanagawa, Treesitter, formateo automático
+- **Platform-aware**: Detecta Windows/Linux y carga plugins accordingly
 
 ### Terminal y Shell
 - **Windows**: WezTerm + PowerShell + Starship
-- **Linux**: Ghostty + Zsh + Powerlevel10k + Starship
+- **Linux**: WezTerm o Ghostty + Zsh + Powerlevel10k
 - **Multiplexor**: Tmux (Linux)
+
+### WezTerm (Linux + Windows)
+- Terminal multiplataforma moderno con splits vim-like
+- Tema Kanagawa Dragon
+- Configuración idéntica en ambas plataformas
+
+### Ghostty (Linux - opcional)
+- Terminal moderno (manual installation required)
+- Si lo usás: agregá a tu config los keybinds de splits
 
 ### Escritorio Completo (Arch Linux + Hyprland)
 - **Compositor**: Hyprland con configuración modular
@@ -93,25 +151,24 @@ Installa una Nerd Font para soporte de iconos:
 ## 📁 Estructura del Repositorio
 
 ```
-HatDots/
-├── HatLinux/           # Configuraciones Linux
-│   ├── nvim/           # Neovim config
-│   ├── HatZsh/         # Zsh + Powerlevel10k
-│   ├── HatGhostty/     # Terminal Ghostty
-│   └── starship/       # Starship prompt
-├── HatWindows/         # Configuraciones Windows
-│   ├── nvim/           # Neovim config con plugins IA
-│   ├── wezterm/        # WezTerm config
-│   ├── powershell/     # PowerShell profile
-│   └── starship/       # Starship prompt
-├── HatArch/            # Configuraciones Arch Linux + Hyprland
-│   ├── DenAsari/       # Tema completo
-│   └── Mocha-Power/    # Tema alternativo
-├── assets/             # Recursos compartidos
-├── link-linux.sh       # Script instalación Linux
-├── link-windows.ps1    # Script instalación Windows
-└── SETUP.md            # Este archivo
+HatDots/                    # Terminal + Shell (portátil)
+├── shared/                 # Configs compartidos
+├── terminals/              # Terminal configs (elegí la que uses)
+│   ├── wezterm/            # WezTerm config
+│   └── ghostty/            # Ghostty config
+├── HatLinux/               # Configuraciones Linux
+│   ├── nvim/               # Neovim config (LazyVim)
+│   └── zsh/                # Zsh + Powerlevel10k
+├── HatWindows/             # Configuraciones Windows
+│   ├── nvim/               # Neovim config con plugins IA
+│   ├── wezterm/            # WezTerm config
+│   └── powershell/         # PowerShell profile
+├── link-linux.sh           # Script instalación Linux
+├── link-windows.ps1        # Script instalación Windows
+└── SETUP.md                # Este archivo
 ```
+
+> **Nota**: Los configs en `HatDots/` son **portables** — funcionan en cualquier distro Linux. Si usás Arch con Hyprland, los configs de desktop están en el repo separado **[HatArch](https://github.com/hat-y/HatArch)**.
 
 ## ⌨️ Atajos Útiles
 
@@ -124,16 +181,20 @@ HatDots/
 - `<leader>aa` - Toggle Avante (IA, Windows)
 - `<leader>ac` - Toggle Claude Code (Windows)
 
-### WezTerm (Windows)
+### WezTerm (Linux + Windows)
 - `Ctrl+Space h/l` - Cambiar workspace
 - `Ctrl+Space flechas` - Navegar panes
 - `Ctrl+Space -/+` - Dividir vertical/horizontal
+- `Ctrl+Space n` - Workspace "notes"
+- `Ctrl+Space d` - Workspace "dev"
 
-### Tmux (Linux)
-- `Ctrl+b` - Prefix
-- `Ctrl+b c` - Nueva ventana
-- `Ctrl+b |` - Dividir vertical
-- `Ctrl+b -` - Dividir horizontal
+### Ghostty (Linux - si lo usás)
+- `Alt + -` - Split vertical (abajo)
+- `Alt + Shift + =` - Split horizontal (derecha)
+- `Alt + h/j/k/l` - Navegar entre splits
+- `Alt + z` - Zoom split actual
+- `Ctrl + Shift + t` - Nueva pestaña
+- `Ctrl + PageUp/PageDown` - Cambiar pestaña
 
 ## 🐛 Problemas Comunes
 
