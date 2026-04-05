@@ -1,68 +1,104 @@
-# --- Shell ---
-command = /usr/bin/zsh -l
-working-directory = ~/
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                   FONT                                       │
+# └──────────────────────────────────────────────────────────────────────────────┘
 
-# --- Fuente y UI ---
-font-family = "IosevkaTerm Nerd Font Mono"
-font-size = 20
+command = /usr/bin/zsh -l -c "tmux attach || tmux new"
+font-family = IosevkaTerm NF
+font-size = 18
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                  WINDOW                                      │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+background-opacity = 0.8
+background-blur-radius = 20
+background-opacity-cells = true
+
+window-decoration = true
+window-padding-color = extend
 window-padding-x = 0
 window-padding-y = 0
-background-opacity = 0.80
-window-decoration = none
+window-step-resize = false
+window-padding-balance = false
+window-height = 100
+window-width = 100
 
-# --- Kanagawa Dragon-ish ---
-foreground = #DCD7BA
-background = #000000
-cursor-color = #C8C093
-selection-background = #2A2A37
-selection-foreground = #DCD7BA
-palette = 0=#181616
-palette = 1=#C34043
-palette = 2=#98BB6C
-palette = 3=#E6C384
-palette = 4=#7E9CD8
-palette = 5=#957FB8
-palette = 6=#7AA89F
-palette = 7=#C8C093
-palette = 8=#2A2A37
-palette = 9=#E82424
-palette = 10=#A7C080
-palette = 11=#FF9E3B
-palette = 12=#8CAAEE
-palette = 13=#A292BA
-palette = 14=#7FC8C2
-palette = 15=#DCD7BA
+gtk-tabs-location = hidden
 
-# --- Keybinds (OJO: sin espacios en el segundo '=') ---
-# Splits: abajo (vertical) y derecha (horizontal)
-keybind = alt+-=new_split:down
-keybind = alt+shift+equal=new_split:right
 
-# Mover el foco entre splits (vim-like)
-keybind = alt+h=goto_split:left
-keybind = alt+j=goto_split:down
-keybind = alt+k=goto_split:up
-keybind = alt+l=goto_split:right
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                  SHADER                                      │
+# └──────────────────────────────────────────────────────────────────────────────┘
 
-# Mover split actual a otra posición
-keybind = alt+shift+h=resize_split:left
-keybind = alt+shift+j=resize_split:down
-keybind = alt+shift+k=resize_split:up
-keybind = alt+shift+l=resize_split:right
+custom-shader = shaders/cursor_smear_gentleman.glsl
 
-# Zoom del split actual
-keybind = alt+z=toggle_split_zoom
 
-# Tabs útiles
-keybind = ctrl+shift+t=new_tab
-keybind = ctrl+shift+w=close_tab
-keybind = ctrl+page_up=previous_tab
-keybind = ctrl+page_down=next_tab
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                            INPUT / KEYBINDINGS                               │
+# └──────────────────────────────────────────────────────────────────────────────┘
 
-# Recargar configuración
-keybind = ctrl+shift+r=reload_config
+# macOS Alt key fix
+macos-option-as-alt = left
+keybind = alt+left=unbind
+keybind = alt+right=unbind
 
-# Copiar/Pegar (estándar Unix)
-keybind = ctrl+shift+c=copy
-keybind = ctrl+shift+v=paste
+# ═══════════════════════════════════════════════════════════════════════════════
+# SPLITS - COMENTADOS PARA USAR TMUX EN VEZ DE SPLITS NATIVOS DE GHOSTTY
+# ═══════════════════════════════════════════════════════════════════════════════
 
+# Split Management
+# keybind = alt+v=new_split:right
+# keybind = alt+d=new_split:down
+
+# Split Navigation
+# keybind = alt+k=goto_split:up
+# keybind = alt+j=goto_split:down
+# keybind = alt+h=goto_split:left
+# keybind = alt+l=goto_split:right
+
+# Split Resize
+# keybind = ctrl+shift+j=resize_split:up,10
+# keybind = ctrl+shift+k=resize_split:down,10
+# keybind = ctrl+shift+h=resize_split:left,10
+# keybind = ctrl+shift+l=resize_split:right,10
+
+# Miscellaneous
+keybind = cmd+k=clear_screen
+keybind = super+f=toggle_maximize
+keybind = shift+enter=text:\x1b\r
+
+# Open file with nvim (write 'nvim' first, then use this keybinding)
+keybind = alt+s=write_screen_file:paste
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                           GENTLEMAN THEME                                    │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+# --- Base Colors ---
+background = 06080f
+foreground = f3f6f9
+cursor-color = e0c15a
+selection-background = 263356
+selection-foreground = f3f6f9
+
+# --- Normal Colors ---
+palette = 0=#06080f
+palette = 1=#cb7c94
+palette = 2=#b7cc85
+palette = 3=#ffe066
+palette = 4=#7fb4ca
+palette = 5=#ff8dd7
+palette = 6=#7aa89f
+palette = 7=#f3f6f9
+
+# --- Bright Colors ---
+palette = 8=#8a8fa3
+palette = 9=#de8fa8
+palette = 10=#d1e8a9
+palette = 11=#fff7b1
+palette = 12=#a3d4d5
+palette = 13=#ffaeea
+palette = 14=#7fb4ca
+palette = 15=#f3f6f9

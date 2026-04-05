@@ -29,12 +29,12 @@ install_dependencies() {
 
     case $pm in
         dnf)
-            sudo dnf install -y neovim git zsh ripgrep fd-find eza zoxide fzf atuin 2>/dev/null || \
+            sudo dnf install -y neovim git zsh ripgrep fd-find eza zoxide fzf tmux 2>/dev/null || \
             sudo dnf install -y neovim git zsh ripgrep fd-find eza zoxide fzf
             ;;
         apt)
             sudo apt update
-            sudo apt install -y neovim git zsh ripgrep fd-find eza zoxide fzf
+            sudo apt install -y neovim git zsh ripgrep fd-find eza zoxide fzf tmux
             # Atuin requires manual install
             if ! command -v atuin &>/dev/null; then
                 echo "📥 Instalando Atuin..."
@@ -70,15 +70,48 @@ install_dependencies() {
     echo "✅ Dependencias instaladas"
 }
 
-# Install Powerlevel10k theme
-install_p10k() {
-    local p10k_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/powerlevel10k"
+# Install Zsh plugins (git clones to XDG data dir)
+install_zsh_plugins() {
+    local plugins_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh"
+    mkdir -p "$plugins_dir"
+
+    # zsh-autosuggestions
+    local as_dir="$plugins_dir/zsh-autosuggestions"
+    if [ ! -d "$as_dir" ]; then
+        echo "📥 Instalando zsh-autosuggestions..."
+        git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$as_dir"
+    else
+        echo "✅ zsh-autosuggestions ya instalado"
+    fi
+
+    # zsh-syntax-highlighting
+    local sh_dir="$plugins_dir/zsh-syntax-highlighting"
+    if [ ! -d "$sh_dir" ]; then
+        echo "📥 Instalando zsh-syntax-highlighting..."
+        git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$sh_dir"
+    else
+        echo "✅ zsh-syntax-highlighting ya instalado"
+    fi
+
+    # Powerlevel10k
+    local p10k_dir="$plugins_dir/powerlevel10k"
     if [ ! -d "$p10k_dir" ]; then
         echo "📥 Instalando Powerlevel10k..."
-        mkdir -p "$(dirname "$p10k_dir")"
         git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$p10k_dir"
     else
         echo "✅ Powerlevel10k ya instalado"
+    fi
+}
+
+# Install Tmux plugins (TPM)
+install_tmux_plugins() {
+    local tpm_dir="$HOME/.tmux/plugins/tpm"
+    mkdir -p "$tpm_dir"
+
+    # TPM itself
+    if [ ! -d "$tpm_dir/tpm" ]; then
+        echo "📥 Instalando TPM..."
+        git clone --depth=1 https://github.com/tmux-plugins/tpm "$tpm_dir/tpm"
     fi
 }
 
@@ -90,8 +123,11 @@ main() {
     # Install dependencies
     install_dependencies
 
-    # Install Powerlevel10k
-    install_p10k
+    # Install Zsh plugins (autosuggestions, syntax-highlighting, powerlevel10k)
+    install_zsh_plugins
+
+    # Install Tmux plugins (TPM)
+    install_tmux_plugins
 
     echo ""
     echo "📂 Creando symlinks..."
@@ -117,9 +153,13 @@ main() {
 
     # Terminal (elegí una: wezterm o ghostty)
     # WezTerm
-    safe_link "$HOME/.config/wezterm/wezterm.lua"    "$TERMINALS/wezterm/wezterm.lua"
-    # Ghostty (comentado - descomentá si lo usás)
-    # safe_link "$HOME/.config/ghostty/config"       "$TERMINALS/ghostty/config"
+    # safe_link "$HOME/.config/wezterm/wezterm.lua"    "$TERMINALS/wezterm/wezterm.lua"
+    # Ghostty
+    safe_link "$HOME/.config/ghostty/config"             "$TERMINALS/ghostty/config"
+    safe_link "$HOME/.config/ghostty/shaders"            "$TERMINALS/ghostty/shaders"
+
+    # Tmux
+    safe_link "$HOME/.config/tmux/tmux.conf"             "$TERMINALS/tmux/tmux.conf"
 
     # Shell (zsh)
     safe_link "$HOME/.zshrc"                         "$REPO/HatLinux/zsh/.zshrc"
@@ -131,7 +171,7 @@ main() {
     echo ""
     echo "Próximos pasos:"
     echo "  1. Reiniciá tu terminal"
-    echo "  2. Cambiá a zsh: chsh -s /bin/zsh"
+    echo "  2. Cambiá a zsh: chsh -s $(which zsh)"
     echo "  3. Abrí nvim y esperá que Lazy instale plugins"
     echo "  4. Enjoy! 🎉"
 }
