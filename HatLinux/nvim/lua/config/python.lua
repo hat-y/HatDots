@@ -125,5 +125,3 @@ _G.UV = {
 	info = uv_venv_info,
 }
 
-vim.notify("🐍 Python + UV configuration loaded", vim.log.levels.DEBUG)
-

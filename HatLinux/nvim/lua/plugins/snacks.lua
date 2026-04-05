@@ -1,4 +1,4 @@
--- Cross-platform utility plugin (but primarily tested on Windows)
+-- Cross-platform utility plugin
 return {
 	{
 		"folke/snacks.nvim",
@@ -7,7 +7,12 @@ return {
 		opts = {
 			-- Snacks configuration
 			bigfile = { enabled = true },
-			notifier = { enabled = true },
+			notifier = {
+				enabled = true,
+				-- Show notifications in a way that's easier to interact with
+				style = "floating",
+				timeout = 3000,
+			},
 			quickfile = { enabled = true },
 			scroll = { enabled = true },
 			statuscolumn = { enabled = true },

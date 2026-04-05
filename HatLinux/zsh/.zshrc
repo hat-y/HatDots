@@ -11,18 +11,22 @@ SAVEHIST=100000
 setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY
 export EDITOR="nvim"
 
-# FZF (keys/completion)
-[ -f /usr/share/fzf/key-bindings.zsh ] && source /usr/share/fzf/key-bindings.zsh
-[ -f /usr/share/fzf/completion.zsh ]   && source /usr/share/fzf/completion.zsh
+# Modo vi para la línea de comandos (h,j,k,l, w, b, etc.)
+bindkey -v
+export KEYTIMEOUT=1
+
+# FZF (key bindings)
+[ -f /usr/share/fzf/shell/key-bindings.zsh ] && source /usr/share/fzf/shell/key-bindings.zsh
 
 # Inicialización completions
 autoload -Uz compinit && compinit -u
 
-# Plugins
-[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
-  source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
-  source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# Plugins (Zsh plugins installed via git)
+ZSH_PLUGINS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh"
+[ -f "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
+  source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+[ -f "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
+  source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # Zoxide & Atuin
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
@@ -34,11 +38,10 @@ alias ll='eza -lh --git --icons=auto --group-directories-first --classify'
 alias la='eza -lha --git --icons=auto --group-directories-first --classify'
 alias lt='eza --tree --level=2 --icons=auto --group-directories-first'
 
-# Powerlevel10k (elige la ruta según instalación)
-if [ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]; then
-  source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
-elif [ -f "$HOME/.local/share/powerlevel10k/powerlevel10k.zsh-theme" ]; then
-  source "$HOME/.local/share/powerlevel10k/powerlevel10k.zsh-theme"
+# Powerlevel10k (installed via link-linux.sh)
+P10K_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/powerlevel10k"
+if [ -f "$P10K_DIR/powerlevel10k.zsh-theme" ]; then
+  source "$P10K_DIR/powerlevel10k.zsh-theme"
 fi
 [ -f "$HOME/.p10k.zsh" ] && source "$HOME/.p10k.zsh"
 

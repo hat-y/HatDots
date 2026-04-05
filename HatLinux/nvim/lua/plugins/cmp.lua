@@ -1,119 +1,64 @@
-	return {
-		{
-			"hrsh7th/nvim-cmp",
-			lazy = false,
-			dependencies = {
-				"L3MON4D3/LuaSnip",
-				"saadparwaiz1/cmp_luasnip",
-				"hrsh7th/cmp-nvim-lsp",
-				"hrsh7th/cmp-path",
-				"hrsh7th/cmp-buffer",
-				"rafamadriz/friendly-snippets",
-			},
-			opts = function(_, opts)
-				local cmp = require("cmp")
-				local luasnip = require("luasnip")
-
-				require("luasnip.loaders.from_vscode").lazy_load()
-
-
-				opts.mapping = cmp.mapping.preset.insert({
-					["<C-Space>"] = cmp.mapping.complete(),
-					["<C-e>"] = cmp.mapping.abort(),
-					["<CR>"] = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = false }),
-
-					["<Tab>"] = cmp.mapping(function(fallback)
-						if cmp.visible() then
-							cmp.select_next_item()
-						elseif luasnip.expand_or_locally_jumpable() then
-							luasnip.expand_or_jump()
-						else
-							fallback()
-						end
-					end, { "i", "s" }),
-
-					["<S-Tab>"] = cmp.mapping(function(fallback)
-						if cmp.visible() then
-							cmp.select_prev_item()
-						elseif luasnip.locally_jumpable(-1) then
-							luasnip.jump(-1)
-						else
-							fallback()
-						end
-					end, { "i", "s" }),
-				})
-
-				opts.window = {
-					completion = cmp.config.window.bordered(),
-					documentation = cmp.config.window.bordered(),
-				}
-
-				-- Platform-specific completion sources
-				local is_windows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
-
-				-- Base sources (always available)
-				local base_sources = {
-					{ name = "nvim_lsp" },
-					{ name = "luasnip" },
-					{ name = "path" },
-				}
-
-				-- Add supermaven on Windows only
-				if is_windows then
-					table.insert(base_sources, 1, { name = "supermaven" })
-				end
-
-				opts.sources = cmp.config.sources(base_sources, {
-					{ name = "buffer", keyword_length = 3 },
-				})
-
-				opts.preselect = cmp.PreselectMode.None
-				return opts
-			end,
-		config = function(_, opts)
+return {
+	{
+		"hrsh7th/nvim-cmp",
+		lazy = false,
+		dependencies = {
+			"L3MON4D3/LuaSnip",
+			"saadparwaiz1/cmp_luasnip",
+			"hrsh7th/cmp-nvim-lsp",
+			"hrsh7th/cmp-path",
+			"hrsh7th/cmp-buffer",
+			"rafamadriz/friendly-snippets",
+		},
+		opts = function(_, opts)
 			local cmp = require("cmp")
-			cmp.setup(opts)
+			local luasnip = require("luasnip")
 
-			local ok, cmp_autopairs = pcall(require, "nvim-autopairs.completion.cmp")
-			if ok then
-				cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
-			end
+			require("luasnip.loaders.from_vscode").lazy_load()
 
-			-- Platform-specific markdown sources
-			local is_windows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
+			opts.mapping = cmp.mapping.preset.insert({
+				["<C-Space>"] = cmp.mapping.complete(),
+				["<C-e>"] = cmp.mapping.abort(),
+				["<CR>"] = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = false }),
 
-			local md_sources = {
-				{ name = "nvim_lsp" },
-				{ name = "path" },
-				{ name = "luasnip" },
+				["<Tab>"] = cmp.mapping(function(fallback)
+					if cmp.visible() then
+						cmp.select_next_item()
+					elseif luasnip.expand_or_locally_jumpable() then
+						luasnip.expand_or_jump()
+					else
+						fallback()
+					end
+				end, { "i", "s" }),
+
+				["<S-Tab>"] = cmp.mapping(function(fallback)
+					if cmp.visible() then
+						cmp.select_prev_item()
+					elseif luasnip.locally_jumpable(-1) then
+						luasnip.jump(-1)
+					else
+						fallback()
+					end
+				end, { "i", "s" }),
+			})
+
+			opts.window = {
+				completion = cmp.config.window.bordered(),
+				documentation = cmp.config.window.bordered(),
 			}
 
-			-- Add obsidian on Windows only
-			if is_windows then
-				table.insert(md_sources, 1, { name = "obsidian" })
-			end
-
-			cmp.setup.filetype("markdown", {
-				sources = cmp.config.sources(md_sources, {
-					{ name = "buffer", keyword_length = 2 },
-				}),
+			-- Base sources (always available)
+			opts.sources = cmp.config.sources({
+				{ name = "nvim_lsp" },
+				{ name = "luasnip" },
+				{ name = "path" },
+			}, {
+				{ name = "buffer", keyword_length = 3 },
 			})
+
+			opts.preselect = cmp.PreselectMode.None
+			return opts
 		end,
-	},
-}
-
-				opts.sources = cmp.config.sources({
-					{ name = "supermaven" },
-					{ name = "nvim_lsp" },
-					{ name = "luasnip" },
-					{ name = "path" },
-				}, {
-					{ name = "buffer", keyword_length = 3 },
-				})
-
-				opts.preselect = cmp.PreselectMode.None
-				return opts
-			end,
 		config = function(_, opts)
 			local cmp = require("cmp")
 			cmp.setup(opts)
@@ -123,9 +68,9 @@
 				cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 			end
 
+			-- Markdown sources (no obsidian on Linux)
 			cmp.setup.filetype("markdown", {
 				sources = cmp.config.sources({
-					{ name = "obsidian" },
 					{ name = "nvim_lsp" },
 					{ name = "path" },
 					{ name = "luasnip" },

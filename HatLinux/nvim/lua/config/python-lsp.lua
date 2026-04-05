@@ -18,14 +18,12 @@ local function get_uv_python_path()
     end
 
     if python_exe then
-      vim.notify("🐍 Using Python: " .. python_exe, vim.log.levels.DEBUG)
       return python_exe
     end
   end
 
   -- Fallback a python global
   local global_python = vim.fn.exepath("python3") or vim.fn.exepath("python")
-  vim.notify("🐍 Using global Python: " .. global_python, vim.log.levels.DEBUG)
   return global_python
 end
 
@@ -42,13 +40,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
       client.config.settings = client.config.settings or {}
       client.config.settings.python = client.config.settings.python or {}
       client.config.settings.python.pythonPath = python_path
-
-      -- Notificar al servidor sobre la nueva configuración
-      client.notify("workspace/didChangeConfiguration", {
-        settings = client.config.settings,
-      })
-
-      vim.notify("🐍 Pyright configured with UV Python: " .. python_path, vim.log.levels.INFO)
     end
   end,
 })
@@ -57,41 +48,4 @@ vim.api.nvim_create_autocmd("LspAttach", {
 vim.api.nvim_create_user_command("PythonPath", function()
   local python_path = get_uv_python_path()
   vim.notify("Current Python path: " .. python_path, vim.log.levels.INFO)
-
-  -- También mostrar qué está usando pyright si está activo
-  local clients = vim.lsp.get_clients({ name = "pyright" })
-  if #clients > 0 then
-    local client = clients[1]
-    local lsp_python_path = client.config.settings.python and client.config.settings.python.pythonPath
-    if lsp_python_path then
-      vim.notify("Pyright Python path: " .. lsp_python_path, vim.log.levels.INFO)
-    else
-      vim.notify("Pyright: no custom python path configured", vim.log.levels.WARN)
-    end
-  else
-    vim.notify("Pyright not active", vim.log.levels.WARN)
-  end
-end, { desc = "Show current Python paths" })
-
--- Comando para recargar la configuración de pyright
-vim.api.nvim_create_user_command("ReloadPythonLSP", function()
-  local clients = vim.lsp.get_clients({ name = "pyright" })
-  if #clients > 0 then
-    local client = clients[1]
-    local python_path = get_uv_python_path()
-
-    client.config.settings = client.config.settings or {}
-    client.config.settings.python = client.config.settings.python or {}
-    client.config.settings.python.pythonPath = python_path
-
-    client.notify("workspace/didChangeConfiguration", {
-      settings = client.config.settings,
-    })
-
-    vim.notify("🐍 Reloaded Pyright with UV Python: " .. python_path, vim.log.levels.INFO)
-  else
-    vim.notify("Pyright not active", vim.log.levels.WARN)
-  end
-end, { desc = "Reload Python LSP configuration" })
-
-vim.notify("🐍 Python LSP + UV configuration loaded", vim.log.levels.DEBUG)
+end, { desc = "Show current Python path" })

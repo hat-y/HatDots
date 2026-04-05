@@ -15,18 +15,14 @@ require("lazy").setup({
 	spec = {
 		{ "LazyVim/LazyVim", import = "lazyvim.plugins" },
 
-		-- Useful extras:
+		-- Language support
 		{ import = "lazyvim.plugins.extras.lang.typescript" },
 		{ import = "lazyvim.plugins.extras.lang.python" },
 		{ import = "lazyvim.plugins.extras.lang.rust" },
-		{ import = "lazyvim.plugins.extras.dap" },
 
 		-- local plugins:
 		{ import = "plugins" },
 		{ "LazyVim/LazyVim", opts = { colorscheme = "kanagawa" } },
-
-		-- Markdown enhancements
-		{ import = "plugins.markdown-enhancements" },
 	},
 	defaults = { lazy = false, version = false },
 	checker = { enabled = false },
