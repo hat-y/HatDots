@@ -68,11 +68,12 @@ return {
 				cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 			end
 
-			-- Markdown sources (no obsidian on Linux)
+			-- Markdown sources (incluyendo obsidian)
 			cmp.setup.filetype("markdown", {
 				sources = cmp.config.sources({
 					{ name = "nvim_lsp" },
 					{ name = "path" },
+					{ name = "obsidian" },
 					{ name = "luasnip" },
 				}, {
 					{ name = "buffer", keyword_length = 2 },
