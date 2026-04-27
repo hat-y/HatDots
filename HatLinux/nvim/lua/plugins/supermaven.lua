@@ -1,28 +1,29 @@
--- Windows-only AI code completion
+-- Multi-platform AI code completion
 return {
 	{
 		"supermaven-inc/supermaven-nvim",
-		enabled = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1,
+		enabled = true,
 		event = "InsertEnter",
 		config = function()
 			local supermaven_api = require("supermaven-nvim.api")
 
 			require("supermaven-nvim").setup({
 				keymaps = {
+					accept_suggestion = "<Tab>", -- Recomendado para paridad
 					clear_suggestion = "<C-]>",
-					accept_word = "<C-w>",
+					accept_word = "<C-j>",
 				},
-				ignore_filetypes = { "cpp", "c", "h", "lua" },
+				ignore_filetypes = { "cpp", "c", "h" }, -- Removido 'lua' para permitir config
 			})
 
-			-- Reliable toggle using the API directly
+			-- Toggle agnóstico al SO
 			vim.keymap.set("n", "<leader>us", function()
 				if supermaven_api.is_running() then
 					supermaven_api.stop()
-					vim.notify("Supermaven disabled", vim.log.levels.INFO)
+					print("Supermaven: OFF")
 				else
 					supermaven_api.start()
-					vim.notify("Supermaven enabled", vim.log.levels.INFO)
+					print("Supermaven: ON")
 				end
 			end, { desc = "Toggle Supermaven" })
 		end,

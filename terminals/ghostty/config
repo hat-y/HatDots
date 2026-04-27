@@ -2,7 +2,7 @@
 # │                                   FONT                                       │
 # └──────────────────────────────────────────────────────────────────────────────┘
 
-command = /usr/bin/zsh -l -c "tmux attach || tmux new"
+command = /usr/bin/tmux -f ~/.tmux.conf new-session -A -s main
 font-family = IosevkaTerm NF
 font-size = 18
 
@@ -25,6 +25,9 @@ window-height = 100
 window-width = 100
 
 gtk-tabs-location = hidden
+
+# Permitir múltiples instancias de Ghostty
+gtk-single-instance = false
 
 
 # ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -67,6 +70,9 @@ keybind = alt+right=unbind
 keybind = cmd+k=clear_screen
 keybind = super+f=toggle_maximize
 keybind = shift+enter=text:\x1b\r
+
+# Cerrar ventana (para que no interfiera con tmux)
+keybind = alt+f4=close_window
 
 # Open file with nvim (write 'nvim' first, then use this keybinding)
 keybind = alt+s=write_screen_file:paste

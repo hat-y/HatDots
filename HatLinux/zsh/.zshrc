@@ -1,50 +1,73 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+# ============================================================================
+# Hat's Zsh Configuration
+# Powerlevel10k + modern tooling
+# ============================================================================
 
-# Historial y rendimiento
+# --- Variables de entorno básicas ---
+export EDITOR="nvim"
+
+# --- Configuración del historial ---
 HISTSIZE=100000
 SAVEHIST=100000
 setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY
-export EDITOR="nvim"
 
-# Modo vi para la línea de comandos (h,j,k,l, w, b, etc.)
+# --- Modo vi para la línea de comandos ---
 bindkey -v
 export KEYTIMEOUT=1
 
-# FZF (key bindings)
+# --- FZF key bindings ---
 [ -f /usr/share/fzf/shell/key-bindings.zsh ] && source /usr/share/fzf/shell/key-bindings.zsh
 
-# Inicialización completions
+# --- Inicialización de completions ---
 autoload -Uz compinit && compinit -u
 
-# Plugins (Zsh plugins installed via git)
+# --- Plugins (carga temprana - autosuggestions puede estar aquí) ---
 ZSH_PLUGINS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh"
 [ -f "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
   source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
-[ -f "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
-  source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
-# Zoxide & Atuin
+# --- Zoxide & Atuin ---
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
 command -v atuin  >/dev/null && eval "$(atuin init zsh)"
 
-# Aliases útiles
+# --- Aliases ---
 alias ls='eza --icons=auto --group-directories-first --classify'
 alias ll='eza -lh --git --icons=auto --group-directories-first --classify'
 alias la='eza -lha --git --icons=auto --group-directories-first --classify'
 alias lt='eza --tree --level=2 --icons=auto --group-directories-first'
 
-# Powerlevel10k (installed via link-linux.sh)
+# --- Powerlevel10k ---
 P10K_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/powerlevel10k"
+
+# Deshabilitar auto-instalación de gitstatusd (evita el error si no hay build tools)
+export GITSTATUS_AUTO_INSTALL=0
+
 if [ -f "$P10K_DIR/powerlevel10k.zsh-theme" ]; then
   source "$P10K_DIR/powerlevel10k.zsh-theme"
 fi
+
+# Cargar configuración de p10k
 [ -f "$HOME/.p10k.zsh" ] && source "$HOME/.p10k.zsh"
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Deshabilitar segmento vcs para evitar error de gitstatus
+# (el prompt va a mostrar el directorio sin info de git en tiempo real)
+#typeset -g POWERLEVEL9K_VCS_DISABLED=true
+
+# --- zsh-syntax-highlighting (DEBE ir al final) ---
+[ -f "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
+  source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+# --- PATH ---
 export PATH="$HOME/.local/bin:$PATH"
+export PATH=/home/hat/.opencode/bin:$PATH
+
+
+# Load Angular CLI autocompletion.
+source <(ng completion script)
+
+# bun completions
+[ -s "/home/hat/.bun/_bun" ] && source "/home/hat/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"

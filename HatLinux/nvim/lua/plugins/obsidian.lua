@@ -733,6 +733,397 @@ creado: %s
 			desc = "Quick create/open today's log",
 		},
 
+		-- Materias commands
+		{
+			"<leader>omn",
+			function()
+				local name = vim.fn.input("Materia: ")
+				if name == "" then
+					return
+				end
+				local vault_path = vim.fn.expand("~/HatNotes")
+				local materias_path = vault_path .. "/4-Projs/Materias"
+				vim.fn.mkdir(materias_path, "p")
+
+				local materia_path = materias_path .. "/" .. name
+				if vim.fn.isdirectory(materia_path) == 1 then
+					vim.notify("La materia '" .. name .. "' ya existe", vim.log.levels.WARN)
+					vim.cmd("e " .. materia_path .. "/materia.md")
+					return
+				end
+				vim.fn.mkdir(materia_path, "p")
+
+				local date = os.date("%Y-%m-%d")
+				local content = string.format([=[---
+creacion: %s
+tipo: materia
+estado: activa
+cuatrimestre: 1C2026
+tags: []
+---
+
+# %s
+
+## Info
+- **Profesor/a**: 
+- **Email**: 
+- **Aula**: 
+- **Horario**: 
+- **Plataforma**: 
+
+## Evaluaciones
+| Tipo | Fecha | Temas | Estado |
+|------|-------|-------|--------|
+| Parcial 1 | | | ⏳ |
+| Parcial 2 | | | ⏳ |
+| TP 1 | | | ⏳ |
+| TP 2 | | | ⏳ |
+| Final | | | ⏳ |
+
+## Unidades / Temario
+1. 
+2. 
+3. 
+4. 
+5. 
+
+## Clases
+- 
+
+## Links útiles
+- 
+]=], date, name)
+
+				vim.fn.writefile(vim.split(content, "\n"), materia_path .. "/materia.md")
+
+				-- Update _indice.md
+				local indice_path = materias_path .. "/_indice.md"
+				if vim.fn.filereadable(indice_path) == 0 then
+					local indice_content = string.format([=[---
+creacion: %s
+tipo: indice
+tags: [materias]
+---
+
+# Materias - 1C 2026
+
+## Activas
+- [[%s/materia|%s]]
+
+## Completadas
+- 
+
+## Notas generales
+- 
+]=], date, name, name, name)
+					vim.fn.writefile(vim.split(indice_content, "\n"), indice_path)
+				else
+					local lines = vim.fn.readfile(indice_path)
+					local activas_idx = nil
+					for i, line in ipairs(lines) do
+						if line == "## Activas" then
+							activas_idx = i
+							break
+						end
+					end
+					if activas_idx then
+						local new_line = "- [[" .. name .. "/materia|" .. name .. "]]"
+						table.insert(lines, activas_idx + 1, new_line)
+						vim.fn.writefile(lines, indice_path)
+					end
+				end
+
+				vim.cmd("e " .. materia_path .. "/materia.md")
+			end,
+			desc = "Nueva materia",
+		},
+		{
+			"<leader>omc",
+			function()
+				local vault_path = vim.fn.expand("~/HatNotes")
+				local materias_path = vault_path .. "/4-Projs/Materias"
+
+				local handle = vim.loop.fs_scandir(materias_path)
+				if not handle then
+					vim.notify("No hay materias. Usa <leader>omn primero", vim.log.levels.WARN)
+					return
+				end
+
+				local materias = {}
+				while true do
+					local name, typ = vim.loop.fs_scandir_next(handle)
+					if not name then
+						break
+					end
+					if typ == "directory" then
+						table.insert(materias, name)
+					end
+				end
+
+				if #materias == 0 then
+					vim.notify("No hay materias creadas. Usa <leader>omn", vim.log.levels.WARN)
+					return
+				end
+
+				vim.ui.select(materias, { prompt = "Materia:" }, function(materia)
+					if not materia then
+						return
+					end
+
+					local materia_path = materias_path .. "/" .. materia
+					local clase_count = 0
+					local clase_handle = vim.loop.fs_scandir(materia_path)
+					if clase_handle then
+						while true do
+							local entry, entry_typ = vim.loop.fs_scandir_next(clase_handle)
+							if not entry then
+								break
+							end
+							if entry_typ == "file" and entry:match("^Clase%-%d+%.md$") then
+								clase_count = clase_count + 1
+							end
+						end
+					end
+
+					local num = clase_count + 1
+					local date = os.date("%Y-%m-%d")
+					local filename = string.format("Clase-%02d.md", num)
+					local filepath = materia_path .. "/" .. filename
+
+					local content = string.format([=[---
+creacion: %s
+tipo: clase
+materia: %s
+clase_num: %d
+tags: []
+---
+
+# Clase %d - %s
+
+## Tema de hoy
+- 
+
+## Apuntes
+
+
+## Conceptos clave
+- 
+
+## Dudas / Preguntar al profe
+- 
+
+## Tareas
+- [ ] 
+
+## Próxima clase
+- 
+]=], date, materia, num, num, materia)
+
+					vim.fn.writefile(vim.split(content, "\n"), filepath)
+					vim.cmd("e " .. filepath)
+				end)
+			end,
+			desc = "Nueva clase (seleccionar materia)",
+		},
+		{
+			"<leader>omt",
+			function()
+				local vault_path = vim.fn.expand("~/HatNotes")
+				local materias_path = vault_path .. "/4-Projs/Materias"
+
+				local handle = vim.loop.fs_scandir(materias_path)
+				if not handle then
+					vim.notify("No hay materias. Usa <leader>omn primero", vim.log.levels.WARN)
+					return
+				end
+
+				local materias = {}
+				while true do
+					local name, typ = vim.loop.fs_scandir_next(handle)
+					if not name then
+						break
+					end
+					if typ == "directory" then
+						table.insert(materias, name)
+					end
+				end
+
+				if #materias == 0 then
+					vim.notify("No hay materias creadas. Usa <leader>omn", vim.log.levels.WARN)
+					return
+				end
+
+				vim.ui.select(materias, { prompt = "Materia:" }, function(materia)
+					if not materia then
+						return
+					end
+
+					local materia_path = materias_path .. "/" .. materia
+					local tp_count = 0
+					local tp_handle = vim.loop.fs_scandir(materia_path)
+					if tp_handle then
+						while true do
+							local entry, entry_typ = vim.loop.fs_scandir_next(tp_handle)
+							if not entry then
+								break
+							end
+							if entry_typ == "file" and entry:match("^TP%-%d+%.md$") then
+								tp_count = tp_count + 1
+							end
+						end
+					end
+
+					local num = tp_count + 1
+					local date = os.date("%Y-%m-%d")
+					local filename = string.format("TP-%02d.md", num)
+					local filepath = materia_path .. "/" .. filename
+
+					local content = string.format([=[---
+creacion: %s
+tipo: tp
+materia: %s
+tp_num: %d
+fecha_entrega: 
+estado: pendiente
+tags: []
+---
+
+# TP %d - %s
+
+## Consigna
+- 
+
+## Requisitos
+- [ ] 
+
+## Notas / Ideas
+- 
+
+## Progreso
+- [ ] Entendí la consigna
+- [ ] Boceto / Plan
+- [ ] Desarrollo
+- [ ] Revisión
+- [ ] Entregado
+
+## Entrega
+- **Fecha límite**: 
+- **Formato**: 
+]=], date, materia, num, num, materia)
+
+					vim.fn.writefile(vim.split(content, "\n"), filepath)
+					vim.cmd("e " .. filepath)
+				end)
+			end,
+			desc = "Nuevo TP (seleccionar materia)",
+		},
+		{
+			"<leader>omr",
+			function()
+				local vault_path = vim.fn.expand("~/HatNotes")
+				local materias_path = vault_path .. "/4-Projs/Materias"
+
+				local handle = vim.loop.fs_scandir(materias_path)
+				if not handle then
+					vim.notify("No hay materias. Usa <leader>omn primero", vim.log.levels.WARN)
+					return
+				end
+
+				local materias = {}
+				while true do
+					local name, typ = vim.loop.fs_scandir_next(handle)
+					if not name then
+						break
+					end
+					if typ == "directory" then
+						table.insert(materias, name)
+					end
+				end
+
+				if #materias == 0 then
+					vim.notify("No hay materias creadas. Usa <leader>omn", vim.log.levels.WARN)
+					return
+				end
+
+				vim.ui.select(materias, { prompt = "Materia:" }, function(materia)
+					if not materia then
+						return
+					end
+
+					local materia_path = materias_path .. "/" .. materia
+
+					local tipo_examen = vim.fn.input("Tipo (Parcial 1/Parcial 2/Final): ")
+					if tipo_examen == "" then
+						tipo_examen = "Parcial"
+					end
+
+					local date = os.date("%Y-%m-%d")
+					local filename = "Repaso-" .. tipo_examen:gsub("%s+", "-") .. ".md"
+					local filepath = materia_path .. "/" .. filename
+
+					local content = string.format([=[---
+creacion: %s
+tipo: repaso
+materia: %s
+examen: %s
+tags: []
+---
+
+# Repaso - %s (%s)
+
+## Temas que entran
+1. 
+2. 
+3. 
+
+## Resumen por tema
+
+### Tema 1
+- 
+
+### Tema 2
+- 
+
+### Tema 3
+- 
+
+## Ejercicios de práctica
+1. 
+
+## Dudas para consultar
+- [ ] 
+
+## Checklist de preparación
+- [ ] Temas teóricos completos
+- [ ] Ejercicios practicados
+- [ ] Fórmulas / definiciones memorizadas
+- [ ] Dudas resueltas
+- [ ] Simulé condiciones de examen
+
+## Notas post-examen
+- 
+]=], date, materia, tipo_examen, materia, tipo_examen)
+
+					vim.fn.writefile(vim.split(content, "\n"), filepath)
+					vim.cmd("e " .. filepath)
+				end)
+			end,
+			desc = "Repaso / Parcial (seleccionar materia)",
+		},
+		{
+			"<leader>omi",
+			function()
+				local vault_path = vim.fn.expand("~/HatNotes")
+				local indice_path = vault_path .. "/4-Projs/Materias/_indice.md"
+				if vim.fn.filereadable(indice_path) == 0 then
+					vim.notify("No existe el índice. Usa <leader>omn primero", vim.log.levels.WARN)
+					return
+				end
+				vim.cmd("e " .. indice_path)
+			end,
+			desc = "Abrir índice de materias",
+		},
+
 		-- Markdown convenience keymaps (<leader>m*)
 		-- Note: bold/italic/link wrapping removed — handled by mini.surround
 		{
