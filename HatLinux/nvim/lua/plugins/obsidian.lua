@@ -110,12 +110,13 @@ return {
 
 		vim.opt.conceallevel = 1
 
-		-- Spell check for markdown files
+		-- Spell check for markdown files - add hunspell path to runtimepath
+		vim.opt.runtimepath:prepend("/usr/share/hunspell")
 		vim.api.nvim_create_autocmd("FileType", {
 			pattern = "markdown",
 			callback = function()
 				vim.opt_local.spell = true
-				vim.opt_local.spelllang = "en"
+				vim.opt_local.spelllang = "es_ES,en"
 			end,
 		})
 
@@ -344,8 +345,31 @@ tags: []
 
 # %s
 
-## Resumen
-%s
+```json
+{
+	"id_proyecto": "PRJ-001",
+	"nombre": "%s",
+	"descripción_breve": "Descripción...",
+	"problema_a_resolver": "Problema...",
+	"público_objetivo": ["Usuario Final"],
+	"supuestos_clave": ["Supuesto 1"],
+	"restricciones": {
+		"tiempo": "Q3 2026",
+		"presupuesto": "N/A",
+		"tecnología": ["Node.js, PostgreSQL"],
+		"cumplimiento": ["GDPR"]
+	},
+	"equipo_disponible": ["2 Backend, 1 Frontend"],
+	"métricas_esperadas": ["MAU > 10k"],
+	"prioridad_del_scope": ["Auth, Core API"],
+	"datos_tecnicos_disponibles": {
+		"APIs": ["REST / GraphQL"],
+		"infra": "Docker / K8s",
+		"stack": ["Stack base"]
+	},
+	"output_tipo": "PRD | RFC | SRS | HLD"
+}
+```
 
 ## Estado
 - [x] Activo

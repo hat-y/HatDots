@@ -140,5 +140,82 @@ return {
 			end,
 			desc = "Forzar abrir Obsidian (obsidian://)",
 		},
+
+		-- Nuevo proyecto en 4-Projs
+		{
+			"<leader>onp",
+			function()
+				local proj_name = vim.fn.input("Proyecto: ")
+				if proj_name == "" then
+					return
+				end
+				local vault_path = "~/HatNotes"
+				local date = os.date("%Y-%m-%d")
+
+				local proj_path = vault_path .. "/4-Projs/" .. proj_name
+				vim.fn.mkdir(proj_path, "p")
+
+				local content = string.format([=[---
+creacion: %s
+estado: activo
+tags: []
+---
+
+# %s
+
+```json
+{
+	"id_proyecto": "PRJ-001",
+	"nombre": "%s",
+	"descripción_breve": "Descripción...",
+	"problema_a_resolver": "Problema...",
+	"público_objetivo": ["Usuario Final"],
+	"supuestos_clave": ["Supuesto 1"],
+	"restricciones": {
+		"tiempo": "Q3 2026",
+		"presupuesto": "N/A",
+		"tecnología": ["Node.js, PostgreSQL"],
+		"cumplimiento": ["GDPR"]
+	},
+	"equipo_disponible": ["2 Backend, 1 Frontend"],
+	"métricas_esperadas": ["MAU > 10k"],
+	"prioridad_del_scope": ["Auth, Core API"],
+	"datos_tecnicos_disponibles": {
+		"APIs": ["REST / GraphQL"],
+		"infra": "Docker / K8s",
+		"stack": ["Stack base"]
+	},
+	"output_tipo": "PRD | RFC | SRS | HLD"
+}
+```
+
+## Estado
+- [x] Activo
+- [ ] En pausa
+- [ ] Completado
+
+## Links importantes
+- [[]]
+- [[]]
+
+## Tareas
+- [ ] 
+
+## Notas
+- 
+
+## Progreso
+-
+
+## Archivos relacionados
+- 
+]=], date, proj_name, proj_name)
+
+				local readme_path = proj_path .. "/README.md"
+				vim.fn.writefile(vim.split(content, "\n"), readme_path)
+				vim.cmd("e " .. readme_path)
+			end,
+			desc = "Nuevo proyecto en 4-Projs",
+		},
 	},
 }
