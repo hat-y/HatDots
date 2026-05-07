@@ -14,7 +14,11 @@ return {
 		"folke/snacks.nvim",
 		event = "VeryLazy",
 		opts = {
-			notifier = { enabled = false }, -- noice handles notifications
+			notifier = {
+				enabled = true,
+				style = "compact",
+				top_down = true, -- new notifications appear at top
+			},
 			quickfile = { enabled = true },
 			scroll = { enabled = true },
 			statuscolumn = { enabled = true },
