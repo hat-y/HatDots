@@ -13,7 +13,6 @@ return {
 		opts = function(_, opts)
 			local cmp = require("cmp")
 			local luasnip = require("luasnip")
-
 			require("luasnip.loaders.from_vscode").lazy_load()
 
 			opts.mapping = cmp.mapping.preset.insert({
@@ -62,11 +61,6 @@ return {
 		config = function(_, opts)
 			local cmp = require("cmp")
 			cmp.setup(opts)
-
-			local ok, cmp_autopairs = pcall(require, "nvim-autopairs.completion.cmp")
-			if ok then
-				cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
-			end
 
 			-- Markdown sources (incluyendo obsidian)
 			cmp.setup.filetype("markdown", {
