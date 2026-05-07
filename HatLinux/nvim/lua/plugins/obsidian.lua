@@ -1328,9 +1328,9 @@ desc = "Abrir material/PDFs de materia",
 			"<leader>mc",
 			function()
 				if vim.fn.mode() == "n" then
-					require("markdown-keymaps").toggle_checkbox()
+					require("config.markdown_utils").toggle_checkbox()
 				else
-					require("markdown-keymaps").insert_checkbox()
+					require("config.markdown_utils").insert_checkbox()
 				end
 			end,
 			desc = "Toggle checkbox (n) / Insert checkbox (i)",
@@ -1338,14 +1338,14 @@ desc = "Abrir material/PDFs de materia",
 		{
 			"<leader>mq",
 			function()
-				require("markdown-keymaps").insert_blockquote()
+				require("config.markdown_utils").insert_blockquote()
 			end,
 			desc = "Insert blockquote",
 		},
 		{
 			",1",
 			function()
-				require("markdown-keymaps").insert_heading({ level = 1 })
+				require("config.markdown_utils").insert_heading({ level = 1 })
 			end,
 			desc = "Insert H1 heading",
 			mode = "i",
@@ -1353,7 +1353,7 @@ desc = "Abrir material/PDFs de materia",
 		{
 			",2",
 			function()
-				require("markdown-keymaps").insert_heading({ level = 2 })
+				require("config.markdown_utils").insert_heading({ level = 2 })
 			end,
 			desc = "Insert H2 heading",
 			mode = "i",
@@ -1361,7 +1361,7 @@ desc = "Abrir material/PDFs de materia",
 		{
 			",3",
 			function()
-				require("markdown-keymaps").insert_heading({ level = 3 })
+				require("config.markdown_utils").insert_heading({ level = 3 })
 			end,
 			desc = "Insert H3 heading",
 			mode = "i",
@@ -1369,7 +1369,7 @@ desc = "Abrir material/PDFs de materia",
 		{
 			",4",
 			function()
-				require("markdown-keymaps").insert_heading({ level = 4 })
+				require("config.markdown_utils").insert_heading({ level = 4 })
 			end,
 			desc = "Insert H4 heading",
 			mode = "i",
@@ -1377,7 +1377,7 @@ desc = "Abrir material/PDFs de materia",
 		{
 			",5",
 			function()
-				require("markdown-keymaps").insert_heading({ level = 5 })
+				require("config.markdown_utils").insert_heading({ level = 5 })
 			end,
 			desc = "Insert H5 heading",
 			mode = "i",
@@ -1385,7 +1385,7 @@ desc = "Abrir material/PDFs de materia",
 		{
 			",6",
 			function()
-				require("markdown-keymaps").insert_heading({ level = 6 })
+				require("config.markdown_utils").insert_heading({ level = 6 })
 			end,
 			desc = "Insert H6 heading",
 			mode = "i",
