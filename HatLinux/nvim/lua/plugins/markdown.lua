@@ -120,6 +120,11 @@ return {
 					end
 					local mu = require("config.markdown_utils")
 
+					-- Visual wrapping for long lines (pasted text, etc.)
+					vim.opt_local.wrap = true
+					vim.opt_local.linebreak = true
+					vim.opt_local.breakindent = true
+
 					km("i", ",1", function()
 						mu.insert_heading({ level = 1 })
 					end, "Insert H1")

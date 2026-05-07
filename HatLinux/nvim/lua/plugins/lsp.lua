@@ -1,15 +1,67 @@
 return {
 	{
+		"mason-org/mason.nvim",
+		opts = {},
+	},
+
+	{
 		"mason-org/mason-lspconfig.nvim",
+		dependencies = {
+			{ "mason-org/mason.nvim", opts = {} },
+			"neovim/nvim-lspconfig",
+		},
 		opts = {
-			ensure_installed = { "vtsls", "pyright", "ruff", "lua_ls", "cssls", "html", "emmet_ls" },
+			ensure_installed = {
+				"vtsls",
+				"pyright",
+				"ruff",
+				"lua_ls",
+				"cssls",
+				"emmet_ls",
+			},
 			automatic_installation = true,
 		},
 	},
+
 	{
 		"neovim/nvim-lspconfig",
+		dependencies = {
+			"saghen/blink.cmp",
+		},
 		opts = {
+			on_attach = function(client, bufnr)
+				local map = function(mode, keys, func, desc)
+					if desc then
+						desc = "LSP: " .. desc
+					end
+					vim.keymap.set(mode, keys, func, { buffer = bufnr, desc = desc })
+				end
+
+				map("n", "gd", vim.lsp.buf.definition, "Go to definition")
+				map("n", "gr", vim.lsp.buf.references, "References")
+				map("n", "gi", vim.lsp.buf.implementation, "Implementation")
+				map("n", "<leader>rn", vim.lsp.buf.rename, "Rename")
+				map("n", "<leader>ca", vim.lsp.buf.code_action, "Code action")
+
+				if client.name == "ruff" then
+					client.server_capabilities.hoverProvider = false
+				end
+			end,
+
+			capabilities = (function()
+				local cap = vim.lsp.protocol.make_client_capabilities()
+				local blink_cap = require("blink.cmp").get_lsp_capabilities(cap)
+				return vim.tbl_deep_extend("force", {}, cap, blink_cap)
+			end)(),
+
 			servers = {
+				["*"] = {
+					capabilities = (function()
+						local cap = vim.lsp.protocol.make_client_capabilities()
+						local blink_cap = require("blink.cmp").get_lsp_capabilities(cap)
+						return vim.tbl_deep_extend("force", {}, cap, blink_cap)
+					end)(),
+				},
 				vtsls = {
 					settings = {
 						typescript = {
@@ -18,27 +70,48 @@ return {
 								includeCompletionsWithSnippetText = true,
 							},
 						},
-						vtsls = { tsserver = { maxTsServerMemory = 4096 } },
-					},
-				},
-				pyright = {
-					settings = { python = { analysis = { typeCheckingMode = "basic" } } },
-				},
-				ruff = {
-					on_attach = function(client)
-						client.server_capabilities.hoverProvider = false
-					end,
-					init_options = { settings = { args = {} } },
-				},
-				lua_ls = {
-					settings = {
-						Lua = {
-							diagnostics = { globals = { "vim" } },
-							workspace = { checkThirdParty = false },
-							telemetry = { enable = false },
+						vtsls = {
+							tsserver = {
+								maxTsServerMemory = 4096,
+							},
 						},
 					},
 				},
+
+				pyright = {
+					settings = {
+						python = {
+							analysis = {
+								typeCheckingMode = "basic",
+							},
+						},
+					},
+				},
+
+				ruff = {
+					init_options = {
+						settings = {
+							args = {},
+						},
+					},
+				},
+
+				lua_ls = {
+					settings = {
+						Lua = {
+							diagnostics = {
+								globals = { "vim" },
+							},
+							workspace = {
+								checkThirdParty = false,
+							},
+							telemetry = {
+								enable = false,
+							},
+						},
+					},
+				},
+
 				cssls = {
 					settings = {
 						css = {
@@ -63,6 +136,7 @@ return {
 						},
 					},
 				},
+
 				html = {
 					settings = {
 						html = {
@@ -83,6 +157,7 @@ return {
 						},
 					},
 				},
+
 				emmet_ls = {
 					settings = {
 						emmet = {
@@ -93,6 +168,13 @@ return {
 					},
 				},
 			},
+		},
+	},
+
+	{
+		"folke/lazydev.nvim",
+		opts = {
+			enable = true,
 		},
 	},
 }
