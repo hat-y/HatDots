@@ -94,9 +94,8 @@ return {
 			vim.opt.conceallevel = 2
 			vim.opt.concealcursor = "n"
 
-			-- Configure folding
-			vim.opt.foldmethod = "expr"
-			vim.opt.foldexpr = "v:lua.vim.markdown#foldlevel()"
+			-- Folding is handled by nvim-treesitter
+			-- (removed broken foldexpr that referenced non-existent v:lua.vim.markdown#foldlevel())
 
 			-- Create TOC command
 			local function generate_toc()
