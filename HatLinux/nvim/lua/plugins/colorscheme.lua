@@ -7,9 +7,47 @@ return {
 		"nyoom-engineering/oxocarbon.nvim",
 		lazy = false,
 		priority = 1000,
+		config = function()
+			vim.opt.background = "dark"
+			vim.cmd.colorscheme("oxocarbon")
+
+			-- Transparency
+			local hl = vim.api.nvim_set_hl
+			hl(0, "Normal", { bg = "none" })
+			hl(0, "NormalFloat", { bg = "none" })
+			hl(0, "NormalNC", { bg = "none" })
+			hl(0, "SignColumn", { bg = "none" })
+			hl(0, "LineNr", { bg = "none" })
+			hl(0, "FoldColumn", { bg = "none" })
+			hl(0, "CursorLineNr", { bg = "none" })
+
+			-- Floats and popups
+			hl(0, "FloatBorder", { bg = "none" })
+			hl(0, "Pmenu", { bg = "none" })
+			hl(0, "PmenuSbar", { bg = "none" })
+
+			-- Sidebars
+			hl(0, "NvimTreeNormal", { bg = "none" })
+			hl(0, "NvimTreeEndOfBuffer", { bg = "none" })
+
+			-- Telescope
+			hl(0, "TelescopeNormal", { bg = "none" })
+			hl(0, "TelescopeBorder", { bg = "none" })
+			hl(0, "TelescopePromptNormal", { bg = "none" })
+			hl(0, "TelescopeResultsNormal", { bg = "none" })
+			hl(0, "TelescopePreviewNormal", { bg = "none" })
+
+			-- Notifications
+			hl(0, "NotifyBackground", { bg = "none" })
+
+			-- Which-key
+			hl(0, "WhichKeyNormal", { bg = "none" })
+		end,
+	},
+      
+
 	},
 
-	-- Available: kanagawa (switch with :colorscheme kanagawa)
 	{
 		"rebelot/kanagawa.nvim",
 		lazy = true,
@@ -37,7 +75,7 @@ return {
 				local theme = colors.theme
 				return {
 					Normal = { bg = "none" },
-					NormalNC = { bg = "none" },
+			 		NormalNC = { bg = "none" },
 					NormalFloat = { bg = "none" },
 					SignColumn = { bg = "none" },
 					LineNr = { bg = "none" },
