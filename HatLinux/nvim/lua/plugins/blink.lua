@@ -15,8 +15,25 @@ return {
 				documentation = { auto_show = false },
 			},
 
+			cmdline = {
+				enabled = true,
+				sources = function()
+					local type = vim.fn.getcmdtype()
+					if type == "/" or type == "?" then
+						return { "buffer" }
+					end
+					return { "cmdline", "path" }
+				end,
+			},
+
 			sources = {
 				default = { "lsp", "path", "snippets", "buffer" },
+				providers = {
+					cmdline = {
+						name = "cmdline",
+						module = "blink.cmp.sources.cmdline",
+					},
+				},
 			},
 
 			fuzzy = {
