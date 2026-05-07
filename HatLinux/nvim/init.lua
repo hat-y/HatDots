@@ -29,3 +29,17 @@ pcall(require, "config.keymaps")
 -- Timeout configurations
 vim.opt.timeoutlen = 1000
 vim.opt.ttimeoutlen = 0
+
+-- Startup profiling helper (comment/uncomment to measure):
+-- 1. CLI: nvim --startuptime /tmp/nvim-startup.log +qa
+-- 2. In-editor: :Lazy profile (shows per-plugin load times)
+-- 3. Built-in: vim.g.startup_clock records init.lua parse duration
+local startup_start = vim.fn.reltime()
+vim.api.nvim_create_autocmd("UIEnter", {
+	once = true,
+	callback = function()
+		local elapsed = vim.fn.reltime(startup_start)
+		local ms = tonumber(vim.fn.reltimestr(elapsed):match("%d+%.%d+")) * 1000
+		vim.g.startup_time_ms = math.floor(ms)
+	end,
+})
