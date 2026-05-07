@@ -48,12 +48,6 @@ return {
 				end
 			end,
 
-			capabilities = (function()
-				local cap = vim.lsp.protocol.make_client_capabilities()
-				local blink_cap = require("blink.cmp").get_lsp_capabilities(cap)
-				return vim.tbl_deep_extend("force", {}, cap, blink_cap)
-			end)(),
-
 			servers = {
 				["*"] = {
 					capabilities = (function()
