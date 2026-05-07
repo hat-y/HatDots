@@ -38,37 +38,41 @@ function M.insert_heading(opts)
 	vim.api.nvim_win_set_cursor(0, { row, col + #heading })
 end
 
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = { "markdown", "markdown.mdx" },
-	callback = function()
-		local buf = vim.api.nvim_get_current_buf()
-		local km = function(mode, lhs, rhs, desc)
-			vim.keymap.set(mode, lhs, rhs, { buffer = buf, desc = desc })
-		end
+return {
+	"markdown-keymaps",
+	ft = { "markdown", "markdown.mdx" },
+	config = function()
+		vim.api.nvim_create_autocmd("FileType", {
+			pattern = { "markdown", "markdown.mdx" },
+			callback = function()
+				local buf = vim.api.nvim_get_current_buf()
+				local km = function(mode, lhs, rhs, desc)
+					vim.keymap.set(mode, lhs, rhs, { buffer = buf, desc = desc })
+				end
 
-		km("i", ",1", function()
-			M.insert_heading({ level = 1 })
-		end, "Insert H1")
-		km("i", ",2", function()
-			M.insert_heading({ level = 2 })
-		end, "Insert H2")
-		km("i", ",3", function()
-			M.insert_heading({ level = 3 })
-		end, "Insert H3")
-		km("i", ",4", function()
-			M.insert_heading({ level = 4 })
-		end, "Insert H4")
-		km("i", ",5", function()
-			M.insert_heading({ level = 5 })
-		end, "Insert H5")
-		km("i", ",6", function()
-			M.insert_heading({ level = 6 })
-		end, "Insert H6")
-		km("i", ",q", M.insert_blockquote, "Insert blockquote")
-		km("n", ",c", M.toggle_checkbox, "Toggle checkbox")
+				km("i", ",1", function()
+					M.insert_heading({ level = 1 })
+				end, "Insert H1")
+				km("i", ",2", function()
+					M.insert_heading({ level = 2 })
+				end, "Insert H2")
+				km("i", ",3", function()
+					M.insert_heading({ level = 3 })
+				end, "Insert H3")
+				km("i", ",4", function()
+					M.insert_heading({ level = 4 })
+				end, "Insert H4")
+				km("i", ",5", function()
+					M.insert_heading({ level = 5 })
+				end, "Insert H5")
+				km("i", ",6", function()
+					M.insert_heading({ level = 6 })
+				end, "Insert H6")
+				km("i", ",q", M.insert_blockquote, "Insert blockquote")
+				km("n", ",c", M.toggle_checkbox, "Toggle checkbox")
+			end,
+		})
+
+		package.loaded["markdown-keymaps"] = M
 	end,
-})
-
-package.loaded["markdown-keymaps"] = M
-
-return {}
+}

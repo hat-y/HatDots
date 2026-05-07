@@ -338,9 +338,13 @@ local function setup()
 	km("n", ",tl", prev_cell, "Table: previous cell")
 end
 
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = "markdown",
-	callback = setup,
-})
-
-return {}
+return {
+	"markdown-tables",
+	ft = "markdown",
+	config = function()
+		vim.api.nvim_create_autocmd("FileType", {
+			pattern = "markdown",
+			callback = setup,
+		})
+	end,
+}
