@@ -124,10 +124,17 @@ return {
 				end
 				local mu = require("config.markdown_utils")
 
-				-- Visual wrapping for long lines (pasted text, etc.)
+				-- Visual wrapping for long lines
 				vim.opt_local.wrap = true
 				vim.opt_local.linebreak = true
 				vim.opt_local.breakindent = true
+
+				-- Auto-format: wrap text at 80 chars (works on paste and while typing)
+				vim.opt_local.textwidth = 80
+				vim.opt_local.formatoptions:append("t") -- auto-wrap at textwidth
+				vim.opt_local.formatoptions:append("a") -- auto-format paragraphs (paste + type)
+				vim.opt_local.formatoptions:append("q") -- allow gq to format
+				vim.opt_local.formatoptions:append("j") -- remove comment leader when joining
 
 				km("i", ",1", function()
 					mu.insert_heading({ level = 1 })

@@ -26,12 +26,14 @@ return {
 				long_message_to_split = true,
 			},
 			routes = {
-				-- Skip noisy "written" messages on save
+				-- Skip noisy save/write messages (English + Spanish)
 				{
 					filter = {
 						event = "msg_show",
 						any = {
 							{ find = "written" },
+							{ find = "escritos" },
+							{ find = "escrito" },
 							{ find = "%d+L, %d+B" },
 							{ find = "; after #%d+" },
 							{ find = "; before #%d+" },
@@ -43,6 +45,12 @@ return {
 							{ find = "%d+ more lines" },
 							{ find = "%d+ fewer lines" },
 							{ find = "Already at newest change" },
+							-- Spanish: "línea X de Y" position messages
+							{ find = "línea %d+ de %d+" },
+							-- Spanish: "No se pudo" error messages for special buffers
+							{ find = "No se pudo" },
+							-- File path messages on save
+							{ find = '".+" %d+L' },
 						},
 					},
 					opts = { skip = true },
