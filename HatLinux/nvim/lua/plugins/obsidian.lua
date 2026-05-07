@@ -1,3 +1,14 @@
+-- Helper: slugify a string (lowercase, no spaces, no accents)
+-- "Seminario de Actualización I" → "seminario-de-actualizacion-i"
+local function slugify(s)
+	s = s:lower()
+	s = s:gsub("á", "a"):gsub("é", "e"):gsub("í", "i"):gsub("ó", "o"):gsub("ú", "u"):gsub("ñ", "n"):gsub("ü", "u")
+	s = s:gsub("Á", "a"):gsub("É", "e"):gsub("Í", "i"):gsub("Ó", "o"):gsub("Ú", "u"):gsub("Ñ", "n"):gsub("Ü", "u")
+	s = s:gsub("[^a-z0-9]+", "-")
+	s = s:gsub("^%-", ""):gsub("%-$", "")
+	return s
+end
+
 return {
 	"epwalsh/obsidian.nvim",
 	version = "*",
@@ -116,7 +127,7 @@ return {
 			pattern = "markdown",
 			callback = function()
 				vim.opt_local.spell = true
-				vim.opt_local.spelllang = "es_ES,en"
+				vim.opt_local.spelllang = "es,en"
 			end,
 		})
 
@@ -757,7 +768,7 @@ creado: %s
 			desc = "Quick create/open today's log",
 		},
 
-		-- Materias commands
+-- Materias commands
 		{
 			"<leader>omn",
 			function()
@@ -765,17 +776,19 @@ creado: %s
 				if name == "" then
 					return
 				end
+				local slug = slugify(name)
 				local vault_path = vim.fn.expand("~/HatNotes")
 				local materias_path = vault_path .. "/4-Projs/Materias"
 				vim.fn.mkdir(materias_path, "p")
 
-				local materia_path = materias_path .. "/" .. name
+				local materia_path = materias_path .. "/" .. slug
 				if vim.fn.isdirectory(materia_path) == 1 then
-					vim.notify("La materia '" .. name .. "' ya existe", vim.log.levels.WARN)
+					vim.notify("La materia '" .. slug .. "' ya existe", vim.log.levels.WARN)
 					vim.cmd("e " .. materia_path .. "/materia.md")
 					return
 				end
 				vim.fn.mkdir(materia_path, "p")
+				vim.fn.mkdir(materia_path .. "/material", "p")
 
 				local date = os.date("%Y-%m-%d")
 				local content = string.format([=[---
@@ -784,6 +797,7 @@ tipo: materia
 estado: activa
 cuatrimestre: 1C2026
 tags: []
+nombre: %s
 ---
 
 # %s
@@ -814,9 +828,13 @@ tags: []
 ## Clases
 - 
 
+## Material
+> Ver subcarpeta `material/` para PDFs y documentos de la materia
+
 ## Links útiles
 - 
-]=], date, name)
+
+]=], date, name, name)
 
 				vim.fn.writefile(vim.split(content, "\n"), materia_path .. "/materia.md")
 
@@ -839,7 +857,8 @@ tags: [materias]
 
 ## Notas generales
 - 
-]=], date, name, name, name)
+
+]=], date, slug, name)
 					vim.fn.writefile(vim.split(indice_content, "\n"), indice_path)
 				else
 					local lines = vim.fn.readfile(indice_path)
@@ -851,7 +870,7 @@ tags: [materias]
 						end
 					end
 					if activas_idx then
-						local new_line = "- [[" .. name .. "/materia|" .. name .. "]]"
+						local new_line = "- [[" .. slug .. "/materia|" .. name .. "]]"
 						table.insert(lines, activas_idx + 1, new_line)
 						vim.fn.writefile(lines, indice_path)
 					end
@@ -874,13 +893,28 @@ tags: [materias]
 				end
 
 				local materias = {}
+				local slug_to_name = {}
 				while true do
 					local name, typ = vim.loop.fs_scandir_next(handle)
 					if not name then
 						break
 					end
-					if typ == "directory" then
-						table.insert(materias, name)
+					if typ == "directory" and name ~= "_indice.md" then
+						-- Read pretty name from materia.md frontmatter
+						local materia_file = materias_path .. "/" .. name .. "/materia.md"
+						local pretty_name = name
+						if vim.fn.filereadable(materia_file) == 1 then
+							local lines = vim.fn.readfile(materia_file)
+							for _, line in ipairs(lines) do
+								local n = line:match("^nombre:%s*(.+)$")
+								if n then
+									pretty_name = n
+									break
+								end
+							end
+						end
+						table.insert(materias, pretty_name)
+						slug_to_name[pretty_name] = name
 					end
 				end
 
@@ -889,12 +923,12 @@ tags: [materias]
 					return
 				end
 
-				vim.ui.select(materias, { prompt = "Materia:" }, function(materia)
-					if not materia then
+				vim.ui.select(materias, { prompt = "Materia:" }, function(pretty_name)
+					if not pretty_name then
 						return
 					end
-
-					local materia_path = materias_path .. "/" .. materia
+					local slug = slug_to_name[pretty_name]
+					local materia_path = materias_path .. "/" .. slug
 					local clase_count = 0
 					local clase_handle = vim.loop.fs_scandir(materia_path)
 					if clase_handle then
@@ -903,7 +937,7 @@ tags: [materias]
 							if not entry then
 								break
 							end
-							if entry_typ == "file" and entry:match("^Clase%-%d+%.md$") then
+							if entry_typ == "file" and entry:match("^clase%-%d+%.md$") then
 								clase_count = clase_count + 1
 							end
 						end
@@ -911,7 +945,7 @@ tags: [materias]
 
 					local num = clase_count + 1
 					local date = os.date("%Y-%m-%d")
-					local filename = string.format("Clase-%02d.md", num)
+					local filename = string.format("clase-%02d.md", num)
 					local filepath = materia_path .. "/" .. filename
 
 					local content = string.format([=[---
@@ -925,6 +959,9 @@ tags: []
 # Clase %d - %s
 
 ## Tema de hoy
+- 
+
+## Material de clase
 - 
 
 ## Apuntes
@@ -941,7 +978,8 @@ tags: []
 
 ## Próxima clase
 - 
-]=], date, materia, num, num, materia)
+
+]=], date, pretty_name, num, num, pretty_name)
 
 					vim.fn.writefile(vim.split(content, "\n"), filepath)
 					vim.cmd("e " .. filepath)
@@ -962,13 +1000,27 @@ tags: []
 				end
 
 				local materias = {}
+				local slug_to_name = {}
 				while true do
 					local name, typ = vim.loop.fs_scandir_next(handle)
 					if not name then
 						break
 					end
-					if typ == "directory" then
-						table.insert(materias, name)
+					if typ == "directory" and name ~= "_indice.md" then
+						local materia_file = materias_path .. "/" .. name .. "/materia.md"
+						local pretty_name = name
+						if vim.fn.filereadable(materia_file) == 1 then
+							local lines = vim.fn.readfile(materia_file)
+							for _, line in ipairs(lines) do
+								local n = line:match("^nombre:%s*(.+)$")
+								if n then
+									pretty_name = n
+									break
+								end
+							end
+						end
+						table.insert(materias, pretty_name)
+						slug_to_name[pretty_name] = name
 					end
 				end
 
@@ -977,12 +1029,12 @@ tags: []
 					return
 				end
 
-				vim.ui.select(materias, { prompt = "Materia:" }, function(materia)
-					if not materia then
+				vim.ui.select(materias, { prompt = "Materia:" }, function(pretty_name)
+					if not pretty_name then
 						return
 					end
-
-					local materia_path = materias_path .. "/" .. materia
+					local slug = slug_to_name[pretty_name]
+					local materia_path = materias_path .. "/" .. slug
 					local tp_count = 0
 					local tp_handle = vim.loop.fs_scandir(materia_path)
 					if tp_handle then
@@ -991,7 +1043,7 @@ tags: []
 							if not entry then
 								break
 							end
-							if entry_typ == "file" and entry:match("^TP%-%d+%.md$") then
+							if entry_typ == "file" and entry:match("^tp%-%d+%.md$") then
 								tp_count = tp_count + 1
 							end
 						end
@@ -999,7 +1051,7 @@ tags: []
 
 					local num = tp_count + 1
 					local date = os.date("%Y-%m-%d")
-					local filename = string.format("TP-%02d.md", num)
+					local filename = string.format("tp-%02d.md", num)
 					local filepath = materia_path .. "/" .. filename
 
 					local content = string.format([=[---
@@ -1033,7 +1085,7 @@ tags: []
 ## Entrega
 - **Fecha límite**: 
 - **Formato**: 
-]=], date, materia, num, num, materia)
+]=], date, pretty_name, num, num, pretty_name)
 
 					vim.fn.writefile(vim.split(content, "\n"), filepath)
 					vim.cmd("e " .. filepath)
@@ -1054,13 +1106,27 @@ tags: []
 				end
 
 				local materias = {}
+				local slug_to_name = {}
 				while true do
 					local name, typ = vim.loop.fs_scandir_next(handle)
 					if not name then
 						break
 					end
-					if typ == "directory" then
-						table.insert(materias, name)
+					if typ == "directory" and name ~= "_indice.md" then
+						local materia_file = materias_path .. "/" .. name .. "/materia.md"
+						local pretty_name = name
+						if vim.fn.filereadable(materia_file) == 1 then
+							local lines = vim.fn.readfile(materia_file)
+							for _, line in ipairs(lines) do
+								local n = line:match("^nombre:%s*(.+)$")
+								if n then
+									pretty_name = n
+									break
+								end
+							end
+						end
+						table.insert(materias, pretty_name)
+						slug_to_name[pretty_name] = name
 					end
 				end
 
@@ -1069,20 +1135,21 @@ tags: []
 					return
 				end
 
-				vim.ui.select(materias, { prompt = "Materia:" }, function(materia)
-					if not materia then
+				vim.ui.select(materias, { prompt = "Materia:" }, function(pretty_name)
+					if not pretty_name then
 						return
 					end
-
-					local materia_path = materias_path .. "/" .. materia
+					local slug = slug_to_name[pretty_name]
+					local materia_path = materias_path .. "/" .. slug
 
 					local tipo_examen = vim.fn.input("Tipo (Parcial 1/Parcial 2/Final): ")
 					if tipo_examen == "" then
 						tipo_examen = "Parcial"
 					end
+					local tipo_slug = slugify(tipo_examen)
 
 					local date = os.date("%Y-%m-%d")
-					local filename = "Repaso-" .. tipo_examen:gsub("%s+", "-") .. ".md"
+					local filename = "repaso-" .. tipo_slug .. ".md"
 					local filepath = materia_path .. "/" .. filename
 
 					local content = string.format([=[---
@@ -1126,7 +1193,8 @@ tags: []
 
 ## Notas post-examen
 - 
-]=], date, materia, tipo_examen, materia, tipo_examen)
+
+]=], date, pretty_name, tipo_examen, pretty_name, tipo_examen)
 
 					vim.fn.writefile(vim.split(content, "\n"), filepath)
 					vim.cmd("e " .. filepath)
@@ -1146,6 +1214,112 @@ tags: []
 				vim.cmd("e " .. indice_path)
 			end,
 			desc = "Abrir índice de materias",
+		},
+		{
+			"<leader>omm",
+			function()
+				local vault_path = vim.fn.expand("~/HatNotes")
+				local materias_path = vault_path .. "/4-Projs/Materias"
+
+				local handle = vim.loop.fs_scandir(materias_path)
+				if not handle then
+					vim.notify("No hay materias. Usa <leader>omn primero", vim.log.levels.WARN)
+					return
+				end
+
+				local materias = {}
+				local slug_to_name = {}
+				while true do
+					local name, typ = vim.loop.fs_scandir_next(handle)
+					if not name then
+						break
+					end
+					if typ == "directory" and name ~= "_indice.md" then
+						local materia_file = materias_path .. "/" .. name .. "/materia.md"
+						local pretty_name = name
+						if vim.fn.filereadable(materia_file) == 1 then
+							local lines = vim.fn.readfile(materia_file)
+							for _, line in ipairs(lines) do
+								local n = line:match("^nombre:%s*(.+)$")
+								if n then
+									pretty_name = n
+									break
+								end
+							end
+						end
+						table.insert(materias, pretty_name)
+						slug_to_name[pretty_name] = name
+					end
+				end
+
+				if #materias == 0 then
+					vim.notify("No hay materias creadas. Usa <leader>omn", vim.log.levels.WARN)
+					return
+				end
+
+				vim.ui.select(materias, { prompt = "Abrir material de:" }, function(pretty_name)
+					if not pretty_name then
+						return
+					end
+					local slug = slug_to_name[pretty_name]
+					local material_path = materias_path .. "/" .. slug .. "/material"
+					vim.fn.mkdir(material_path, "p")
+					-- Open material folder in terminal file manager or telescope
+					local pickers = require("telescope.pickers")
+					local finders = require("telescope.finders")
+					local conf = require("telescope.config").values
+					local actions = require("telescope.actions")
+					local action_state = require("telescope.actions.state")
+
+					local files = {}
+					local mat_handle = vim.loop.fs_scandir(material_path)
+					if mat_handle then
+						while true do
+							local f_name, f_type = vim.loop.fs_scandir_next(mat_handle)
+							if not f_name then
+								break
+							end
+							if f_type == "file" then
+								table.insert(files, { name = f_name, path = material_path .. "/" .. f_name })
+							end
+						end
+					end
+					table.sort(files, function(a, b) return a.name < b.name end)
+
+					if #files == 0 then
+						vim.notify("Sin PDFs aún. Agregá archivos a: " .. material_path, vim.log.levels.INFO)
+						return
+					end
+
+					pickers
+						.new({}, {
+							prompt_title = "Material: " .. pretty_name,
+							finder = finders.new_table({
+								results = files,
+								entry_maker = function(entry)
+									return {
+										value = entry.path,
+										display = entry.name,
+										ordinal = entry.name,
+									}
+								end,
+							}),
+							sorter = conf.generic_sorter({}),
+							attach_mappings = function(prompt_bufnr, map)
+								actions.select_default:replace(function()
+									local selection = action_state.get_selected_entry()
+									actions.close(prompt_bufnr)
+									if selection then
+										vim.fn.jobstart({ "xdg-open", selection.value }, { detach = true })
+									end
+								end)
+								return true
+							end,
+						})
+						:find()
+				end)
+			end,
+desc = "Abrir material/PDFs de materia",
 		},
 
 		-- Markdown convenience keymaps (<leader>m*)
