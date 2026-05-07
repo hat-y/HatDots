@@ -1,6 +1,8 @@
 return {
 	{
 		"nvim-telescope/telescope.nvim",
+		lazy = true,
+		cmd = "Telescope",
 		dependencies = {
 			"nvim-lua/plenary.nvim",
 			"nvim-telescope/telescope-fzf-native.nvim",
@@ -100,7 +102,6 @@ return {
 					sorting_strategy = "descending",
 					winblend = 0,
 					border = {},
-					borderchars = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
 					color_devicons = true,
 					use_less = true,
 					set_env = { ["COLORTERM"] = "truecolor" }, -- default = nil,

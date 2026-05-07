@@ -1,15 +1,21 @@
 -- Cross-platform utility plugin
 return {
+	-- bigfile: must load early to detect large files before they fully open
 	{
 		"folke/snacks.nvim",
 		priority = 1000,
-		lazy = false,
 		opts = {
-			-- Snacks configuration
 			bigfile = { enabled = true },
+		},
+	},
+
+	-- Lazy components: notifier, quickfile, scroll, statuscolumn, words, terminal
+	{
+		"folke/snacks.nvim",
+		event = "VeryLazy",
+		opts = {
 			notifier = {
 				enabled = true,
-				-- Show notifications in a way that's easier to interact with
 				style = "floating",
 				timeout = 3000,
 			},
