@@ -30,6 +30,9 @@ pcall(require, "config.keymaps")
 vim.opt.timeoutlen = 1000
 vim.opt.ttimeoutlen = 0
 
+-- Disable ruler (position display in status line)
+vim.opt.ruler = false
+
 -- Startup profiling helper (comment/uncomment to measure):
 -- 1. CLI: nvim --startuptime /tmp/nvim-startup.log +qa
 -- 2. In-editor: :Lazy profile (shows per-plugin load times)

@@ -28,11 +28,11 @@ return {
 		end,
 	},
 
-	-- Inline markdown rendering
+	-- Inline markdown rendering + markdown buffer keymaps
+	-- (config merged with keymaps to avoid overriding which-key's default setup)
 	{
 		"MeanderingProgrammer/render-markdown.nvim",
 		ft = "markdown",
-		opts = {},
 	},
 
 	-- Telescope Media Files for media preview
@@ -52,7 +52,7 @@ return {
 		end,
 	},
 
-	-- Which-key markdown groups + buffer keymap autocmds
+	-- Which-key markdown groups (opts only — NO config to avoid breaking LazyVim's which-key setup)
 	{
 		"folke/which-key.nvim",
 		opts = function(_, opts)
@@ -75,7 +75,7 @@ return {
 				{ "<leader>mfi", desc = "Italic  (sa i)", icon = "*" },
 				{ "<leader>mfl", desc = "Link  (sa l)", icon = "[]" },
 				{ "<leader>mfc", desc = "Code  (sa c)", icon = "`" },
-				{ "<leader>mfC", desc = "Code block  (sa C)", icon = "```" },
+				{ "<leader>mfc", desc = "Code block  (sa C)", icon = "```" },
 
 				-- Quick insert
 				{ "<leader>mq", desc = "Blockquote  (,q)", icon = ">" },
@@ -109,45 +109,59 @@ return {
 
 			vim.list_extend(opts.spec, spec)
 		end,
-		config = function()
-			-- Buffer-local markdown keymaps
+	},
+
+	-- Markdown buffer keymaps + visual wrapping (hooks into render-markdown's config)
+	{
+		"MeanderingProgrammer/render-markdown.nvim",
+		config = function(_, opts)
+			require("render-markdown").setup(opts)
+
+			local function setup_markdown_buf()
+				local buf = vim.api.nvim_get_current_buf()
+				local km = function(mode, lhs, rhs, desc)
+					vim.keymap.set(mode, lhs, rhs, { buffer = buf, desc = desc })
+				end
+				local mu = require("config.markdown_utils")
+
+				-- Visual wrapping for long lines (pasted text, etc.)
+				vim.opt_local.wrap = true
+				vim.opt_local.linebreak = true
+				vim.opt_local.breakindent = true
+
+				km("i", ",1", function()
+					mu.insert_heading({ level = 1 })
+				end, "Insert H1")
+				km("i", ",2", function()
+					mu.insert_heading({ level = 2 })
+				end, "Insert H2")
+				km("i", ",3", function()
+					mu.insert_heading({ level = 3 })
+				end, "Insert H3")
+				km("i", ",4", function()
+					mu.insert_heading({ level = 4 })
+				end, "Insert H4")
+				km("i", ",5", function()
+					mu.insert_heading({ level = 5 })
+				end, "Insert H5")
+				km("i", ",6", function()
+					mu.insert_heading({ level = 6 })
+				end, "Insert H6")
+				km("i", ",q", mu.insert_blockquote, "Insert blockquote")
+				km("n", ",c", mu.toggle_checkbox, "Toggle checkbox")
+				km("n", "<leader>mt", mu.generate_toc, "Generate TOC")
+			end
+
+			-- Register for future markdown files
 			vim.api.nvim_create_autocmd("FileType", {
 				pattern = { "markdown", "markdown.mdx" },
-				callback = function()
-					local buf = vim.api.nvim_get_current_buf()
-					local km = function(mode, lhs, rhs, desc)
-						vim.keymap.set(mode, lhs, rhs, { buffer = buf, desc = desc })
-					end
-					local mu = require("config.markdown_utils")
-
-					-- Visual wrapping for long lines (pasted text, etc.)
-					vim.opt_local.wrap = true
-					vim.opt_local.linebreak = true
-					vim.opt_local.breakindent = true
-
-					km("i", ",1", function()
-						mu.insert_heading({ level = 1 })
-					end, "Insert H1")
-					km("i", ",2", function()
-						mu.insert_heading({ level = 2 })
-					end, "Insert H2")
-					km("i", ",3", function()
-						mu.insert_heading({ level = 3 })
-					end, "Insert H3")
-					km("i", ",4", function()
-						mu.insert_heading({ level = 4 })
-					end, "Insert H4")
-					km("i", ",5", function()
-						mu.insert_heading({ level = 5 })
-					end, "Insert H5")
-					km("i", ",6", function()
-						mu.insert_heading({ level = 6 })
-					end, "Insert H6")
-					km("i", ",q", mu.insert_blockquote, "Insert blockquote")
-					km("n", ",c", mu.toggle_checkbox, "Toggle checkbox")
-					km("n", "<leader>mt", mu.generate_toc, "Generate TOC")
-				end,
+				callback = setup_markdown_buf,
 			})
+
+			-- Also apply to current buffer if already markdown
+			if vim.bo.filetype == "markdown" or vim.bo.filetype == "markdown.mdx" then
+				setup_markdown_buf()
+			end
 		end,
 	},
 }
