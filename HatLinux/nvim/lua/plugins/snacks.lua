@@ -14,11 +14,7 @@ return {
 		"folke/snacks.nvim",
 		event = "VeryLazy",
 		opts = {
-			notifier = {
-				enabled = true,
-				style = "floating",
-				timeout = 3000,
-			},
+			notifier = { enabled = false }, -- noice handles notifications
 			quickfile = { enabled = true },
 			scroll = { enabled = true },
 			statuscolumn = { enabled = true },
