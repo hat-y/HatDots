@@ -30,8 +30,19 @@ pcall(require, "config.keymaps")
 vim.opt.timeoutlen = 1000
 vim.opt.ttimeoutlen = 0
 
--- Disable ruler (position display in status line)
+-- Disable default position display
 vim.opt.ruler = false
+vim.opt.showcmd = false
+vim.opt.showmode = false
+
+-- Force disable ruler after plugins load (in case something re-enables it)
+vim.api.nvim_create_autocmd("UIEnter", {
+	once = true,
+	callback = function()
+		vim.opt.ruler = false
+		vim.opt.showcmd = false
+	end,
+})
 
 -- Startup profiling helper (comment/uncomment to measure):
 -- 1. CLI: nvim --startuptime /tmp/nvim-startup.log +qa
