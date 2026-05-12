@@ -44,9 +44,6 @@ return {
 			hl(0, "WhichKeyNormal", { bg = "none" })
 		end,
 	},
-      
-
-	},
 
 	{
 		"rebelot/kanagawa.nvim",
@@ -75,7 +72,7 @@ return {
 				local theme = colors.theme
 				return {
 					Normal = { bg = "none" },
-			 		NormalNC = { bg = "none" },
+					NormalNC = { bg = "none" },
 					NormalFloat = { bg = "none" },
 					SignColumn = { bg = "none" },
 					LineNr = { bg = "none" },

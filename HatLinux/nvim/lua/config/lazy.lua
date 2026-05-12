@@ -22,7 +22,7 @@ require("lazy").setup({
 
 		-- local plugins:
 		{ import = "plugins" },
-		{ "LazyVim/LazyVim", opts = { colorscheme = "kanagawa" } },
+		{ "LazyVim/LazyVim" },
 	},
 	defaults = { lazy = false, version = false },
 	checker = { enabled = false },

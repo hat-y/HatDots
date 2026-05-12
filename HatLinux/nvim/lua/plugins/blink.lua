@@ -4,9 +4,7 @@ return {
 		dependencies = {
 			"saghen/blink.lib",
 		},
-		build = function()
-			require("blink.cmp").build():wait(60000)
-		end,
+		build = "cargo build --release",
 
 		opts = {
 			keymap = { preset = "default" },

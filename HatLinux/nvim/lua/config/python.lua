@@ -1,3 +1,6 @@
+-- Python provider para remote plugins (pynvim, jupyter_client, etc.)
+vim.g.python3_host_prog = vim.fn.expand("~/.venvs/nvim/bin/python")
+
 -- Configuración específica de Python para uv
 
 -- Función para detectar y activar entorno virtual uv

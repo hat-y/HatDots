@@ -52,7 +52,7 @@ return {
 		event = "VeryLazy",
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 		opts = {
-			options = { theme = "kanagawa", icons_enabled = true },
+			options = { theme = "auto", icons_enabled = true },
 			sections = {
 				lualine_a = {
 					{ "mode", icon = "ރ" },
