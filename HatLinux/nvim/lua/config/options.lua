@@ -39,6 +39,9 @@ vim.opt.shellxquote = ""
 vim.opt.shellpipe = "2>&1 | tee %s"
 vim.opt.shellredir = "> %s 2>&1"
 
+-- HatDots: keep relative numbers off
+vim.opt.relativenumber = false
+
 -- Better performance settings
 vim.opt.updatetime = 200
 vim.opt.timeoutlen = 300

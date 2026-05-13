@@ -1,5 +1,5 @@
 # ============================================================================
-# Hat's Zsh Configuration
+# Hat's Zsh Configuration — HatDots adapted for CachyOS/Omarchy
 # Powerlevel10k + modern tooling
 # ============================================================================
 
@@ -21,14 +21,20 @@ export KEYTIMEOUT=1
 # --- Inicialización de completions ---
 autoload -Uz compinit && compinit -u
 
-# --- Plugins (carga temprana - autosuggestions puede estar aquí) ---
-ZSH_PLUGINS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh"
-[ -f "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
-  source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+# --- Plugins: zsh-autosuggestions ---
+# CachyOS: system-wide. Fallback: ~/.local/share/zsh/
+if [ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
+  source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+else
+  local as_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/zsh-autosuggestions"
+  [ -f "$as_dir/zsh-autosuggestions.zsh" ] && source "$as_dir/zsh-autosuggestions.zsh"
+fi
 
-# --- Zoxide & Atuin ---
+# --- Zoxide (smart cd) ---
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
-command -v atuin  >/dev/null && eval "$(atuin init zsh)"
+
+# --- Atuin (shell history) ---
+# command -v atuin >/dev/null && eval "$(atuin init zsh)"
 
 # --- Aliases ---
 alias ls='eza --icons=auto --group-directories-first --classify'
@@ -37,37 +43,30 @@ alias la='eza -lha --git --icons=auto --group-directories-first --classify'
 alias lt='eza --tree --level=2 --icons=auto --group-directories-first'
 
 # --- Powerlevel10k ---
-P10K_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/powerlevel10k"
-
-# Deshabilitar auto-instalación de gitstatusd (evita el error si no hay build tools)
-export GITSTATUS_AUTO_INSTALL=0
-
-if [ -f "$P10K_DIR/powerlevel10k.zsh-theme" ]; then
-  source "$P10K_DIR/powerlevel10k.zsh-theme"
+# CachyOS: system-wide
+if [ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]; then
+  source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+else
+  local p10k_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/powerlevel10k"
+  [ -f "$p10k_dir/powerlevel10k.zsh-theme" ] && source "$p10k_dir/powerlevel10k.zsh-theme"
 fi
 
-# Cargar configuración de p10k
-[ -f "$HOME/.p10k.zsh" ] && source "$HOME/.p10k.zsh"
-
-# Deshabilitar segmento vcs para evitar error de gitstatus
-# (el prompt va a mostrar el directorio sin info de git en tiempo real)
-#typeset -g POWERLEVEL9K_VCS_DISABLED=true
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # --- zsh-syntax-highlighting (DEBE ir al final) ---
-[ -f "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
-  source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+if [ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+  source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+else
+  local sh_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/zsh-syntax-highlighting"
+  [ -f "$sh_dir/zsh-syntax-highlighting.zsh" ] && source "$sh_dir/zsh-syntax-highlighting.zsh"
+fi
 
 # --- PATH ---
 export PATH="$HOME/.local/bin:$PATH"
-export PATH=/home/hat/.opencode/bin:$PATH
-
-
-# Load Angular CLI autocompletion.
-source <(ng completion script)
-
-# bun completions
-[ -s "/home/hat/.bun/_bun" ] && source "/home/hat/.bun/_bun"
+export PATH="$HOME/.opencode/bin:$PATH"
 
 # bun
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
