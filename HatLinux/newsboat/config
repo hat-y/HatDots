@@ -1,6 +1,5 @@
 # ── General ─────────────────────────────────────────────────────────────────
 browser "xdg-open %u"
-editor "nvim +12 %f"
 max-items 200
 reload-time 60
 reload-threads 5
@@ -14,13 +13,12 @@ feedlist-format " %n %4i %11u %?T?| %-40T ?&| %-40t ?"
 datetime-format "%Y-%m-%d %H:%M"
 
 # ── Keys ────────────────────────────────────────────────────────────────────
-# Navegación tipo vim
-k up
-j down
-g home
-G end
-Ctrl-D page_down
-Ctrl-U page_up
+bind-key k up
+bind-key j down
+bind-key g home
+bind-key G end
+bind-key Ctrl-D page_down
+bind-key Ctrl-U page_up
 
 # Feed/article actions
 o open-in-browser
