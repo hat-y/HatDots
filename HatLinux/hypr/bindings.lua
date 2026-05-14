@@ -28,7 +28,7 @@ hl.bind("SUPER + SHIFT + X", hl.dsp.exec_cmd([[omarchy-launch-webapp "https://x.
 hl.bind("SUPER + SHIFT + ALT + X", hl.dsp.exec_cmd([[omarchy-launch-webapp "https://x.com/compose/post"]]), { description = "X Post" })
 
 -- Add extra bindings below.
--- hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("alacritty -e ssh your-server"), { description = "SSH" })
+hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd([[omarchy-launch-or-focus "newsboat" "uwsm-app -- ghostty --class=com.ghostty.newsboat --title=newsboat -e newsboat"]]), { description = "Newsboat (RSS)" })
 
 -- Overwrite existing bindings with hl.unbind() first if needed.
 -- hl.unbind("SUPER + SPACE")

@@ -1,0 +1,34 @@
+# ── General ─────────────────────────────────────────────────────────────────
+browser "xdg-open %u"
+editor "nvim +12 %f"
+max-items 200
+reload-time 60
+reload-threads 5
+show-read-feeds no
+show-read-articles no
+scrolloff 5
+
+# ── Visual ──────────────────────────────────────────────────────────────────
+articlelist-format "%4i %?D? ?& ?%f %u %?T?| %T ?&| %t ?"
+feedlist-format " %n %4i %11u %?T?| %-40T ?&| %-40t ?"
+datetime-format "%Y-%m-%d %H:%M"
+
+# ── Keys ────────────────────────────────────────────────────────────────────
+# Navegación tipo vim
+k up
+j down
+g home
+G end
+Ctrl-D page_down
+Ctrl-U page_up
+
+# Feed/article actions
+o open-in-browser
+Space toggle-article-read
+d mark-all-feeds-read
+r reload
+R reload-all
+
+# ── External ────────────────────────────────────────────────────────────────
+# Abrir en navegador con Enter
+bind-key ENTER open-in-browser
