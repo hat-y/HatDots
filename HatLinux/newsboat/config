@@ -12,21 +12,19 @@ articlelist-format "%4i %?D? ?& ?%f %u %?T?| %T ?&| %t ?"
 feedlist-format " %n %4i %11u %?T?| %-40T ?&| %-40t ?"
 datetime-format "%Y-%m-%d %H:%M"
 
-# ── Keys ────────────────────────────────────────────────────────────────────
+# ── Keys (sintaxis: bind-key <tecla> <acción>) ──────────────────────────────
+# Navegación vim
 bind-key k up
 bind-key j down
 bind-key g home
 bind-key G end
-bind-key Ctrl-D page_down
-bind-key Ctrl-U page_up
+bind-key ^D page_down
+bind-key ^U page_up
 
-# Feed/article actions
-o open-in-browser
-Space toggle-article-read
-d mark-all-feeds-read
-r reload
-R reload-all
-
-# ── External ────────────────────────────────────────────────────────────────
-# Abrir en navegador con Enter
+# Acciones
+bind-key o open-in-browser
+bind-key Space toggle-article-read
+bind-key d mark-all-feeds-read
+bind-key r reload
+bind-key R reload-all
 bind-key ENTER open-in-browser
