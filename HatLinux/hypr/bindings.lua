@@ -1,6 +1,6 @@
 -- Application bindings.
 hl.bind("SUPER + RETURN", hl.dsp.exec_cmd([[uwsm-app -- xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)"]]), { description = "Terminal" })
-hl.bind("SUPER + ALT + RETURN", hl.dsp.exec_cmd([[omarchy-launch-or-focus "tmux-work" "uwsm-app -- ghostty --class=com.ghostty.tmux-work --title=tmux-work -e tmux-work"]]), { description = "Terminal (tmux)" })
+hl.bind("SUPER + ALT + RETURN", hl.dsp.exec_cmd("tmux-work-workspace"), { description = "Terminal (tmux per-workspace)" })
 hl.bind("SUPER + SHIFT + RETURN", hl.dsp.exec_cmd("omarchy-launch-browser"), { description = "Browser" })
 hl.bind("SUPER + SHIFT + F", hl.dsp.exec_cmd("uwsm-app -- nautilus --new-window"), { description = "File manager" })
 hl.bind("SUPER + ALT + SHIFT + F", hl.dsp.exec_cmd([[uwsm-app -- nautilus --new-window "$(omarchy-cmd-terminal-cwd)"]]), { description = "File manager (cwd)" })
@@ -29,6 +29,9 @@ hl.bind("SUPER + SHIFT + ALT + X", hl.dsp.exec_cmd([[omarchy-launch-webapp "http
 
 -- Add extra bindings below.
 hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd([[omarchy-launch-or-focus "newsboat" "uwsm-app -- ghostty --class=com.ghostty.newsboat --title=newsboat -e newsboat"]]), { description = "Newsboat (RSS)" })
+
+-- Translator popup (floating Alacritty).
+hl.bind("SUPER + Z", hl.dsp.exec_cmd("omarchy-translator", { float = true, size = { 550, 420 }, move = { 1354, 330 }, pin = true }), { description = "Translator" })
 
 -- Overwrite existing bindings with hl.unbind() first if needed.
 -- hl.unbind("SUPER + SPACE")

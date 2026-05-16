@@ -1,0 +1,51 @@
+#!/bin/bash
+# ──────────────────────────────────────────────────────────────────────────────
+# tmux-work-workspace — Per-workspace tmux session launcher
+#
+# Creates or attaches to a tmux session unique to the current Hyprland workspace.
+# Each workspace gets its own independent tmux session (Work-1, Work-2, etc.)
+# with 3 windows: nvim, shell, pi.
+#
+# Usage: tmux-work-workspace
+#   (designed to be called from a Hyprland keybinding)
+# ──────────────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+# ── Detect workspace ─────────────────────────────────────────────────────────
+WORKSPACE_DATA=$(hyprctl activeworkspace -j 2>/dev/null || echo '{"id":0,"name":"0"}')
+WORKSPACE_ID=$(echo "$WORKSPACE_DATA" | jq -r '.id')
+WORKSPACE_NAME=$(echo "$WORKSPACE_DATA" | jq -r '.name')
+
+# Use workspace name as identifier (handles both numeric and named workspaces)
+SESSION_NAME="Work-${WORKSPACE_NAME}"
+WINDOW_CLASS="com.ghostty.tmux-ws-${WORKSPACE_NAME}"
+WINDOW_TITLE="tmux-ws-${WORKSPACE_NAME}"
+
+# Special names might have special chars; sanitize for tmux session names
+SESSION_NAME="Work-${WORKSPACE_NAME}"
+
+# ── Focus existing window for this workspace if it exists ───────────────────
+WINDOW_ADDRESS=$(hyprctl clients -j 2>/dev/null | jq -r --arg c "$WINDOW_CLASS" \
+  '.[]|select(.class == $c)|.address' | head -n1)
+
+if [[ -n $WINDOW_ADDRESS ]]; then
+  hyprctl dispatch focuswindow "address:$WINDOW_ADDRESS"
+  exit 0
+fi
+
+# ── Create tmux session if it doesn't exist ─────────────────────────────────
+if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+  CWD="$(omarchy-cmd-terminal-cwd 2>/dev/null || echo "$HOME")"
+  tmux new-session -d -s "$SESSION_NAME" -n "nvim" -c "$CWD"
+  tmux send-keys -t "${SESSION_NAME}:1" "nvim" Enter
+  tmux new-window -t "$SESSION_NAME" -n "shell" -c "$CWD"
+  tmux new-window -t "$SESSION_NAME" -n "pi" -c "$CWD"
+  tmux select-window -t "${SESSION_NAME}:1"
+fi
+
+# ── Launch Ghostty attached to this workspace's session ────────────────────
+exec uwsm-app -- ghostty \
+  --class="$WINDOW_CLASS" \
+  --title="$WINDOW_TITLE" \
+  -e tmux attach-session -t "$SESSION_NAME"

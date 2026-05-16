@@ -91,6 +91,11 @@ return {
 		-- Performance optimizations
 		ui = {
 			enable = true,
+			-- Dejar checkboxes, bullets e íconos de links a render-markdown.nvim
+			-- para evitar conflicto de conceals que oculta texto después del checkbox
+			checkboxes = {},
+			bullets = {},
+			external_link_icon = {},
 			update_debounce = 200,
 			max_file_length = 5000,
 		},
