@@ -266,39 +266,95 @@ tags: []
 					return
 				end
 				local vault_path = vim.fn.expand("~/HatNotes")
-				local date = os.date("%Y-%m-%d")
+				local template_path = vault_path .. "/7-Tmpl/know-tmpl.md"
 
-				-- Create filename from title (slugify)
-				local filename = title:lower():gsub("%s+", "-")
-				local file_path = vault_path .. "/2-Know/" .. filename .. ".md"
+				-- Read template
+				local template = io.open(template_path, "r")
+				if not template then
+					vim.notify("Template no encontrado: " .. template_path, vim.log.levels.ERROR)
+					return
+				end
+				local content = template:read("*all")
+				template:close()
+
+				-- Create id from title (slugify + fallback)
+				local id = title:lower()
+				id = id:gsub("á", "a"):gsub("é", "e"):gsub("í", "i"):gsub("ó", "o"):gsub("ú", "u"):gsub("ñ", "n")
+				id = id:gsub("[^a-z0-9]+", "-"):gsub("^%-", ""):gsub("%-$", "")
+				if id == "" or id == "-" then
+					id = os.date("%Y-%m-%d")
+				end
+
+				-- Escape title for YAML (handle : # " and other problematic chars)
+				local title_escaped = title
+				title_escaped = title_escaped:gsub("\\", "\\\\")
+				title_escaped = title_escaped:gsub('"', '\\"')
+
+				-- Replace placeholders
+				content = content:gsub("{{title}}", title_escaped)
+				content = content:gsub("{{id}}", id)
+
+				-- Create filename and path
+				local filename = id .. ".md"
+				local file_path = vault_path .. "/2-Know/" .. filename
+
+				vim.fn.writefile(vim.split(content, "\n"), file_path)
+				vim.cmd("e " .. file_path)
+			end,
+			desc = "Nueva nota en 2-Know (desde know-tmpl.md)",
+		},
+		{
+			"<leader>onm",
+			function()
+				local name = vim.fn.input("MOC: ")
+				if name == "" then
+					return
+				end
+				local vault_path = vim.fn.expand("~/HatNotes")
+				local mocs_path = vault_path .. "/5-MOCs"
+				vim.fn.mkdir(mocs_path, "p")
+
+				-- Create id from name (slugify + fallback)
+				local id = name:lower()
+				id = id:gsub("á", "a"):gsub("é", "e"):gsub("í", "i"):gsub("ó", "o"):gsub("ú", "u"):gsub("ñ", "n")
+				id = id:gsub("[^a-z0-9]+", "-"):gsub("^%-", ""):gsub("%-$", "")
+				if id == "" or id == "-" then
+					id = os.date("%Y-%m-%d")
+				end
+
+				-- Escape name for YAML
+				local name_escaped = name
+				name_escaped = name_escaped:gsub("\\", "\\\\")
+				name_escaped = name_escaped:gsub('"', '\\"')
+
+				local filename = id .. ".md"
+				local file_path = mocs_path .. "/" .. filename
 
 				local content = string.format([=[---
-creacion: %s
-tipo: concepto
+id: %s
+aliases: []
 tags: []
 ---
 
 # %s
 
-## Qué es
-%s
-
-## Por qué importa
-- 
-
-## Ejemplo
-```javascript
-// código
-```
-
-## Relacionado
+## Temas
 - [[]]
-]=], date, title, title)
+
+## Conceptos relacionados
+- [[]]
+
+## Recursos
+-
+
+## Próximos pasos
+-
+]=], id, name_escaped)
 
 				vim.fn.writefile(vim.split(content, "\n"), file_path)
 				vim.cmd("e " .. file_path)
 			end,
-			desc = "Nueva nota en 2-Know (concepto)",
+			desc = "Nuevo MOC en 5-MOCs",
 		},
 		{
 			"<leader>ona",
