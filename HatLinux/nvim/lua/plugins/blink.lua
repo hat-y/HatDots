@@ -1,3 +1,6 @@
+-- Blink.cmp configuration - MUST be compatible with LazyVim's blink extra
+-- LazyVim's blink extra (from lazyvim.json) handles the base config,
+-- we only override what we need here.
 return {
 	{
 		"saghen/blink.cmp",
@@ -7,10 +10,31 @@ return {
 		build = "cargo build --release",
 
 		opts = {
-			keymap = { preset = "default" },
+			-- Use super-tab preset: Tab accepts/cycles, Shift-Tab goes back
+			keymap = {
+				preset = "super-tab",
+			},
 
 			completion = {
-				documentation = { auto_show = false },
+				documentation = {
+					auto_show = false,
+				},
+				menu = {
+					auto_show = true,
+				},
+				ghost_text = {
+					enabled = false,
+				},
+			},
+
+			sources = {
+				default = { "lsp", "path", "snippets", "buffer" },
+				providers = {
+					lsp = {
+						name = "LSP",
+						module = "blink.cmp.sources.lsp",
+					},
+				},
 			},
 
 			cmdline = {
@@ -24,26 +48,15 @@ return {
 				end,
 			},
 
-			sources = {
-				default = { "lsp", "path", "snippets", "buffer" },
-				providers = {
-					cmdline = {
-						name = "cmdline",
-						module = "blink.cmp.sources.cmdline",
-					},
-				},
-			},
-
-			fuzzy = {
-				implementation = "rust",
-			},
-
 			snippets = {
 				preset = "luasnip",
 			},
 		},
 
-		config = function()
+		config = function(_, opts)
+			require("blink.cmp").setup(opts)
+
+			-- Connect autopairs if available
 			local ok, cmp_autopairs = pcall(require, "nvim-autopairs.completion.blink")
 			if ok then
 				require("blink.cmp").accept:connect(function()
