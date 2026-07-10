@@ -8,7 +8,7 @@ return {
       ensure_installed = {
         "lua", "vim", "vimdoc", "markdown", "markdown_inline",
         "bash", "html", "css", "javascript", "typescript", "json", "yaml", "toml",
-        "python", "rust",
+        "python", "rust", "java", "tsx",
       },
       highlight = { enable = true },
       indent = { enable = true },

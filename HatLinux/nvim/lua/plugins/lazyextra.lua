@@ -1,4 +1,17 @@
 return {
+  -- Disable inlay hints: bug en nvim 0.12.3 (issue #39772) causa
+  -- "Invalid 'col': out of range" en nvim_buf_set_extmark cuando se edita
+  -- el buffer. Se puede rehabilitar cuando se actualice a 0.13.
+  {
+    "LazyVim/LazyVim",
+    opts = {
+      inlay_hints = {
+        enabled = false,
+        exclude = {},
+      },
+    },
+  },
+
   -- Python extra con configuración personalizada
   {
     "LazyVim/LazyVim",

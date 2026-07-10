@@ -1,23 +1,6 @@
-#!/bin/zsh
-#
-# Script para crear nueva sesión de tmux con 2 ventanas (nvim + shell)
-# Usado por: Ctrl+Space N en tmux
-#
-
-# Cargar config de tmux
-tmux source-file ~/.tmux.conf 2>/dev/null
-
-SESSION_NAME="$1"
-[ -z "$SESSION_NAME" ] && SESSION_NAME="main"
-SESSION_NAME="ghostty-$SESSION_NAME"
-
-# Si ya existe, switch a ella
-if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    tmux switch-client -t "$SESSION_NAME"
-    return 0
-fi
-
-# Crear sesión nueva con 2 ventanas (primero nvim, después shell)
-tmux new-session -d -s "$SESSION_NAME" -n nvim
-tmux new-window -t "$SESSION_NAME" -n shell
-tmux switch-client -t "$SESSION_NAME"
+#!/bin/sh
+# Compatibility shim — delegates to the canonical wrapper.
+# This file exists during the migration window (DG-3 steps 1-7) so that
+# users with a stale ~/.local/bin/ghostty-tmux-new symlink still work.
+# It will be removed at step 8 of the sequencing plan.
+exec ~/.local/bin/ghostty-multiplexer-new "$@"

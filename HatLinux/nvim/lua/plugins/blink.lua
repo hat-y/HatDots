@@ -54,6 +54,11 @@ return {
 		},
 
 		config = function(_, opts)
+			-- Clean custom fields that LazyVim injects for compat source processing
+			-- These are consumed by LazyVim's own config fn; since we override config,
+			-- we must strip them before blink.cmp.setup validation
+			opts.sources.compat = nil
+
 			require("blink.cmp").setup(opts)
 
 			-- Connect autopairs if available

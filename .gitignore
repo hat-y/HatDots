@@ -78,3 +78,10 @@ env/
 HatArch/themes/*/vesktop/*
 !HatArch/themes/*/vesktop/*.css
 *.ldb
+# Local Pi runtime state
+.atl/
+.pi/
+.pi-subagents/
+
+# Backups
+*.bak

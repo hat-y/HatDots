@@ -15,6 +15,7 @@ if is_linux then
   require("config.options")       -- Linux clipboard & shell
   require("config.python")        -- Python + uv
   require("config.python-lsp")    -- Python LSP config
+  require("config.java")          -- Java + nvim-jdtls
   require("config.keymaps")       -- Keymaps
 elseif is_windows then
   -- Windows-specific configs
