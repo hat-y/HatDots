@@ -43,4 +43,4 @@ next_agent = "prefix+alt+j"
 focus_agent = "prefix+ctrl+1..9"
 
 [ui.toast]
-delivery = "herdr"
+delivery = "system"
