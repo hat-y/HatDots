@@ -1,0 +1,76 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# herdr config — HatDots/HatMac
+# Docs: https://herdr.dev/docs/configuration/
+# Override path: HERDR_CONFIG_PATH=/path/to/config.toml
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Onboarding ─────────────────────────────────────────────────────────────────
+# Mostrar onboarding al primer arranque. Ponelo en false después del setup inicial.
+onboarding = true
+
+# ── Terminal ───────────────────────────────────────────────────────────────────
+# herdr crea panes con este shell. Coincide con HatMac/zsh/.zshrc.
+[terminal]
+default_shell = "/bin/zsh"
+shell_mode = "login"                # ejecuta zsh como login shell (lee .zshrc)
+new_cwd = "current"                 # nuevos panes heredan el cwd del pane activo
+
+# ── Theme ──────────────────────────────────────────────────────────────────────
+# Kanagawa — consistente con wezterm y tmux Gentleman theme.
+[theme]
+name = "kanagawa"
+
+# ── Session persistence ────────────────────────────────────────────────────────
+# Reanudar agentes de IA en su sesión nativa al restaurar (Claude Code, Codex,
+# OpenCode, etc.). Default: true. Ponelo en false si querés panes "limpios".
+[session]
+resume_agents_on_restore = true
+
+# ── Keybinds ───────────────────────────────────────────────────────────────────
+# prefix = ctrl+b (mismo que tmux). Para evitar conflicto con tmux cuando
+# corrés herdr DENTRO de tmux, cambiá el prefix a algo distinto (ej: "ctrl+a").
+[keys]
+prefix = "ctrl+b"
+
+# Custom: integración con el resto del setup HatDots
+[[keys.custom]]
+key = "prefix+g"
+description = "HatDots: lanzar ghostty-tmux-new (nueva sesión tmux)"
+command = "ghostty-tmux-new"
+action_type = "shell"
+
+[[keys.custom]]
+key = "prefix+shift+t"
+description = "HatDots: abrir tmux-work (sesión Work con 3 windows)"
+command = "tmux-work"
+action_type = "shell"
+
+[[keys.custom]]
+key = "prefix+shift+n"
+description = "HatDots: hat-news (RSS headlines con osascript notif)"
+command = "hat-news"
+action_type = "shell"
+
+[[keys.custom]]
+key = "prefix+shift+o"
+description = "HatDots: abrir Obsidian"
+command = "open -a Obsidian"
+action_type = "shell"
+
+# ── UI ─────────────────────────────────────────────────────────────────────────
+[ui]
+# Sidebar con agentes a la izquierda. Útil para ver Claude/Codex/OpenCode corriendo.
+sidebar_visible = true
+sidebar_position = "left"
+status_indicator_style = "blocks"    # "blocks" | "dots" | "text" — visual del estado del pane
+
+# ── Server ─────────────────────────────────────────────────────────────────────
+[server]
+# Default: escuchar en localhost:7777 para el socket API que usan los agentes.
+# No cambiar salvo que sepas lo que hacés.
+
+# ── Update ─────────────────────────────────────────────────────────────────────
+[update]
+channel = "stable"                  # "stable" | "preview"
+version_check = true
+manifest_check = true

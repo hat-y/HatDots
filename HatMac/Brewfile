@@ -38,6 +38,11 @@ brew "tree"
 # ── RSS ────────────────────────────────────────────────────────────────────────
 brew "newsboat"
 
+# ── herdr (terminal server para agentes de IA) ─────────────────────────────────
+# Binario Rust. Persiste sesiones de Claude Code / Codex / OpenCode / Cursor.
+# Convive con tmux. Ver HatMac/herdr/README.md
+brew "herdr"
+
 # ── Fonts (cask) ───────────────────────────────────────────────────────────────
 cask "font-jetbrains-mono-nerd-font"
 cask "font-iosevka-nerd-font"

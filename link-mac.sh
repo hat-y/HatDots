@@ -82,6 +82,7 @@ mkdir -p "$HOME/.config" \
          "$HOME/.config/wezterm" \
          "$HOME/.config/tmux" \
          "$HOME/.config/newsboat" \
+         "$HOME/.config/herdr" \
          "$HOME/.local/bin"
 
 safe_link() {
@@ -118,6 +119,9 @@ safe_link "$HOME/.local/bin/ghostty-tmux-new"   "$HATMAC/tmux/scripts/ghostty-tm
 safe_link "$HOME/.config/newsboat/config"       "$HATMAC/newsboat/config"
 safe_link "$HOME/.config/newsboat/urls"         "$HATMAC/newsboat/urls"
 safe_link "$HOME/.local/bin/hat-news"           "$HATMAC/newsboat/hat-news"
+
+# herdr (terminal server para agentes de IA)
+safe_link "$HOME/.config/herdr/config.toml"     "$HATMAC/herdr/config.toml"
 
 echo ""
 echo "=========================================="

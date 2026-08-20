@@ -79,6 +79,9 @@ HatMac/
 │   ├── config                # browser = "open %u" (macOS nativo)
 │   ├── urls                  # feeds: Google News AR/US, HN, LWN, Ars, etc.
 │   └── hat-news              # script: headlines + osascript notif
+├── herdr/
+│   ├── config.toml           # kanagawa theme + prefix=ctrl+b + custom keybinds
+│   └── README.md             # qué es, instalación, atajos, troubleshooting
 └── nvim/                     # LazyVim completo
     ├── init.lua              # con rama is_mac explícita
     ├── lua/config/
