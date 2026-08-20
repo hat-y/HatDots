@@ -17,8 +17,9 @@ brew "zsh-syntax-highlighting"
 brew "powerlevel10k"
 
 # ── Modern CLI tools (reemplazos) ──────────────────────────────────────────────
+# tmux-continuum, tmux-resurrect, tmux-sensible, tmux-yank: son plugins de TPM,
+# los instala `tmux.conf` automáticamente con `prefix + I`. No son fórmulas brew.
 brew "tmux"
-brew "tmux-continuum"
 brew "ripgrep"
 brew "fd"
 brew "eza"
