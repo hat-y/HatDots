@@ -11,9 +11,9 @@ Este repositorio contiene dotfiles multiplataforma para **Linux**, **Windows** y
 # 1. Instalar Homebrew (si no lo tenés)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 2. Clonar y correr el installer
-git clone https://github.com/hat-y/HatDots.git $HOME/HatDots
-cd $HOME/HatDots
+# 2. Clonar y correr el installer (el path no importa, el script auto-detecta)
+git clone https://github.com/hat-y/HatDots.git ~/projects/HatDots
+cd ~/projects/HatDots
 chmod +x link-mac.sh
 ./link-mac.sh          # corre brew bundle + crea symlinks
 

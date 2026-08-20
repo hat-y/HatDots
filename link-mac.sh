@@ -9,9 +9,18 @@
 
 set -Eeuo pipefail
 
-REPO="${HATDOTS_REPO:-$HOME/HatDots}"
+# Auto-detect repo root from script location (works no matter where you clone).
+# Override con env: HATDOTS_REPO=/custom/path ./link-mac.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="${HATDOTS_REPO:-$SCRIPT_DIR}"
 HATMAC="$REPO/HatMac"
 BREWFILE="$HATMAC/Brewfile"
+
+if [ ! -f "$BREWFILE" ]; then
+  echo "❌ Brewfile no encontrado en: $BREWFILE"
+  echo "   Verificá que estés corriendo este script desde la raíz del repo HatDots."
+  exit 1
+fi
 
 INSTALL_BREW=true
 INSTALL_CASKS=true
