@@ -25,7 +25,7 @@ Dotfiles para macOS, adaptados desde la rama `omarchy-config-merge` de HatDots.
 - ✅ **Zsh + Powerlevel10k** — paths adaptados a Homebrew
 - ✅ **Atuin** (history sync), **eza**, **zoxide**, **fzf**, **ripgrep**, **fd**
 - ✅ **tmux** con TPM, continuum, tmux-resurrect + scripts (`tmux-work`, `ghostty-tmux-new`)
-- ✅ **Ghostty** config + 52 shaders (incluido `cursor_smear_gentleman.glsl`)
+- ✅ **Ghostty** config completa (Gentleman Theme palette + macos-option-as-alt + Cmd+K clear + 52 shaders)
 - ✅ **Newsboat** + script `hat-news` con notificaciones nativas vía `osascript`
 
 ## � Instalación
@@ -69,7 +69,7 @@ HatMac/
 │       ├── tmux-work             # sesión Work con 3 windows (nvim/shell/pi)
 │       └── ghostty-tmux-new      # nueva sesión en ghostty (Ctrl+Space N)
 ├── ghostty/
-│   ├── config                # command = herdr (auto-arranca con LaunchAgent)
+│   ├── config                # command = herdr + Gentleman theme palette + Cmd+K clear
 │   ├── shaders/              # 52 shaders GLSL
 │   └── themes/               # catppuccin-mocha
 ├── newsboat/
