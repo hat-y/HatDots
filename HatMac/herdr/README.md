@@ -57,12 +57,12 @@ tail -f ~/Library/Logs/herdr/server.log
 ./link-mac.sh --no-herdr-autostart
 ```
 
-**Integración con Ghostty/WezTerm:**
-El `HatMac/ghostty/config` y `HatMac/wezterm/wezterm.lua` ya tienen:
+**Integración con Ghostty:**
+El `HatMac/ghostty/config` ya tiene:
 ```
 command = /opt/homebrew/bin/herdr
 ```
-Cuando abrís el terminal, Ghostty/WezTerm ejecutan `herdr` → si el server está corriendo (LaunchAgent), hace attach; si no, crea uno nuevo + attach.
+Cuando abrís Ghostty, ejecuta `herdr` → si el server está corriendo (LaunchAgent), hace attach; si no, crea uno nuevo + attach.
 
 **tmux queda como herramienta interna:** dentro de cualquier pane de herdr podés correr `tmux` si necesitás splits/workspaces adicionales. La sesión "main" de tmux sigue configurada por si querés usarla.
 
@@ -102,7 +102,7 @@ HERDR_CONFIG_PATH=/custom/path/config.toml herdr
 
 La config de HatMac está optimizada para integrarse con el resto:
 - `[terminal] default_shell = "/bin/zsh"` — matchea `HatMac/zsh/.zshrc`
-- `[theme] name = "kanagawa"` — mismo theme que wezterm y tmux Gentleman
+- `[theme] name = "kanagawa"` — mismo theme que Ghostty y tmux Gentleman
 - `[keys] prefix = "ctrl+b"` — mismo prefix que tmux (⚠️ si corrés herdr DENTRO de tmux, cambiá uno de los dos prefix)
 - Custom keybinds que llaman scripts del repo (tmux-work, hat-news, etc.)
 

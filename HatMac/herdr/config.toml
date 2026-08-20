@@ -16,7 +16,7 @@ shell_mode = "login"                # ejecuta zsh como login shell (lee .zshrc)
 new_cwd = "current"                 # nuevos panes heredan el cwd del pane activo
 
 # ── Theme ──────────────────────────────────────────────────────────────────────
-# Kanagawa — consistente con wezterm y tmux Gentleman theme.
+# Kanagawa — consistente con Ghostty y tmux Gentleman theme.
 [theme]
 name = "kanagawa"
 

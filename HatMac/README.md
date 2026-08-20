@@ -4,7 +4,7 @@ Dotfiles para macOS, adaptados desde la rama `omarchy-config-merge` de HatDots.
 
 ## ⚠️ Alcance y decisiones
 
-**HatMac es minimal y consciente.** Está armado para vivir **dentro del terminal** (Ghostty/WezTerm + tmux + Neovim) y **no intenta reemplazar el WM nativo de macOS**.
+**HatMac es minimal y consciente.** Está armado para vivir **dentro de Ghostty** (+ tmux + Neovim) y **no intenta reemplazar el WM nativo de macOS**.
 
 ### Lo que **NO** se incluye (a propósito)
 
@@ -26,7 +26,6 @@ Dotfiles para macOS, adaptados desde la rama `omarchy-config-merge` de HatDots.
 - ✅ **Atuin** (history sync), **eza**, **zoxide**, **fzf**, **ripgrep**, **fd**
 - ✅ **tmux** con TPM, continuum, tmux-resurrect + scripts (`tmux-work`, `ghostty-tmux-new`)
 - ✅ **Ghostty** config + 52 shaders (incluido `cursor_smear_gentleman.glsl`)
-- ✅ **WezTerm** config (idéntico al de Linux)
 - ✅ **Newsboat** + script `hat-news` con notificaciones nativas vía `osascript`
 
 ## � Instalación
@@ -52,7 +51,7 @@ Esto corre `brew bundle --file HatMac/Brewfile` y crea todos los symlinks con ba
 
 ```bash
 ./link-mac.sh --no-brew    # ya tenés las deps instaladas
-./link-mac.sh --no-cask    # no instala Ghostty/WezTerm (ya los tenés)
+./link-mac.sh --no-cask    # no instala Ghostty (ya lo tenés)
 ```
 
 ## 📁 Estructura
@@ -70,11 +69,9 @@ HatMac/
 │       ├── tmux-work             # sesión Work con 3 windows (nvim/shell/pi)
 │       └── ghostty-tmux-new      # nueva sesión en ghostty (Ctrl+Space N)
 ├── ghostty/
-│   ├── config                # comando = /opt/homebrew/bin/tmux, shader gentleman
+│   ├── config                # command = herdr (auto-arranca con LaunchAgent)
 │   ├── shaders/              # 52 shaders GLSL
 │   └── themes/               # catppuccin-mocha
-├── wezterm/
-│   └── wezterm.lua           # idéntico al de Linux (portable)
 ├── newsboat/
 │   ├── config                # browser = "open %u" (macOS nativo)
 │   ├── urls                  # feeds: Google News AR/US, HN, LWN, Ars, etc.

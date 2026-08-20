@@ -83,7 +83,6 @@ echo "📂 Creando symlinks..."
 
 mkdir -p "$HOME/.config" \
          "$HOME/.config/ghostty" \
-         "$HOME/.config/wezterm" \
          "$HOME/.config/tmux" \
          "$HOME/.config/newsboat" \
          "$HOME/.config/herdr" \
@@ -110,9 +109,6 @@ safe_link "$HOME/.p10k.zsh"                     "$HATMAC/zsh/.p10k.zsh"
 
 # Ghostty (directorio completo: config + shaders + themes)
 safe_link "$HOME/.config/ghostty"               "$HATMAC/ghostty"
-
-# WezTerm
-safe_link "$HOME/.config/wezterm"               "$HATMAC/wezterm"
 
 # Tmux
 safe_link "$HOME/.tmux.conf"                    "$HATMAC/tmux/tmux.conf"
@@ -149,14 +145,14 @@ echo "Próximos pasos:"
 echo "  1. Reiniciá tu terminal o: source ~/.zshrc"
 echo "  2. Si nunca usaste zsh: chsh -s /bin/zsh"
 echo "  3. Configurá tu prompt: p10k configure"
-echo "  4. Abrí Ghostty o WezTerm (esperá que Lazy instale plugins en nvim)"
+echo "  4. Abrí Ghostty (esperá que Lazy instale plugins en nvim)"
 echo "  5. Para RSS en TUI: hat-news --open"
 echo ""
 echo "⚠️  Lo que HatMac NO incluye (a propósito):"
 echo "   • Hyprland → no existe en macOS"
 echo "   • Yabai/skhd → elegiste minimal sin tiling WM"
 echo "   • keybinds globales tipo SUPER+X → no hay compositor que los capture"
-echo "   Todo el flujo vive dentro de Ghostty/WezTerm + tmux + nvim."
+echo "   Todo el flujo vive dentro de Ghostty + tmux + nvim."
 echo ""
 echo "   Si más adelante querés tiling estilo Hyprland en Mac,"
 echo "   mirá: brew install --cask yabai skhd"
