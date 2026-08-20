@@ -3,9 +3,10 @@
 # Installs dependencies via Homebrew and creates symlinks for dotfiles
 #
 # Uso:
-#   ./link-mac.sh                # instala deps + crea symlinks
-#   ./link-mac.sh --no-brew      # solo crea symlinks (asume deps ya instaladas)
-#   ./link-mac.sh --no-cask      # no instala casks (apps GUI)
+#   ./link-mac.sh                     # instala deps + crea symlinks
+#   ./link-mac.sh --no-brew           # solo crea symlinks (asume deps ya instaladas)
+#   ./link-mac.sh --no-cask           # no instala casks (apps GUI)
+#   ./link-mac.sh --no-herdr-autostart # no instala LaunchAgent de herdr
 
 set -Eeuo pipefail
 
@@ -24,15 +25,18 @@ fi
 
 INSTALL_BREW=true
 INSTALL_CASKS=true
+HERDR_AUTOSTART=yes
 
 for arg in "$@"; do
   case "$arg" in
     --no-brew)  INSTALL_BREW=false ;;
     --no-cask)  INSTALL_CASKS=false ;;
+    --no-herdr-autostart)  HERDR_AUTOSTART=no ;;
     -h|--help)
-      echo "Uso: ./link-mac.sh [--no-brew] [--no-cask]"
-      echo "  --no-brew  No correr brew bundle (asumir deps instaladas)"
-      echo "  --no-cask  No instalar casks (apps GUI)"
+      echo "Uso: ./link-mac.sh [--no-brew] [--no-cask] [--no-herdr-autostart]"
+      echo "  --no-brew            No correr brew bundle (asumir deps instaladas)"
+      echo "  --no-cask            No instalar casks (apps GUI)"
+      echo "  --no-herdr-autostart Skip LaunchAgent de herdr (server manual)"
       exit 0
       ;;
     *) echo "⚠️  Flag desconocida: $arg"; exit 1 ;;
@@ -122,6 +126,20 @@ safe_link "$HOME/.local/bin/hat-news"           "$HATMAC/newsboat/hat-news"
 
 # herdr (terminal server para agentes de IA)
 safe_link "$HOME/.config/herdr/config.toml"     "$HATMAC/herdr/config.toml"
+chmod +x "$HATMAC/herdr/install.sh"
+
+# Instalar LaunchAgent para que herdr server arranque al login
+# (skip con --no-herdr-autostart)
+if [ "${HERDR_AUTOSTART:-yes}" != "no" ] && [ -f "$HATMAC/herdr/install.sh" ]; then
+  if command -v herdr >/dev/null 2>&1; then
+    echo ""
+    echo "🚀 Instalando LaunchAgent para herdr server..."
+    "$HATMAC/herdr/install.sh" || echo "⚠️  Falló la instalación del LaunchAgent. Reintentá con: $HATMAC/herdr/install.sh"
+  else
+    echo "�️  herdr no instalado todavía. Después de 'brew install herdr' corré:"
+    echo "   $HATMAC/herdr/install.sh"
+  fi
+fi
 
 echo ""
 echo "=========================================="

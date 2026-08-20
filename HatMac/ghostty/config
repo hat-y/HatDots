@@ -4,8 +4,12 @@
 
 # ── Terminal ──────────────────────────────────────────────────────────────────
 
-# Usar tmux como shell con sesión automática
-command = /opt/homebrew/bin/tmux -f ~/.tmux.conf new-session -A -s main
+# Lanzar herdr (terminal server persistente para agentes de IA).
+# Si hay server corriendo → attach. Si no → crea server + attach.
+# El server corre en background via LaunchAgent (ver HatMac/herdr/install.sh).
+# tmux queda como herramienta interna: dentro de cualquier pane podés correr
+# `tmux` si necesitás splits/workspaces.
+command = /opt/homebrew/bin/herdr
 
 # Font
 font-family = JetBrainsMono Nerd Font

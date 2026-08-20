@@ -29,6 +29,43 @@ curl -fsSL https://herdr.dev/install.sh | sh
 mise use -g herdr
 ```
 
+## Auto-arranque en boot/login (LaunchAgent)
+
+Para que herdr server arranque automáticamente al hacer login (sin abrir terminal) y sobreviva reinicios:
+
+```bash
+./HatMac/herdr/install.sh             # instala + carga el LaunchAgent
+./HatMac/herdr/install.sh --restart   # recarga después de cambiar config
+./HatMac/herdr/install.sh --uninstall # desinstala
+```
+
+**Lo que hace:**
+- Detecta el path del binario herdr (`/opt/homebrew/bin/herdr` o `/usr/local/bin/herdr`).
+- Genera `~/Library/LaunchAgents/com.user.herdr.plist` con `herdr server`.
+- Lo carga con `launchctl load -w` (persiste entre logins).
+- Configura `KeepAlive` para que re-arranque si crashea.
+
+**Verificación:**
+```bash
+launchctl list | grep herdr           # debe mostrar com.user.herdr
+herdr status server                   # debe decir "running"
+tail -f ~/Library/Logs/herdr/server.log
+```
+
+**Si querés saltarlo durante `./link-mac.sh`:**
+```bash
+./link-mac.sh --no-herdr-autostart
+```
+
+**Integración con Ghostty/WezTerm:**
+El `HatMac/ghostty/config` y `HatMac/wezterm/wezterm.lua` ya tienen:
+```
+command = /opt/homebrew/bin/herdr
+```
+Cuando abrís el terminal, Ghostty/WezTerm ejecutan `herdr` → si el server está corriendo (LaunchAgent), hace attach; si no, crea uno nuevo + attach.
+
+**tmux queda como herramienta interna:** dentro de cualquier pane de herdr podés correr `tmux` si necesitás splits/workspaces adicionales. La sesión "main" de tmux sigue configurada por si querés usarla.
+
 ## Uso básico
 
 ```bash

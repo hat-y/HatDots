@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Label: identificador único del LaunchAgent -->
+    <key>Label</key>
+    <string>com.user.herdr</string>
+
+    <!-- Programa a ejecutar: __HERDR_BIN__ es reemplazado por install.sh -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HERDR_BIN__</string>
+        <string>server</string>
+    </array>
+
+    <!-- Tipo: Background = baja prioridad, no bloquea shutdown/login -->
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <!-- Arrancar al login -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Re-arrancar si crashea. No re-arrancar si salió con éxito (exit 0) -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+
+    <!-- Throttle: no relanzar más de 1 vez cada 10s si está en loop -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <!-- Logs: __HERDR_LOG__ es reemplazado por install.sh -->
+    <key>StandardOutPath</key>
+    <string>__HERDR_LOG__</string>
+    <key>StandardErrorPath</key>
+    <string>__HERDR_LOG__</string>
+</dict>
+</plist>

@@ -3,9 +3,25 @@ local act = wezterm.action
 local config = wezterm.config_builder and wezterm.config_builder() or {}
 
 -- ===== Basic Settings =====
--- Linux shell: try zsh first, fallback to bash
-local shell = os.execute("command -v zsh") and "zsh" or "bash"
-config.default_prog = { shell }
+-- Lanzar herdr (terminal server persistente). Attach si hay server, sino crea.
+-- El server corre via LaunchAgent (ver HatMac/herdr/install.sh).
+-- tmux queda como herramienta interna dentro de panes de herdr.
+local function has_cmd(cmd)
+  return os.execute("command -v " .. cmd .. " >/dev/null 2>&1")
+end
+
+local default_cmd
+if has_cmd("herdr") then
+  default_cmd = "herdr"
+elseif has_cmd("zsh") then
+  default_cmd = "zsh"
+elseif has_cmd("bash") then
+  default_cmd = "bash"
+end
+
+if default_cmd then
+  config.default_prog = { default_cmd }
+end
 
 -- Font configuration with Linux-friendly fallback
 local font_family = "IosevkaTerm Nerd Font Mono"
