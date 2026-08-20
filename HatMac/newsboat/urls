@@ -1,0 +1,18 @@
+# ── Noticias generales ──────────────────────────────────────────────────────────
+https://news.google.com/rss?hl=es-419&gl=AR&ceid=AR:es "Google News Argentina"
+https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en "Google News US"
+
+# ── Tecnología ───────────────────────────────────────────────────────────────────
+https://hnrss.org/frontpage "Hacker News"
+https://hnrss.org/newest "Hacker News (nuevo)"
+https://lwn.net/headlines/newrss "LWN.net"
+https://feeds.arstechnica.com/arstechnica/index "Ars Technica"
+https://www.phoronix.com/rss.php "Phoronix"
+
+# ── Linux / Arch ─────────────────────────────────────────────────────────────────
+https://archlinux.org/feeds/news "Arch Linux News"
+https://www.reddit.com/r/archlinux/.rss "r/archlinux"
+
+# ── Agregá más abajo ────────────────────────────────────────────────────────────
+# Para newsletters tipo Substack: https://midiario.substack.com/feed
+# Para feeds custom con script: exec:~/scripts/mi-feed.sh "Mi Feed"

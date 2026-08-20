@@ -1,0 +1,48 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# HatDots/HatMac — Brewfile para macOS
+# Instalá todo con: brew bundle --file HatMac/Brewfile
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Terminals (cask) ───────────────────────────────────────────────────────────
+cask "ghostty"
+cask "wezterm"
+
+# ── Editor ─────────────────────────────────────────────────────────────────────
+brew "neovim"
+
+# ── Shell & plugins ────────────────────────────────────────────────────────────
+brew "zsh"
+brew "zsh-autosuggestions"
+brew "zsh-syntax-highlighting"
+brew "powerlevel10k"
+
+# ── Modern CLI tools (reemplazos) ──────────────────────────────────────────────
+brew "tmux"
+brew "tmux-continuum"
+brew "ripgrep"
+brew "fd"
+brew "eza"
+brew "zoxide"
+brew "fzf"
+brew "atuin"
+
+# ── Git / Dev ──────────────────────────────────────────────────────────────────
+brew "git"
+brew "gh"
+brew "lazygit"
+brew "jq"
+brew "bat"
+brew "tree"
+
+# ── RSS ────────────────────────────────────────────────────────────────────────
+brew "newsboat"
+
+# ── Fonts (cask) ───────────────────────────────────────────────────────────────
+cask "font-jetbrains-mono-nerd-font"
+cask "font-iosevka-nerd-font"
+
+# ── Extras (opcional, descomentar si los usás) ────────────────────────────────
+# brew "starship"        # alternativa moderna a powerlevel10k
+# brew "uv"              # Python package manager (usado por config.python)
+# brew "reattach-to-user-namespace"  # para tmux + pasteboard en Mac
+# brew "terminal-notifier"           # alternativa a osascript para notifs

@@ -1,8 +1,29 @@
 # HatDots - Guía de Configuración Rápida
 
-Este repositorio contiene dotfiles multiplataforma para **Linux** y **Windows** con Neovim (LazyVim), terminales, shells y herramientas de productividad.
+Este repositorio contiene dotfiles multiplataforma para **Linux**, **Windows** y **macOS** con Neovim (LazyVim), terminales, shells y herramientas de productividad.
+
+> **🆕 macOS** — La rama `omarchy-config-merge` trae configs de Hyprland. `HatMac/` es un subset portable de esa rama, **sin** WM/keybinds globales (elección consciente: minimal). Ver `HatMac/README.md` para el detalle.
 
 ## 🚀 Instalación Rápida
+
+### macOS (HatMac)
+```bash
+# 1. Instalar Homebrew (si no lo tenés)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. Clonar y correr el installer
+git clone https://github.com/hat-y/HatDots.git $HOME/HatDots
+cd $HOME/HatDots
+chmod +x link-mac.sh
+./link-mac.sh          # corre brew bundle + crea symlinks
+
+# Flags útiles:
+#   ./link-mac.sh --no-brew    # ya tenés las deps
+#   ./link-mac.sh --no-cask    # no instala Ghostty/WezTerm
+```
+
+> HatMac es **minimal**: Ghostty/WezTerm + tmux + nvim + zsh + newsboat.
+> **No** incluye tiling WM (yabai/skhd) ni keybinds globales estilo Hyprland.
 
 ### Windows
 ```powershell
