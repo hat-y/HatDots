@@ -42,6 +42,9 @@ alias ll='eza -lh --git --icons=auto --group-directories-first --classify'
 alias la='eza -lha --git --icons=auto --group-directories-first --classify'
 alias lt='eza --tree --level=2 --icons=auto --group-directories-first'
 
+# Disable gitstatusd auto-install (avoids errors when build tools are missing)
+export GITSTATUS_AUTO_INSTALL=0
+
 # --- Powerlevel10k ---
 # CachyOS: system-wide
 if [ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]; then
@@ -78,6 +81,9 @@ fi
 # --- PATH ---
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.opencode/bin:$PATH"
+
+# Load Angular CLI autocompletion.
+command -v ng >/dev/null 2>&1 && source <(ng completion script)
 
 # bun
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
