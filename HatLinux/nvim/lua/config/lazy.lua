@@ -26,6 +26,7 @@ require("lazy").setup({
 		{ "LazyVim/LazyVim" },
 	},
 	defaults = { lazy = false, version = false },
+	performance = { rtp = { reset = false } },
 	checker = { enabled = false },
 	rocks = { enabled = false },
 })

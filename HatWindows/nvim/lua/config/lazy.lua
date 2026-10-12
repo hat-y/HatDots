@@ -23,5 +23,6 @@ require("lazy").setup({
 		{ "LazyVim/LazyVim", opts = { colorscheme = "kanagawa" } },
 	},
 	defaults = { lazy = false, version = false },
+	performance = { rtp = { reset = false } },
 	checker = { enabled = false },
 })
