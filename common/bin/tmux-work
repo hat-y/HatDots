@@ -7,7 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 SESSION_NAME="Work"
-CWD="$(omarchy-cmd-terminal-cwd 2>/dev/null || echo "$HOME")"
+CWD="$(omarchy-cmd-terminal-cwd 2>/dev/null || echo "${PWD:-$HOME}")"
 
 # ── Attach if session already exists ─────────────────────────────────────────
 if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
