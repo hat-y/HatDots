@@ -166,6 +166,13 @@ stop it.
   empty — its one line is the explicitly-authorized
   `HatWindows/nvim/GEMINI.md` → `os/windows/docs/GEMINI.md` move (a doc, not
   nvim config/plugin code); `HatWindows/nvim/.claude/` untouched.
+- 2026-10-12: Independent phase 2 verification: Linux/Omarchy effective configs
+  (common + linked overlays) equivalent to the live decc87c files except the
+  intended tmux fish shell; ghostty Omarchy dynamic theme was never active in the
+  live config (`HatLinux/ghostty/config`), so nothing changed there; all 67
+  deletions accounted for (byte-identical counterparts). One defect: mac
+  `tmux-work` lost cwd detection; fixed in `3897765` (`bash -n` OK; fallback
+  observed resolving to the current directory without `omarchy-cmd-terminal-cwd`).
 
 ## Phase 1 merge decisions
 
@@ -330,11 +337,10 @@ stop it.
 - **kde/hypr**: `HatLinux/kde` → `os/linux/kde` (generic Linux desktop, not
   Hyprland-specific — KZones/KWin run under any Linux WM). `HatLinux/hypr` →
   `os/omarchy/hypr` (Hyprland-only by definition).
-- **tmux scripts**: `terminals/tmux/tmux-work` (uses
-  `omarchy-cmd-terminal-cwd 2>/dev/null` with a graceful `$HOME` fallback —
-  already portable) → `common/bin/tmux-work`; dropped `HatMac/tmux/scripts/tmux-work`,
-  a near-identical rewrite with a different (also fine) cwd-detection style and
-  nothing else unique. `terminals/tmux/tmux-work-workspace` (calls `hyprctl`/
+- **tmux scripts**: `terminals/tmux/tmux-work` → `common/bin/tmux-work`; dropped
+  `HatMac/tmux/scripts/tmux-work`, a near-identical rewrite. Its `$HOME` fallback
+  was NOT portable (on macOS every session opened in `$HOME`); fixed in `3897765`
+  to fall back to `${PWD:-$HOME}`, matching the old mac behavior. `terminals/tmux/tmux-work-workspace` (calls `hyprctl`/
   `uwsm-app` unconditionally) → `os/omarchy/bin/`. `HatLinux/tmux/scripts/ghostty-tmux-new`
   (a documented migration-window compat shim, generic POSIX sh, no OS-specific
   calls) → `common/bin/ghostty-tmux-new`. `HatMac/tmux/scripts/ghostty-tmux-new`
