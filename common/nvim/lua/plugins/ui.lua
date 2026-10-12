@@ -163,6 +163,22 @@ return {
 						padding = 1,
 					},
 
+					{
+						pane = 2,
+						icon = " ",
+						title = "Git Status",
+						section = "terminal",
+						color = "#FFA066",
+						enabled = function()
+							return require("snacks.git").get_root() ~= nil
+						end,
+						cmd = "git status --short --branch --renames",
+						height = 7,
+						padding = 1,
+						ttl = 300,
+						indent = 3,
+					},
+
 					{ section = "startup" },
 				},
 				preset = {

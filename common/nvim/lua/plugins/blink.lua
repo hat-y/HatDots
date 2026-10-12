@@ -51,6 +51,10 @@ return {
 			snippets = {
 				preset = "luasnip",
 			},
+
+			fuzzy = {
+				implementation = "rust",
+			},
 		},
 
 		config = function(_, opts)

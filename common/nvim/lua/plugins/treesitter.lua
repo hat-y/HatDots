@@ -9,10 +9,15 @@ return {
         "lua", "vim", "vimdoc", "markdown", "markdown_inline",
         "bash", "html", "css", "javascript", "typescript", "json", "yaml", "toml",
         "python", "rust", "java", "tsx",
+        "apex", "soql", "sosl", "sflog", -- Salesforce (lua/salesforce/*)
+        -- visualforce: no official nvim-treesitter parser. Alias to html in
+        -- after/ftplugin/visualforce.lua if you need it.
       },
       highlight = { enable = true },
       indent = { enable = true },
-      auto_install = false,
+      -- Auto-install missing parsers (apex/soql/sosl/sflog and future ones)
+      -- without having to run `:TSInstall` by hand.
+      auto_install = true,
     },
     config = function(_, opts)
       local ok, configs = pcall(require, "nvim-treesitter.configs")

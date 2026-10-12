@@ -1,6 +1,6 @@
 local script = debug.getinfo(1, "S").source:sub(2)
 local root = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(script))))
-package.path = root .. "/shared/nvim/lua/?.lua;" .. root .. "/shared/nvim/lua/?/init.lua;" .. package.path
+package.path = root .. "/common/nvim/lua/?.lua;" .. root .. "/common/nvim/lua/?/init.lua;" .. package.path
 
 local vault = vim.fn.tempname()
 local templates = {

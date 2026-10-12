@@ -34,7 +34,10 @@ require("lazy").setup({
   rocks = { enabled = false },
   performance = {
     rtp = {
-      reset = false,
+      -- No longer forced to false: hatnotes now lives under this config's own
+      -- lua/ directory (common/nvim/lua/hatnotes), so it's already on the
+      -- default runtimepath and doesn't need the old shared/nvim append hack
+      -- to survive lazy.nvim's rtp reset.
       disabled_plugins = {
         "gzip",
         "tarPlugin",

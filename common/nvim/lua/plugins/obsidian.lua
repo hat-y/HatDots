@@ -1,6 +1,10 @@
 local creation = require("hatnotes.creation")
 local vault_path = creation.vault_path
 
+-- Platform-aware "open" command: macOS uses `open`, Linux uses `xdg-open`.
+local is_mac = vim.fn.has("macunix") == 1
+local open_cmd = is_mac and "open" or "xdg-open"
+
 return {
 	"epwalsh/obsidian.nvim",
 	version = "*",
@@ -68,12 +72,12 @@ return {
 		end,
 		file_extension = "md",
 
-		-- Open URLs/images on Linux (xdg-open)
+		-- Open URLs/images (macOS: `open`, Linux: `xdg-open`)
 		follow_url_func = function(url)
-			vim.fn.jobstart({ "xdg-open", url }, { detach = true })
+			vim.fn.jobstart({ open_cmd, url }, { detach = true })
 		end,
 		follow_img_func = function(img)
-			vim.fn.jobstart({ "xdg-open", img }, { detach = true })
+			vim.fn.jobstart({ open_cmd, img }, { detach = true })
 		end,
 
 		sort_by = "modified",
@@ -121,7 +125,11 @@ return {
 		vim.opt.conceallevel = 1
 
 		-- Spell check for markdown files - add hunspell path to runtimepath
-		vim.opt.runtimepath:prepend("/usr/share/hunspell")
+		-- macOS: $HOMEBREW_PREFIX/share/hunspell. Linux: /usr/share/hunspell
+		local hunspell_dir = is_mac
+			and (vim.fn.getenv("HOMEBREW_PREFIX") .. "/share/hunspell")
+			or "/usr/share/hunspell"
+		vim.opt.runtimepath:prepend(hunspell_dir)
 		vim.api.nvim_create_autocmd("FileType", {
 			pattern = "markdown",
 			callback = function()
@@ -457,7 +465,7 @@ creado: %s
 		{
 			"<leader>oO",
 			function()
-				vim.fn.jobstart({ "xdg-open", "obsidian://open" }, { detach = true })
+				vim.fn.jobstart({ open_cmd, "obsidian://open" }, { detach = true })
 			end,
 			desc = "Forzar abrir Obsidian (obsidian://)",
 		},
@@ -587,7 +595,7 @@ creado: %s
 									local selection = action_state.get_selected_entry()
 									actions.close(prompt_bufnr)
 									if selection then
-										vim.fn.jobstart({ "xdg-open", selection.value }, { detach = true })
+										vim.fn.jobstart({ open_cmd, selection.value }, { detach = true })
 									end
 								end)
 								return true
