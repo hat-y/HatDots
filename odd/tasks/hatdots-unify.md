@@ -118,11 +118,20 @@ stop it.
   `STARTUP_OK` and `HATNOTES true` (no errors, no lazy.nvim install attempts);
   `nvim -u NONE -i NONE -l shared/nvim/tests/creation_smoke.lua` printed
   `creation smoke passed`. No fix commit was needed.
+- 2026-10-12: Independent verification (risk tier `high` from `gentle-ai review
+  assess`, driven by pre-existing branch scripts) found 5 merge defects; fixed in one
+  scoped correction commit: restored work-branch `GITSTATUS_AUTO_INSTALL=0` and
+  Angular completion in `.zshrc` (completion now guarded by `command -v ng`), removed
+  omarchy `bind K ... kill-session -a` override so work-branch `bind K kill-session`
+  wins, restored work-branch `lazyvim.json` news value `11866`. Dropping omarchy's
+  `default-command fish` confirmed as deliberate (work branch sets zsh). Checks:
+  `zsh -n` OK, `lazyvim.json` valid JSON, single `bind K` in tmux.conf.
 
 ## Phase 1 merge decisions
 
 - `HatLinux/nvim/lazyvim.json`: union of both `extras` lists (dap.core, lang.angular,
-  lang.docker, lang.prisma, lang.python, lang.rust, lang.typescript), deduped.
+  lang.docker, lang.prisma, lang.python, lang.rust, lang.typescript), deduped;
+  `news.NEWS.md` keeps the work-branch value `11866`.
 - `HatLinux/nvim/lua/config/lazy.lua`: kept work branch's `lang.java` import and
   `performance.rtp.reset = false`; unioned in omarchy's `install.colorscheme` and
   `performance.rtp.disabled_plugins` list (non-overlapping sub-keys, merged into one
@@ -151,8 +160,8 @@ stop it.
   `set -s extended-keys on`, `set -g -a terminal-overrides '*:Ms=...'` (OSC52 clip
   passthrough, additive to the existing RGB override), `status-justify left`,
   `unbind %` / `unbind '"'` plus the `d` split key (non-overlapping with work's
-  existing `h`/`v` split keys), and the `K` confirm-before bulk-session-kill override
-  appended after the existing `bind K kill-session`. Removed one literal duplicate of
+  existing `h`/`v` split keys). Omarchy's `K` confirm-before bulk-session-kill override
+  was removed in the correction commit (same key, work branch wins). Removed one literal duplicate of
   the "smart C-l" passthrough binding that existed twice in the work branch's own
   content (kept the one correctly placed after `run '~/.tmux/plugins/tpm/tpm'`, per
   its own comment: "Must come AFTER TPM run").
@@ -176,8 +185,10 @@ stop it.
 
 - `link-linux.sh` ghostty heredoc changed to unquoted `GHOSTTY_EOF`, so every `$`
   in it now expands; superseded by the Go installer in phase 4.
-- `HatLinux/fish/config.fish` hardcodes `/home/hat/.local/share/pnpm/bin`;
-  `HatLinux/zsh/.zshrc` hardcodes `/home/hat/.opencode/bin` and `/home/hat/.bun`.
+- `HatLinux/fish/config.fish` hardcodes `/home/hat/.local/share/pnpm/bin`
+  (`HatLinux/zsh/.zshrc` uses `$HOME` after the merge).
+- tmux `default-shell` is zsh while the login shell on the Omarchy machine is fish;
+  confirm the intended tmux shell in phase 2.
 - Omarchy dynamic theming (symlink-based `theme.lua` sourcing
   `/home/hat/.config/omarchy/current/theme/neovim.lua`) was dropped in the merge in
   favor of the work branch's regular-file `theme.lua`; must be reintroduced under
