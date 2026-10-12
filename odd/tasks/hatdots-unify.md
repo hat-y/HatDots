@@ -93,10 +93,40 @@ stop it.
 
 ### Phase 3 — Single Neovim
 
-- [ ] P3-1 Merge the three nvim copies into `common/nvim`, newest version wins on drift.
-- [ ] P3-2 OS-conditional plugin imports; remove AI plugins.
-- [ ] P3-3 Salesforce comparison and decision.
-- [ ] P3-4 Single `lazy-lock.json`.
+- [x] P3-1 Merge the three nvim copies into `common/nvim`, newest version wins on drift.
+      Commits `71f7c4a` (move), `c06aea4` (fold). See "Phase 3 decisions" below.
+- [x] P3-2 OS-conditional plugin imports; remove AI plugins. Commit `d23feb0`.
+      Verified: `rg` scan for avante/claude-code/gemini/copilot/supermaven across
+      `common/nvim` only matches the intentional disabled.lua stubs.
+- [ ] P3-3 Salesforce comparison and decision. OPEN — Linux's `lua/salesforce/*`
+      stays active; Mac's `xixiaofinland/sf.nvim` + `apex_ls` + their two
+      dependencies (fzf-lua, overseer) parked at
+      `common/nvim/parked/salesforce-mac/*.parked`. A separate comparison is
+      running per the user; this phase did not pick a winner.
+- [x] P3-4 Single `lazy-lock.json`. Commits `c06aea4` (add smear-cursor.nvim),
+      `d23feb0` (drop supermaven-nvim), `4b1aed7` (14 stale pins re-resolved by
+      a real `+Lazy! restore`, unrelated to merge decisions — see that commit).
+- [x] P3-5 Follow the Omarchy theme (Ghostty + Neovim), with live reload.
+      Commits `ce64d33` (nvim: `lua/config/omarchy_theme.lua` +
+      `plugins/omarchy-theme-watch.lua` + tests), `5518224` (desktop overlay
+      layer: `omarchy.tmux.conf`, `omarchy.ghostty`), `233c55c` (link-linux.sh
+      wiring). RED/GREEN evidence:
+      - `tests/omarchy_theme_smoke.lua` (path/available/spec/is_omarchy): RED
+        was `module 'config.omarchy_theme' not found` before the module
+        existed, then (after writing it) a second RED confirmed by
+        temporarily stubbing `is_omarchy()` to `return false` and observing
+        its assertion fail; GREEN after restoring the real implementation.
+      - `tests/omarchy_theme_watcher_smoke.lua` (fs-event watcher): RED
+        confirmed twice — once from a real bug (watching `current/` instead
+        of the Omarchy base dir missed the fixture's symlink swap, since
+        inotify on Linux doesn't reliably watch recursively) that changed the
+        implementation, and once more by stubbing `watch()` to `return nil`.
+        GREEN after fixing the watch target to the base dir and restoring the
+        real implementation.
+      Live verification (this machine is Omarchy): isolated instance printed
+      `AVAILABLE true`, `IS_OMARCHY true`, `COLORS_NAME aether` — matches
+      `~/.config/omarchy/current/theme/neovim.lua`'s actual spec on this
+      machine (also "aether").
 
 ### Phase 4 — Installer
 
@@ -173,6 +203,44 @@ stop it.
   deletions accounted for (byte-identical counterparts). One defect: mac
   `tmux-work` lost cwd detection; fixed in `3897765` (`bash -n` OK; fallback
   observed resolving to the current directory without `omarchy-cmd-terminal-cwd`).
+- 2026-10-12: Phase 3 done (except P3-3, left OPEN) in the same worktree, HEAD
+  `4b1aed7` (8 commits: `71f7c4a` move, `c06aea4` fold mac/windows, `d23feb0`
+  remove AI plugins, `ce64d33` follow Omarchy theme + tests, `5518224` omarchy
+  overlay layer, `233c55c` installer links + doc paths, `4b1aed7` stale
+  lazy-lock pins). See "Phase 3 decisions" below for the per-file merge
+  outcome. Checks (all observed; see "Verification" implicit in each command
+  below — this phase's checks are listed here rather than in a separate
+  subsection since they map directly to the task's own numbered list):
+  1) `+Lazy! restore` on the isolated `NVIM_APPNAME=hatdots-unify` instance:
+     completed (git checkouts all succeeded); it also rewrote 14 stale pins —
+     see `4b1aed7`. Mason tool downloads (`codelldb`, `vscode-spring-boot-tools`)
+     were still running when the 90s timeout hit the headless process; this is
+     pre-existing config, unrelated to the merge, and not re-run to
+     completion (network-bound binary download, not a plugin-restore check).
+  2) Startup: printed `STARTUP_OK`, `HATNOTES true`, `THEME aether`, no lua
+     errors; `+checkhealth lazy` → all ✅ (lazy.nvim, git, no other package
+     manager detected, no packer_compiled.lua, luarocks disabled).
+  3) AI-plugin grep: only the five intentional `disabled.lua` stub entries
+     (CopilotChat, gemini-cli, copilot.lua, avante.nvim, supermaven-nvim)
+     match; no live usage anywhere else in `common/nvim`.
+  4) Tests: `tests/creation_smoke.lua`, `tests/omarchy_theme_smoke.lua`,
+     `tests/omarchy_theme_watcher_smoke.lua` all GREEN; RED evidence recorded
+     under task P3-5 above.
+  5) Omarchy live check (this machine is Omarchy): isolated instance printed
+     `AVAILABLE true`, `IS_OMARCHY true`, `COLORS_NAME aether`, matching
+     `~/.config/omarchy/current/theme/neovim.lua`'s real spec on this box.
+  6) `ghostty +validate-config --config-file=common/ghostty/config` → exit 0,
+     also re-checked with the omarchy.ghostty overlay actually linked (fake
+     `$HOME`) → exit 0; `tmux -L p3 -f common/tmux/tmux.conf ... show -g
+     default-shell` → `/usr/bin/fish`, also re-checked with
+     omarchy.tmux.conf actually linked → same, no parse errors; `bash -n`
+     clean on `link-linux.sh`/`link-mac.sh`; `zsh -n` clean on
+     `common/zsh/.zshrc`; `fish -n` clean on `common/fish/config.fish`.
+     `link-windows.ps1` is **not** verified by the PowerShell parser in this
+     environment (no `pwsh` installed, same pre-existing limitation phase 2
+     already flagged) — paths checked by hand.
+  7) `fd -t d '^(HatLinux|HatMac|HatWindows|shared)$' --max-depth 1` → empty.
+     `git status` → clean.
 
 ## Phase 1 merge decisions
 
@@ -232,28 +300,24 @@ stop it.
 
 - `link-linux.sh` ghostty heredoc changed to unquoted `GHOSTTY_EOF`, so every `$`
   in it now expands; superseded by the Go installer in phase 4. Note: that
-  heredoc'd config is a *different* file from `common/ghostty/config` — the
-  installer never linked a ghostty config file before phase 2, only the
-  shaders dir, so `common/ghostty/config`'s new os/local overlay hooks are
-  not yet wired for Linux specifically (they are for mac). Phase 4 replaces
-  this installer; until then, Linux users who want the overlay need to link
-  `common/ghostty/config` by hand (see `os/linux/README.md`).
+  heredoc'd config is still a *different* file from `common/ghostty/config` —
+  `common/ghostty/config` itself is still not linked by `link-linux.sh` (only
+  its shaders dir, and now its `os.ghostty`/`omarchy.ghostty` overlay
+  destinations are, as of phase 3 — see "Phase 3 decisions"). Phase 4
+  replaces this installer; until then, Linux users who want
+  `common/ghostty/config` itself need to link it by hand (see
+  `os/linux/README.md`).
 - ~~`HatLinux/fish/config.fish` hardcodes `/home/hat/.local/share/pnpm/bin`~~ —
   fixed in phase 2 (`common/fish/config.fish`, `$HOME`-based + existence-guarded).
 - ~~tmux `default-shell` is zsh while the login shell on the Omarchy machine is
   fish~~ — fixed in phase 2 (prefers fish via `command -v`, falls back to `$SHELL`).
-- Omarchy dynamic theming (symlink-based `theme.lua` sourcing
-  `/home/hat/.config/omarchy/current/theme/neovim.lua`) was dropped in the merge in
-  favor of the work branch's regular-file `theme.lua`; must be reintroduced under
-  `os/omarchy` in phase 3. Same situation found for **Ghostty** in phase 2: both
-  `HatLinux/ghostty/config` and `HatMac/ghostty/config` had already abandoned
-  Ghostty's own dynamic-omarchy-theme `config-file` line in favor of a shared
-  static "Gentleman Theme" palette (both OSes agreed independently) —
-  `common/ghostty/config` now ships that static palette; dynamic Omarchy
-  theming for Ghostty is not reintroduced anywhere (no `os/omarchy/ghostty`
-  overlay exists). Flagging as a possible follow-up, not done without asking.
+- ~~Omarchy dynamic theming... must be reintroduced under `os/omarchy` in
+  phase 3~~ — done in phase 3 (task P3-5): `lua/config/omarchy_theme.lua` +
+  `plugins/omarchy-theme-watch.lua` for Neovim, `os/omarchy/ghostty/
+  omarchy.ghostty` for Ghostty (see "Phase 3 decisions").
 - `link-windows.ps1` is not verified by the PowerShell parser in this
   environment (no `pwsh` installed); paths were checked to exist by hand.
+  Same limitation phase 2 found; still true in phase 3.
 
 ## Phase 2 layout decisions
 
@@ -357,23 +421,144 @@ stop it.
   `HatMac/README.md` → `os/mac/README.md`. Both had their structure-tree and
   path references updated to the new layout (not just the root README/SETUP).
 
+## Phase 3 decisions
+
+Base = `HatLinux/nvim` (phase 1 already made it the most complete copy).
+Per-file comparison against Mac (`refs/remotes/origin/feat/harmac-config`)
+and Windows (`refs/heads/work/linux-salesforce-herdr`, same branch as Linux
+for date-comparison purposes — Windows's config lives on that same branch,
+there's no separate Windows branch):
+
+- **Identical across copies, no decision needed** (~20 files): `after/
+  transparency.lua`, `.neoconf.json`, `lua/config/{autocmds,dap,
+  markdown_utils,python,python-lsp,utils}.lua` (Windows's `utils.lua` was a
+  strict subset, dropped), `lua/plugins/{all-themes,disable-news-alert,
+  example,fff,img-clip,jupyter,luasnip,markdown(minus one AI line, see
+  below),mini-surround,noice,snacks,snacks-animated-scrolling-off,telescope,
+  vim-tmux-navigation,vimtex}.lua`, `luasnippets/obsidian.lua`, `plugin/
+  after/transparency.lua`, `spell/*`, `stylua.toml`.
+- **Linux was already a strict superset, kept verbatim** (no unique content
+  lost from Mac/Windows, confirmed by direct comparison): `lua/config/
+  keymaps.lua` (richer `toggleterm.Terminal:new()` API vs Mac's generic
+  `:toggleterm` command — two distinct terminal behaviors, Mac's not a
+  feature, a regression), `lua/plugins/{lsp,lazyextra,format,git}.lua`
+  (Linux's `lsp.lua` already extracts `config.lsp_on_attach`, which is
+  exactly what Mac's inline `on_attach` duplicated; Mac's `servers["*"]
+  .capabilities` blink.cmp wiring is explicitly unneeded per Linux's own
+  comment — LazyVim's blink extra already negotiates capabilities).
+- **Union of real fixes/features, folded into Linux's file**:
+  `lua/plugins/treesitter.lua` (added Mac's `apex`/`soql`/`sosl`/`sflog`
+  parsers + `auto_install = true`, kept Linux's `java`/`tsx` entries and
+  `prefer_git = true` — Mac's own comment calls its `prefer_git = false` a
+  no-op), `lua/plugins/blink.lua` (added Mac's `fuzzy.implementation =
+  "rust"`; did **not** fold Mac's `sources.providers.cmdline` entry or its
+  `default`-preset keymap — Linux's `cmdline` block and `super-tab` keymap
+  already cover the same ground, and Linux's `config` function strips a
+  LazyVim-injected compat field Mac's simpler version doesn't handle),
+  `lua/plugins/oil.lua` (added Windows's floating window + `<leader>E`,
+  auto-save-on-leave, `.git` in `is_always_hidden`, sort/case_insensitive
+  opts; did **not** fold Windows's `use_default_keymaps = false` + full
+  custom keymap table — it restates oil.nvim's own documented defaults
+  almost verbatim, so it changes nothing Linux doesn't already get for
+  free), `lua/plugins/ui.lua` (added Windows's "Git Status" terminal pane in
+  the snacks dashboard), `lua/plugins/obsidian.lua` (open_cmd and hunspell
+  path now OS-aware via `has("macunix")` — Mac's own `<leader>onl`/`onk`
+  "unique" keys turned out to already be covered by `hatnotes.creation`'s
+  shared `creation.keys`, so nothing else needed folding).
+- **Restructured into cross-platform files** (genuinely OS-specific code,
+  per the task's own instruction, instead of three near-duplicate files):
+  `init.lua` (one `if is_linux / elseif is_mac / elseif is_windows` dispatch;
+  dropped the old `shared/nvim` runtimepath-append hack, see below) and
+  `lua/config/options.lua` (clipboard + shell now branch on
+  `vim.fn.has(...)`/`vim.fn.executable(...)` inside one file instead of
+  three OS-named files; Linux's generic perf/search/split/LSP settings,
+  which Mac's older `options.lua` never had, are now unconditional for
+  every OS — a fold-in, not an OS branch).
+- **Resolved conflicts, kept Linux, documented the loss**:
+  `lua/plugins/colorscheme.lua` — Linux's version is an intentional,
+  fully-commented-out "kept for reference" file (its own comment says the
+  active theme lives in `theme.lua`); Mac/Windows instead set a second,
+  colliding `LazyVim.opts.colorscheme` (`oxocarbon`/`kanagawa`). Dropped
+  Mac/Windows's active versions — nothing unique lost, both themes already
+  exist as Linux's own commented reference entries. `lua/plugins/
+  which-key-groups.lua` — kept Mac's generic `[H]erdr` group (guarded the
+  one macOS-only `open -a` keymap with `has("macunix")`); dropped its
+  Salesforce `<leader>S*` group entirely — direct key collision (`So`, `Sp`,
+  `Sr`, `St`, `SO`, ...) with the active `lua/salesforce/*` module, which
+  already owns that whole namespace.
+- **AI plugins removed** (task P3-2, user decision): `zbirenbaum/
+  copilot.lua` and `supermaven-inc/supermaven-nvim` were active (Linux/Mac);
+  `yetone/avante.nvim`, `coder/claudecode.nvim` and `marcinjahn/
+  gemini-cli.nvim` were Windows-only. `olimorris/codecompanion.nvim`,
+  `CopilotC-Nvim/CopilotChat.nvim` and `sudo-tee/opencode.nvim` were already
+  inert (`enabled = false`) everywhere and untouched. All are now listed,
+  force-disabled, in `disabled.lua`. Cleaned up the stray references that
+  pointed at the removed plugins: the `supermaven-nvim` `lazy-lock.json`
+  pin, the `<leader>mu` which-key hint in `markdown.lua`, and two whole docs
+  that were nothing but AI-plugin setup instructions —
+  `os/windows/docs/API_KEYS.md` and `GEMINI.md` — plus the one SETUP.md
+  section pointing at `API_KEYS.md`. Windows's `cmp.lua` (nvim-cmp) was
+  dropped outright: pure cmp config, no non-cmp content, and the rest of
+  this config uses blink.cmp.
+- **Mac-only generic plugins**: `smear-cursor.nvim` brought in but
+  `enabled = false` by default — Ghostty already runs its own cursor-smear
+  shader (`custom-shader = shaders/cursor_smear_gentleman.glsl`), so
+  enabling both would smear the cursor twice. `fzf-lua.lua` and
+  `overseer.lua` were **not** brought in as generic utilities: both files'
+  own comments say their only purpose is serving `xixiaofinland/sf.nvim`
+  (fzf-lua for its metadata picker, overseer for its async terminal), so
+  they were parked alongside it instead (see Salesforce below) rather than
+  activated with no consumer.
+- **Salesforce (task P3-3, still undecided)**: parked Mac's `xixiaofinland-
+  sf.lua`, `apex_ls.lua`, `fzf-lua.lua` and `overseer.lua` as
+  `common/nvim/parked/salesforce-mac/*.parked` (off the plugin import path,
+  with a README explaining why and how to restore). Linux's `lua/
+  salesforce/*`, `plugins/salesforce.lua` and `salesforce.md` stay active
+  as-is, per the existing user decision to compare separately.
+- **`shared/nvim` → `common/nvim`**: `lua/hatnotes/` and `tests/` moved in
+  directly (`git mv`); removed the `vim.opt.runtimepath:append(.../shared/
+  nvim)` hack from `init.lua` and the `performance.rtp.reset = false` it
+  required, now that hatnotes lives under this config's own `lua/` dir
+  (already on the default runtimepath). Verified via the full isolated
+  startup check (`HATNOTES true`) and the existing `creation_smoke.lua`
+  test, still GREEN.
+- **Omarchy theme following (task P3-5)**: see that task above for the
+  module design and RED/GREEN evidence. Layer-naming fix alongside it: on
+  an Omarchy machine both `os/linux` and `os/omarchy` overlays apply, so
+  they needed separate overlay targets instead of sharing `os.*` — see the
+  "Overlay files" table below (renamed `os/omarchy/tmux/os.tmux.conf` →
+  `omarchy.tmux.conf`, added `os/omarchy/ghostty/omarchy.ghostty`, wired a
+  third `omarchy.*` layer into every common config's overlay chain).
+- **`lazyvim.json`**: already a clean union from phase 1 (dap.core,
+  lang.angular, lang.docker, lang.prisma, lang.python, lang.rust,
+  lang.typescript) with no AI extras in it; no change needed.
+
 ## Overlay files (for the phase-4 installer manifest)
+
+Three layers per common config, loaded in order: `os.*` (linux/mac/windows)
+-> `omarchy.*` (desktop environment, only linked where it applies) ->
+`local.*` (untracked, machine-specific).
 
 | Overlay file | Link target | Linked by |
 |---|---|---|
-| `os/omarchy/tmux/os.tmux.conf` | `~/.config/hatdots/os.tmux.conf` | `link-linux.sh` (added) |
-| `os/linux/ghostty/os.ghostty` | `~/.config/hatdots/os.ghostty` | not yet linked (see Known issues) |
+| `os/linux/ghostty/os.ghostty` | `~/.config/hatdots/os.ghostty` | `link-linux.sh` (added phase 3) |
 | `os/mac/ghostty/os.ghostty` | `~/.config/hatdots/os.ghostty` | `link-mac.sh` (added) |
 | `os/mac/zsh/os.zsh` | `~/.config/hatdots/os.zsh` | `link-mac.sh` (added) |
-| `os/linux/newsboat/os.newsboat` | `~/.config/hatdots/os.newsboat` | not yet linked (Linux never linked newsboat before) |
+| `os/linux/newsboat/os.newsboat` | `~/.config/hatdots/os.newsboat` | not yet linked (Linux never linked newsboat before; out of phase 3 scope) |
 | `os/mac/newsboat/os.newsboat` | `~/.config/hatdots/os.newsboat` | `link-mac.sh` (added) |
+| `os/omarchy/tmux/omarchy.tmux.conf` | `~/.config/hatdots/omarchy.tmux.conf` | `link-linux.sh` (renamed from `os.tmux.conf`, see Phase 3 decisions) |
+| `os/omarchy/ghostty/omarchy.ghostty` | `~/.config/hatdots/omarchy.ghostty` | `link-linux.sh` (added phase 3) |
 
-No fish overlay files exist yet (none needed); `common/fish/config.fish`
-already has the `os.fish`/`local.fish` hooks ready for when one is.
+Both omarchy.\* links are gated on `~/.local/share/omarchy` existing (same
+marker `lua/config/omarchy_theme.lua`'s `is_omarchy()` checks).
+
+No fish overlay files exist yet (none needed); `common/fish/config.fish`,
+`common/zsh/.zshrc`, `common/tmux/tmux.conf` and `common/ghostty/config` all
+have `os.*`/`omarchy.*`/`local.*` hooks ready for when one is (zsh/fish
+`omarchy.*` added in phase 3 for symmetry, unused so far).
 
 ## Next step
 
-Phase 3: single Neovim (merge the three copies, OS-conditional plugin
-imports, remove AI plugins, Salesforce comparison, one `lazy-lock.json`).
-Also carries forward from phase 2: decide whether Ghostty needs its own
-Omarchy dynamic-theme overlay (see Known issues).
+P3-3: Salesforce comparison and decision (separate comparison running per
+the user) — then Phase 4 (installer: module manifest, platform/linker/pkg
+adapters, Bubbletea TUI, release workflow).
