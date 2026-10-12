@@ -101,8 +101,11 @@ palette = 13=#ffaeea
 palette = 14=#7fb4ca
 palette = 15=#f3f6f9
 
-# ── OS / local overlays ──────────────────────────────────────────────────────
+# ── OS / desktop / local overlays ────────────────────────────────────────────
 # Linked by the installer into ~/.config/hatdots/. Optional (?): silently
-# skipped when absent.
+# skipped when absent. Three layers, loaded in order: OS (linux/mac/windows)
+# -> desktop environment (e.g. omarchy, only linked where it applies) ->
+# local (untracked, machine-specific).
 config-file = ?~/.config/hatdots/os.ghostty
+config-file = ?~/.config/hatdots/omarchy.ghostty
 config-file = ?~/.config/hatdots/local.ghostty

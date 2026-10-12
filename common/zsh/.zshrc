@@ -104,9 +104,13 @@ command -v ng >/dev/null 2>&1 && source <(ng completion script)
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# --- OS / local overlays ---
+# --- OS / desktop / local overlays ---
 # Linked by the installer into ~/.config/hatdots/. Sourced last: nothing
 # above depends on overlay-set state, and this still lets the overlay's own
-# zsh-syntax-highlighting attempt (if any) run after everything else.
+# zsh-syntax-highlighting attempt (if any) run after everything else. Three
+# layers: OS (linux/mac/windows) -> desktop environment (e.g. omarchy, only
+# linked where it applies; no omarchy.zsh exists yet, kept here for
+# symmetry with tmux/ghostty) -> local (untracked, machine-specific).
 [ -f ~/.config/hatdots/os.zsh ] && source ~/.config/hatdots/os.zsh
+[ -f ~/.config/hatdots/omarchy.zsh ] && source ~/.config/hatdots/omarchy.zsh
 [ -f ~/.config/hatdots/local.zsh ] && source ~/.config/hatdots/local.zsh

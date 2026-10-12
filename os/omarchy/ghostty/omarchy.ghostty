@@ -1,0 +1,8 @@
+# Omarchy overlay for common/ghostty/config. Linked by link-linux.sh into
+# ~/.config/hatdots/omarchy.ghostty (desktop-layer overlay, only linked when
+# ~/.local/share/omarchy exists - see odd/tasks/hatdots-unify.md, task P3-5).
+#
+# Follows Omarchy's active theme instead of the static Gentleman Theme
+# palette common/ghostty/config otherwise ships. `omarchy-theme-set`
+# rewrites this file's target and sends ghostty SIGUSR2 to reload it.
+config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"

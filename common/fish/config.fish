@@ -157,10 +157,16 @@
         set -gx PATH $HOME/.local/share/pnpm/bin $PATH
     end
 
-    # ─── 11. OS / local overlays ────────────────────────────────────────────────
-    # Linked by the installer into ~/.config/hatdots/.
+    # ─── 11. OS / desktop / local overlays ──────────────────────────────────────
+    # Linked by the installer into ~/.config/hatdots/. Three layers: OS
+    # (linux/mac/windows) -> desktop environment (e.g. omarchy, only linked
+    # where it applies; no omarchy.fish exists yet, kept here for symmetry
+    # with tmux/ghostty) -> local (untracked, machine-specific).
     if test -f ~/.config/hatdots/os.fish
         source ~/.config/hatdots/os.fish
+    end
+    if test -f ~/.config/hatdots/omarchy.fish
+        source ~/.config/hatdots/omarchy.fish
     end
     if test -f ~/.config/hatdots/local.fish
         source ~/.config/hatdots/local.fish
