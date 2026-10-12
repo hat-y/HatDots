@@ -69,3 +69,16 @@ vim.opt.shortmess = "filnxtToO"
 -- Startup performance
 vim.opt.lazyredraw = false
 vim.opt.synmaxcol = 240
+
+-- Kill inlay hints: bug en nvim 0.12.3 (issue #39772) causa
+-- "Invalid 'col': out of range". Rehabilitar cuando se actualice a 0.13+.
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("KillInlayHints", { clear = true }),
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client.server_capabilities.inlayHintProvider then
+      vim.lsp.inlay_hint.enable(false, { bufnr = args.buf })
+      client.server_capabilities.inlayHintProvider = false
+    end
+  end,
+})

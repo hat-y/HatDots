@@ -1,3 +1,10 @@
+local config_path = vim.uv.fs_realpath(vim.fn.stdpath("config"))
+if not config_path then
+  error("HatDots shared Neovim runtimepath: cannot resolve stdpath('config')")
+end
+local repo_root = vim.fs.dirname(vim.fs.dirname(config_path))
+vim.opt.runtimepath:append(vim.fs.joinpath(repo_root, "shared", "nvim"))
+
 -- Platform detection
 local is_windows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 local is_linux = vim.fn.has("unix") == 1 and vim.fn.has("macunix") == 0
@@ -15,6 +22,7 @@ if is_linux then
   require("config.options")       -- Linux clipboard & shell
   require("config.python")        -- Python + uv
   require("config.python-lsp")    -- Python LSP config
+  require("config.java")          -- Java + nvim-jdtls
   require("config.keymaps")       -- Keymaps
 elseif is_windows then
   -- Windows-specific configs

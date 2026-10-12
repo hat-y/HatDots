@@ -80,8 +80,12 @@ map("n", "<leader>Lh", "<cmd>lua vim.lsp.buf.hover()<cr>", { desc = "Hover docum
 -- Terminal
 -- ====================================================================
 
-map("n", "<leader>tt", "<cmd>toggleterm<cr>", { desc = "Toggle terminal" })
-map("n", "<leader>tn", "<cmd>toggleterm<cr>", { desc = "New terminal" })
+map("n", "<leader>tt", function()
+	require("toggleterm.terminal").Terminal:new({ count = 1, hidden = false }):toggle()
+end, { desc = "Toggle terminal" })
+map("n", "<leader>tn", function()
+	require("toggleterm.terminal").Terminal:new():toggle()
+end, { desc = "New terminal" })
 map("t", "<Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 
 -- ====================================================================

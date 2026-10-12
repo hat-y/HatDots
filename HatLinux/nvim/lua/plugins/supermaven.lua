@@ -9,7 +9,7 @@ return {
 
 			require("supermaven-nvim").setup({
 				keymaps = {
-					accept_suggestion = "<Tab>", -- Recomendado para paridad
+					accept_suggestion = "<C-l>", -- Evitar conflicto con Blink.cmp Tab
 					clear_suggestion = "<C-]>",
 					accept_word = "<C-j>",
 				},

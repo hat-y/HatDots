@@ -19,12 +19,14 @@ require("lazy").setup({
 		{ import = "lazyvim.plugins.extras.lang.typescript" },
 		{ import = "lazyvim.plugins.extras.lang.python" },
 		{ import = "lazyvim.plugins.extras.lang.rust" },
+		{ import = "lazyvim.plugins.extras.lang.java" },
 
 		-- local plugins:
 		{ import = "plugins" },
 		{ "LazyVim/LazyVim" },
 	},
 	defaults = { lazy = false, version = false },
+	performance = { rtp = { reset = false } },
 	checker = { enabled = false },
 	rocks = { enabled = false },
 })

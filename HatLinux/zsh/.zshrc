@@ -53,6 +53,19 @@ fi
 # (el prompt va a mostrar el directorio sin info de git en tiempo real)
 #typeset -g POWERLEVEL9K_VCS_DISABLED=true
 
+# --- Multiplexer auto-start: Herdr > Tmux > nothing ---
+# Guard vars HERDR_ENV, TMUX, ZELLIJ must all be unset.
+# See openspec/changes/add-herdr-multiplexor/spec.md DG-5 for parity with Fish.
+# If gitstatus fails under Herdr PTY, also try POWERLEVEL9K_DISABLE_GITSTATUS=true
+# (R-9 escape hatch).
+if [[ -o interactive ]] && [[ -z "$HERDR_ENV" && -z "$TMUX" && -z "$ZELLIJ" ]]; then
+    if command -v herdr >/dev/null 2>&1 && herdr --version >/dev/null 2>&1; then
+        exec herdr
+    elif command -v tmux >/dev/null 2>&1; then
+        tmux new-session -A -s main
+    fi
+fi
+
 # --- zsh-syntax-highlighting (DEBE ir al final) ---
 [ -f "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
   source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"

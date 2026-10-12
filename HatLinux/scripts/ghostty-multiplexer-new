@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# ghostty-multiplexer-new — HatDots multiplexer-aware session starter.
+#
+# Invoked by:
+#   - HatLinux/ghostty/config (command = ...)
+#   - HatLinux/tmux/.tmux.conf   (bind N command-prompt ... run-shell ...)
+#
+# Arity: one OPTIONAL positional session name; default = "main".
+# Extra args are ignored (intentional; matches the legacy ghostty-tmux-new arity).
+#
+# Behavior:
+#   1. If `herdr` is on PATH and responds to `herdr --version` (liveness probe),
+#      exec into it, passing the optional session name through.
+#   2. Else if `tmux` is on PATH, exec `tmux new-session -A -s "$SESSION"`.
+#   3. Else warn to stderr and exec $SHELL.
+#
+# Guards (interactive shell only): callers (Zsh/Fish guards) already check
+# HERDR_ENV, TMUX, ZELLIJ. This wrapper does NOT re-check those — it is the
+# launcher, not the policy. Policy lives in shell init scripts.
+#
+# Why /bin/sh not bash not zsh: POSIX sh is the lowest common denominator
+# among Linux, macOS, WSL, and Ghostty's default PATH. exec semantics and
+# command -v are POSIX. This script has no bashisms.
+#
+# Signal handling: we DO set traps on TERM/INT/HUP (see below) for best-effort
+# cleanup if exec fails or a partial tmux session needs killing. exec replaces
+# the process normally, but the trap catches the rare exec-fails-mid-flight case.
+
+set -eu
+
+SESSION_NAME="${1:-main}"
+
+# --- Herdr liveness probe ---
+# `command -v` checks PATH resolvability; `--version >/dev/null 2>&1` skips
+# dead shims (R-6). If herdr fails liveness, fall through to tmux.
+if command -v herdr >/dev/null 2>&1 && herdr --version >/dev/null 2>&1; then
+    # Trap is for cleanup only IF a hypothetical backgrounded job existed.
+    # In our wrapper there is no fork; this trap is a future-proofing no-op.
+    trap 'exit 1' TERM INT HUP
+    exec herdr --session "$SESSION_NAME"
+fi
+
+# --- Tmux fallback ---
+# Prefer tmux-session-layout (preserves 3-window layout: nvim + 2 shells)
+# if available; fall back to simple new-session otherwise.
+if command -v tmux >/dev/null 2>&1; then
+    trap 'tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true; exit 1' TERM INT HUP
+    if command -v tmux-session-layout >/dev/null 2>&1; then
+        exec tmux-session-layout "$SESSION_NAME"
+    else
+        exec tmux new-session -A -s "$SESSION_NAME"
+    fi
+fi
+
+# --- Last resort: launch the user's shell with a warning ---
+printf 'ghostty-multiplexer-new: no herdr or tmux on PATH — launching $SHELL\n' >&2
+exec "${SHELL:-/bin/sh}"
