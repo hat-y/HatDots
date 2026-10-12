@@ -98,11 +98,40 @@ stop it.
 - [x] P3-2 OS-conditional plugin imports; remove AI plugins. Commit `d23feb0`.
       Verified: `rg` scan for avante/claude-code/gemini/copilot/supermaven across
       `common/nvim` only matches the intentional disabled.lua stubs.
-- [ ] P3-3 Salesforce comparison and decision. OPEN — Linux's `lua/salesforce/*`
-      stays active; Mac's `xixiaofinland/sf.nvim` + `apex_ls` + their two
-      dependencies (fzf-lua, overseer) parked at
-      `common/nvim/parked/salesforce-mac/*.parked`. A separate comparison is
-      running per the user; this phase did not pick a winner.
+- [x] P3-3 Salesforce comparison and decision. Commit `b883cee`. **User
+      decision: keep `xixiaofinland/sf.nvim` (option B), drop the custom
+      Linux module (option A)** — portability across every OS beat a
+      Linux-only hand-rolled integration. Restored `xixiaofinland-sf.lua`,
+      `apex_ls.lua`, `fzf-lua.lua`, `overseer.nvim` from
+      `common/nvim/parked/salesforce-mac/` (dir removed) and the Salesforce
+      `<leader>S*` which-key group from
+      `refs/remotes/origin/feat/harmac-config`; deleted `lua/salesforce/*`
+      (10 files), `plugins/salesforce.lua`, `salesforce.md`. Split
+      `akinsho/toggleterm.nvim` into its own `plugins/toggleterm.lua` (still
+      needed by `lua/config/keymaps.lua`'s `<leader>tt`/`<leader>tn`, which
+      call it directly — not vestigial). `os/mac/bin/hat-sf-install` moved to
+      `common/bin/` (OS-agnostic) and wired into both install scripts.
+      **Lost features** (sf.nvim doesn't cover these; the custom module did):
+      Apex/LWC/trigger scaffolding (`new_apex_class`/`new_lwc`/`new_trigger`
+      in the deleted `salesforce/scaffolds.lua`), a SOQL query picker, a
+      debug-log picker, and the lualine org-indicator component. Scaffolding
+      could be ported later as a thin layer on top of sf.nvim if wanted — not
+      done without asking, out of this task's scope.
+      Verified: `+Lazy! restore` installed `sf.nvim`/`fzf-lua`/`overseer.nvim`
+      cleanly (no further lock drift this time); isolated startup still
+      prints `STARTUP_OK`/`HATNOTES true`/`THEME aether`, no errors;
+      `exists(':SF')` → `2` after force-loading the plugin; dumping
+      `nvim_get_keymap('n')` after firing `User VeryLazy` (needed in headless
+      mode for the `event = "VeryLazy"` which-key-groups.lua config to run)
+      found **zero** duplicate `lhs` across all 341 normal-mode maps, and all
+      9 restored `<leader>S*` mappings present exactly once; `+checkhealth
+      sf` was initially `1 ⚠️ 1 ❌` ("apex parser not installed") purely
+      because `:Lazy restore` doesn't open an apex buffer to trigger
+      nvim-treesitter's `auto_install` — forcing `:TSInstall apex soql sosl
+      sflog` once resolved it to `1 ⚠️` (only the pre-existing optional
+      `ctags` hint) with **0 errors**; `rg -n 'salesforce\.' common/nvim`
+      only matches a historical comment in the new `toggleterm.lua`, no
+      stale `require`s; all 3 nvim tests still GREEN; `git status` clean.
 - [x] P3-4 Single `lazy-lock.json`. Commits `c06aea4` (add smear-cursor.nvim),
       `d23feb0` (drop supermaven-nvim), `4b1aed7` (14 stale pins re-resolved by
       a real `+Lazy! restore`, unrelated to merge decisions — see that commit).
@@ -203,8 +232,9 @@ stop it.
   deletions accounted for (byte-identical counterparts). One defect: mac
   `tmux-work` lost cwd detection; fixed in `3897765` (`bash -n` OK; fallback
   observed resolving to the current directory without `omarchy-cmd-terminal-cwd`).
-- 2026-10-12: Phase 3 done (except P3-3, left OPEN) in the same worktree, HEAD
-  `4b1aed7` (8 commits: `71f7c4a` move, `c06aea4` fold mac/windows, `d23feb0`
+- 2026-10-12: Phase 3 done (P3-1/P3-2/P3-4/P3-5; P3-3 followed as a separate
+  task below) in the same worktree, HEAD `4b1aed7` (8 commits: `71f7c4a` move,
+  `c06aea4` fold mac/windows, `d23feb0`
   remove AI plugins, `ce64d33` follow Omarchy theme + tests, `5518224` omarchy
   overlay layer, `233c55c` installer links + doc paths, `4b1aed7` stale
   lazy-lock pins). See "Phase 3 decisions" below for the per-file merge
@@ -241,6 +271,13 @@ stop it.
      already flagged) — paths checked by hand.
   7) `fd -t d '^(HatLinux|HatMac|HatWindows|shared)$' --max-depth 1` → empty.
      `git status` → clean.
+- 2026-10-12: P3-3 decided and done, HEAD `b883cee`. User chose sf.nvim over
+  the custom module; see task P3-3 above for the full restore/delete/verify
+  detail. One real finding during verification: `+checkhealth sf` initially
+  reported the apex treesitter parser missing — not a config defect, just
+  `:Lazy restore` never opening an apex buffer to trigger `auto_install`;
+  resolved by running `:TSInstall apex soql sosl sflog` once, then
+  `+checkhealth sf` was clean (only the pre-existing optional ctags hint).
 
 ## Phase 1 merge decisions
 
@@ -509,12 +546,10 @@ there's no separate Windows branch):
   (fzf-lua for its metadata picker, overseer for its async terminal), so
   they were parked alongside it instead (see Salesforce below) rather than
   activated with no consumer.
-- **Salesforce (task P3-3, still undecided)**: parked Mac's `xixiaofinland-
-  sf.lua`, `apex_ls.lua`, `fzf-lua.lua` and `overseer.lua` as
-  `common/nvim/parked/salesforce-mac/*.parked` (off the plugin import path,
-  with a README explaining why and how to restore). Linux's `lua/
-  salesforce/*`, `plugins/salesforce.lua` and `salesforce.md` stay active
-  as-is, per the existing user decision to compare separately.
+- **Salesforce (task P3-3, decided)**: initially parked Mac's `xixiaofinland-
+  sf.lua`, `apex_ls.lua`, `fzf-lua.lua` and `overseer.lua`; the user then
+  chose sf.nvim over the custom Linux module (see task P3-3 above for the
+  restore, deletion and verification detail — commit `b883cee`).
 - **`shared/nvim` → `common/nvim`**: `lua/hatnotes/` and `tests/` moved in
   directly (`git mv`); removed the `vim.opt.runtimepath:append(.../shared/
   nvim)` hack from `init.lua` and the `performance.rtp.reset = false` it
@@ -559,6 +594,6 @@ have `os.*`/`omarchy.*`/`local.*` hooks ready for when one is (zsh/fish
 
 ## Next step
 
-P3-3: Salesforce comparison and decision (separate comparison running per
-the user) — then Phase 4 (installer: module manifest, platform/linker/pkg
-adapters, Bubbletea TUI, release workflow).
+Phase 3 is complete (P3-1 through P3-5 all done). Phase 4: installer
+(module manifest format and parser, platform detection/plan/linker/package
+adapters, Bubbletea TUI, release workflow and bootstrap scripts).
