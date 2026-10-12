@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# ──────────────────────────────────────────────────────────────────────────────
+# tmux-work — Open or create a tmux "Work" session with 3 windows
+#   Window 1: nvim  — running nvim
+#   Window 2: shell — plain shell
+#   Window 3: pi    — plain shell, named "pi"
+# ──────────────────────────────────────────────────────────────────────────────
+
+SESSION_NAME="Work"
+CWD="$(omarchy-cmd-terminal-cwd 2>/dev/null || echo "$HOME")"
+
+# ── Attach if session already exists ─────────────────────────────────────────
+if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    if [ -n "$TMUX" ]; then
+        tmux switch-client -t "$SESSION_NAME"
+    else
+        tmux attach-session -t "$SESSION_NAME"
+    fi
+    exit 0
+fi
+
+# ── Create new session with 3 windows ────────────────────────────────────────
+# Window 1: nvim
+tmux new-session -d -s "$SESSION_NAME" -n "nvim" -c "$CWD"
+tmux send-keys -t "$SESSION_NAME:1" "nvim" Enter
+
+# Window 2: shell
+tmux new-window -t "$SESSION_NAME" -n "shell" -c "$CWD"
+
+# Window 3: pi (just the name, plain shell)
+tmux new-window -t "$SESSION_NAME" -n "pi" -c "$CWD"
+
+# Switch back to window 1 (nvim)
+tmux select-window -t "$SESSION_NAME:1"
+
+# Attach
+if [ -z "$TMUX" ]; then
+    tmux attach-session -t "$SESSION_NAME"
+fi

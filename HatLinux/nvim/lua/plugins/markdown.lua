@@ -33,6 +33,26 @@ return {
 	{
 		"MeanderingProgrammer/render-markdown.nvim",
 		ft = "markdown",
+		opts = {
+			enabled = true,
+			anti_conceal = {
+				-- No ocultar nunca el checkbox, incluso cuando el cursor no está en la línea
+				ignore = {
+					check_icon = true,
+					code_background = true,
+					indent = true,
+					sign = true,
+					virtual_lines = true,
+				},
+			},
+			checkbox = {
+				-- right_pad evita que el conceal del checkbox (usado para tapar [ ] original)
+				-- se corra y termine ocultando la primera palabra del texto.
+				-- El ícono Nerd Font (1 celda) + espacio interno + right_pad(2) = 4 celdas,
+				-- que es exactamente el ancho de [ ] + espacio.
+				right_pad = 2,
+			},
+		},
 	},
 
 	-- Telescope Media Files for media preview

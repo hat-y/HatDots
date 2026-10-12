@@ -1,110 +1,71 @@
-# ┌──────────────────────────────────────────────────────────────────────────────┐
-# │                                   FONT                                       │
-# └──────────────────────────────────────────────────────────────────────────────┘
+# ═══════════════════════════════════════════════════════════════════════════════
+# GHOSTTY CONFIG — HatDots base + Omarchy theme integration
+# ═══════════════════════════════════════════════════════════════════════════════
 
+# ── Theme dinámico (Omarchy) ──────────────────────────────────────────────────
+config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
+
+# ── Terminal ──────────────────────────────────────────────────────────────────
+
+# Usar tmux como shell con sesión automática
 command = /usr/bin/tmux -f ~/.tmux.conf new-session -A -s main
-font-family = IosevkaTerm NF
-font-size = 18
 
+# Font
+font-family = JetBrainsMono Nerd Font
+font-style = Regular
+font-size = 12
 
-# ┌──────────────────────────────────────────────────────────────────────────────┐
-# │                                  WINDOW                                      │
-# └──────────────────────────────────────────────────────────────────────────────┘
+# ── Window ────────────────────────────────────────────────────────────────────
 
 background-opacity = 0.8
 background-blur-radius = 20
 background-opacity-cells = true
 
 window-decoration = true
-window-padding-color = extend
 window-padding-x = 0
 window-padding-y = 0
-window-step-resize = false
 window-padding-balance = false
+window-step-resize = false
 window-height = 100
 window-width = 100
 
+confirm-close-surface = false
+resize-overlay = never
+gtk-toolbar-style = flat
+
+# Ocultar tabs (usamos tmux)
 gtk-tabs-location = hidden
 
-# Permitir múltiples instancias de Ghostty
+# Permitir múltiples instancias
 gtk-single-instance = false
 
-
-# ┌──────────────────────────────────────────────────────────────────────────────┐
-# │                                  SHADER                                      │
-# └──────────────────────────────────────────────────────────────────────────────┘
+# ── Shaders ───────────────────────────────────────────────────────────────────
 
 custom-shader = shaders/cursor_smear_gentleman.glsl
 
+# ── Cursor ───────────────────────────────────────────────────────────────────
 
-# ┌──────────────────────────────────────────────────────────────────────────────┐
-# │                            INPUT / KEYBINDINGS                               │
-# └──────────────────────────────────────────────────────────────────────────────┘
+cursor-style = block
+cursor-style-blink = false
+shell-integration-features = no-cursor,ssh-env
 
-# macOS Alt key fix
-macos-option-as-alt = left
-keybind = alt+left=unbind
-keybind = alt+right=unbind
+# ── Teclado ───────────────────────────────────────────────────────────────────
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# SPLITS - COMENTADOS PARA USAR TMUX EN VEZ DE SPLITS NATIVOS DE GHOSTTY
-# ═══════════════════════════════════════════════════════════════════════════════
+keybind = shift+insert=paste_from_clipboard
+keybind = control+insert=copy_to_clipboard
 
-# Split Management
-# keybind = alt+v=new_split:right
-# keybind = alt+d=new_split:down
-
-# Split Navigation
-# keybind = alt+k=goto_split:up
-# keybind = alt+j=goto_split:down
-# keybind = alt+h=goto_split:left
-# keybind = alt+l=goto_split:right
-
-# Split Resize
-# keybind = ctrl+shift+j=resize_split:up,10
-# keybind = ctrl+shift+k=resize_split:down,10
-# keybind = ctrl+shift+h=resize_split:left,10
-# keybind = ctrl+shift+l=resize_split:right,10
-
-# Miscellaneous
-keybind = cmd+k=clear_screen
 keybind = super+f=toggle_maximize
 keybind = shift+enter=text:\x1b\r
-
-# Cerrar ventana (para que no interfiera con tmux)
 keybind = alt+f4=close_window
-
-# Open file with nvim (write 'nvim' first, then use this keybinding)
 keybind = alt+s=write_screen_file:paste
 
+# Split resize
+keybind = super+control+shift+alt+arrow_down=resize_split:down,100
+keybind = super+control+shift+alt+arrow_up=resize_split:up,100
+keybind = super+control+shift+alt+arrow_left=resize_split:left,100
+keybind = super+control+shift+alt+arrow_right=resize_split:right,100
 
-# ┌──────────────────────────────────────────────────────────────────────────────┐
-# │                           GENTLEMAN THEME                                    │
-# └──────────────────────────────────────────────────────────────────────────────┘
+# ── Rendimiento ───────────────────────────────────────────────────────────────
 
-# --- Base Colors ---
-background = 06080f
-foreground = f3f6f9
-cursor-color = e0c15a
-selection-background = 263356
-selection-foreground = f3f6f9
-
-# --- Normal Colors ---
-palette = 0=#06080f
-palette = 1=#cb7c94
-palette = 2=#b7cc85
-palette = 3=#ffe066
-palette = 4=#7fb4ca
-palette = 5=#ff8dd7
-palette = 6=#7aa89f
-palette = 7=#f3f6f9
-
-# --- Bright Colors ---
-palette = 8=#8a8fa3
-palette = 9=#de8fa8
-palette = 10=#d1e8a9
-palette = 11=#fff7b1
-palette = 12=#a3d4d5
-palette = 13=#ffaeea
-palette = 14=#7fb4ca
-palette = 15=#f3f6f9
+mouse-scroll-multiplier = 0.95
+async-backend = epoll

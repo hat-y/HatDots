@@ -83,6 +83,11 @@ return {
 		-- Performance optimizations
 		ui = {
 			enable = true,
+			-- Dejar checkboxes, bullets e íconos de links a render-markdown.nvim
+			-- para evitar conflicto de conceals que oculta texto después del checkbox
+			checkboxes = {},
+			bullets = {},
+			external_link_icon = {},
 			update_debounce = 200,
 			max_file_length = 5000,
 		},
@@ -206,6 +211,60 @@ return {
 		{ "<leader>or", "<cmd>ObsidianRename<cr>", desc = "Rename note" },
 		{ "<leader>olT", "<cmd>ObsidianTemplate log-tmpl<cr>", desc = "Insert log template" },
 
+		-- Quick note creation (MOC) — not covered by hatnotes.creation yet
+		{
+			"<leader>onm",
+			function()
+				local name = vim.fn.input("MOC: ")
+				if name == "" then
+					return
+				end
+				local vault_path = vim.fn.expand("~/HatNotes")
+				local mocs_path = vault_path .. "/5-MOCs"
+				vim.fn.mkdir(mocs_path, "p")
+
+				-- Create id from name (slugify + fallback)
+				local id = name:lower()
+				id = id:gsub("á", "a"):gsub("é", "e"):gsub("í", "i"):gsub("ó", "o"):gsub("ú", "u"):gsub("ñ", "n")
+				id = id:gsub("[^a-z0-9]+", "-"):gsub("^%-", ""):gsub("%-$", "")
+				if id == "" or id == "-" then
+					id = os.date("%Y-%m-%d")
+				end
+
+				-- Escape name for YAML
+				local name_escaped = name
+				name_escaped = name_escaped:gsub("\\", "\\\\")
+				name_escaped = name_escaped:gsub('"', '\\"')
+
+				local filename = id .. ".md"
+				local file_path = mocs_path .. "/" .. filename
+
+				local content = string.format([=[---
+id: %s
+aliases: []
+tags: []
+---
+
+# %s
+
+## Temas
+- [[]]
+
+## Conceptos relacionados
+- [[]]
+
+## Recursos
+-
+
+## Próximos pasos
+-
+]=], id, name_escaped)
+
+				vim.fn.writefile(vim.split(content, "\n"), file_path)
+				vim.cmd("e " .. file_path)
+			end,
+			desc = "Nuevo MOC en 5-MOCs",
+		},
 
 		-- Libro / Lectura commands
 		{

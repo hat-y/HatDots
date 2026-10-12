@@ -5,9 +5,9 @@ function M.toggle_checkbox()
 	local line = vim.api.nvim_get_current_line()
 
 	if line:match("^%s*-%s+%[x%]") then
-		vim.api.nvim_set_current_line(line:gsub("(%s*-%s+)%[x%](%s*)", "%1[ ]%2"))
+		vim.api.nvim_set_current_line((line:gsub("(%s*-%s+)%[x%](%s*)", "%1[ ]%2")))
 	elseif line:match("^%s*-%s+%[ %]") then
-		vim.api.nvim_set_current_line(line:gsub("(%s*-%s+)%[ %](%s*)", "%1[x]%2"))
+		vim.api.nvim_set_current_line((line:gsub("(%s*-%s+)%[ %](%s*)", "%1[x]%2")))
 	else
 		local row = vim.api.nvim_win_get_cursor(0)[1]
 		vim.api.nvim_buf_set_text(0, row - 1, 0, row - 1, 0, { "- [ ] " })
