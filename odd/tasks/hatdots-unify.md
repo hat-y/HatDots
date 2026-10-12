@@ -163,10 +163,23 @@ stop it.
 
 ### Phase 4 — Installer
 
-- [ ] P4-1 Module manifest format and parser (TDD).
-- [ ] P4-2 Platform detection, plan, linker, package adapters (TDD).
-- [ ] P4-3 Bubbletea TUI (teatest).
-- [ ] P4-4 Release workflow and bootstrap scripts.
+- [x] P4-1 Module manifest format and parser (TDD). Commit `900caa0`
+      (domain types + manifest parser/validator).
+- [x] P4-2 Platform detection, plan, linker, package adapters (TDD). Split
+      into subtasks, each its own commit:
+  - [x] P4-2a Detect platform and package manager. Commit `508531d`.
+  - [x] P4-2b Build install plans (`domain.BuildPlan`). Commit `d688a8e`.
+  - [x] P4-2c Apply links with idempotent backups (linker adapter,
+        Windows junction fallback behind a build-tag-isolated interface).
+        Commit `2af9c75`.
+  - [x] P4-2d Package manager adapters (pacman/AUR/apt/dnf/zypper/brew/
+        winget/scoop command building + Executor port). Commit `32d01b5`.
+  - [x] P4-2e Non-interactive CLI (`internal/app` use cases +
+        `cmd/hatdots`). Commit `d7891f5`.
+  - [x] Real repo manifest (`modules.toml`) + parity tests against the
+        three old scripts. Commit `63f3d10`.
+- [ ] P4-3 Bubbletea TUI (teatest). Not started — phase 4b.
+- [ ] P4-4 Release workflow and bootstrap scripts. Not started — phase 4b.
 
 ### Phase 5 — Close
 
@@ -297,6 +310,113 @@ stop it.
   `:Lazy restore` never opening an apex buffer to trigger `auto_install`;
   resolved by running `:TSInstall apex soql sosl sflog` once, then
   `+checkhealth sf` was clean (only the pre-existing optional ctags hint).
+- 2026-10-12: Phase 4a done (P4-1/P4-2/real manifest; P4-3/P4-4 are phase
+  4b), HEAD `63f3d10`, 7 commits (`900caa0` manifest schema+parser,
+  `508531d` platform detection, `d688a8e` BuildPlan, `2af9c75` linker,
+  `32d01b5` pkg adapters, `d7891f5` app+CLI, `63f3d10` real manifest+
+  parity). New Go module `github.com/hat-y/HatDots/installer` under
+  `installer/`, hexagonal: `internal/domain` (pure: Module/Link/
+  PackageSpec/PostInstall/Platform/Manifest/Plan/Action + `BuildPlan`,
+  disk-free via an `FSState` port), `internal/manifest` (TOML parse +
+  validate), `internal/platform` (OS/Omarchy/distro/pkg-manager
+  detection), `internal/linker` (real `FSState` + `Linker.Apply`,
+  Windows dir-link fallback behind a build-tag-isolated
+  `dirLinkStrategy` interface so the fallback decision itself is a
+  Linux test), `internal/pkg` (per-manager command building + an
+  `Executor` port), `internal/app` (Load/Plan/Apply use cases),
+  `cmd/hatdots` (stdlib-`flag` CLI: `list`, `--all`/`--only`/
+  `--dry-run`/`--yes`/`--os`/`--desktop`/`--repo`). See
+  `installer/README.md` for the full schema, the required/optional
+  table (provisional, open question below), and every deliberate
+  deviation from the old scripts.
+  RED/GREEN evidence (one line per task, full detail in each commit
+  message):
+  - P4-1: `go test ./internal/manifest/...` failed to build
+    (`undefined: Parse, Validate`) before manifest.go/validate.go
+    existed; GREEN after, 18 cases across domain+manifest.
+  - P4-2a: `go test ./internal/platform/...` failed to build
+    (`undefined: DetectOmarchy, DetectPkgManagerFor, ...`); GREEN after,
+    11 cases.
+  - P4-2b: moved `plan.go` aside, confirmed `go test
+    ./internal/domain/...` failed to build (`undefined: BuildPlan,
+    Action, DstState, ...`), restored it; GREEN after, 12 top-level
+    cases (several table-driven).
+  - P4-2c: `go test ./internal/linker/...` failed to build
+    (`undefined: FSState, Linker`); GREEN after, 10 cases, including the
+    Windows symlink-then-junction-fallback decision exercised purely on
+    Linux via injected functions.
+  - P4-2d: `go test ./internal/pkg/...` failed to build (`undefined:
+    Command`); GREEN after, 14 cases across every manager.
+  - P4-2e: `go test ./internal/app/...` and `go test
+    ./cmd/hatdots/...` both failed to build (`undefined: Load, Event,
+    run, findRepoRoot, ...`); GREEN after, 6 + 10 cases.
+  - Real manifest/parity: deliberately broke tmux's `dst_mac` override
+    (`~/.tmux.conf` -> `~/.tmux-BROKEN.conf`) and reran `go test
+    ./internal/parity/... -run TestParity_Mac`, which failed with
+    "old-script pair not covered by the new manifest's plan"; reverted,
+    GREEN again.
+  Full-suite verification (all observed): `go vet ./...` clean;
+  `gofmt -l .` empty; `go test ./... -race -count=1` passes across all
+  8 packages; `go test ./... -cover` shows 70-89% per package (parity
+  has no statements of its own, by design — it's all assertions over
+  the other packages' output); `GOOS=darwin go build ./...`,
+  `GOOS=windows go build ./...`, and `GOARCH=arm64 GOOS=darwin go
+  build ./...` all succeed; `go run ./cmd/hatdots --repo .. --dry-run
+  --all --yes` on this machine (linux+omarchy, real detection) printed
+  a 29-action plan reflecting this machine's actual `~/.config` state
+  (several `link-replace`/`backup-then-link` actions against real
+  pre-existing files, not just `link-create`); the same with `--os mac
+  --desktop none` (28 actions) and `--os windows --desktop none`
+  (4 actions, `LOCALAPPDATA` env var supplied manually since this
+  machine is Linux) also printed plans; a before/after `git status`
+  and an `ls -la ~/.config | md5sum` snapshot were byte-identical
+  across all three dry runs — confirmed nothing was touched.
+  Parity results per platform: linux+omarchy, linux (no desktop), mac,
+  and windows each pass `installer/internal/parity`'s
+  `TestParity_*`, i.e. the plan from the real manifest contains every
+  `(src, dst)` pair hand-extracted from reading (never running)
+  `link-linux.sh`/`link-mac.sh`/`link-windows.ps1`. Mac and Windows
+  carry every old pair with zero drops. Linux drops 5 pairs, each
+  documented with a reason in `installer/internal/parity/parity_test.go`'s
+  `linuxDropped` and in `installer/README.md`: the shaders-only link
+  (superseded by linking the whole `common/ghostty` dir, a superset),
+  the heredoc-generated `~/.config/ghostty/config` (superseded by the
+  tracked `common/ghostty/config`, linked directly), the two
+  heredoc-generated launcher scripts (superseded by the tracked
+  `common/bin/ghostty-multiplexer-new`, already wired into
+  `common/ghostty/config`'s `command =` line), and the heredoc-generated
+  `tmux-session-layout` (superseded by Herdr, see
+  `openspec/changes/add-herdr-multiplexor`, now the primary
+  multiplexer). One real gap found and fixed while building the
+  parity fixture: `link-linux.sh` has always copied (not symlinked)
+  `.p10k.zsh` to Linux too, which the first manifest draft missed
+  entirely (the `zsh` module was mac-only); fixed by widening `zsh` to
+  `os = ["linux", "mac"]` with only the `.p10k.zsh` link unfiltered
+  (`.zshrc`/`os.zsh` stay mac-only), and unifying Linux to a symlink
+  like mac already used instead of a copy.
+  Also extended beyond strict 1:1 parity, per the task's own
+  instruction to cover "everything... including the overlay layer
+  from the tracker table... common/bin scripts... hypr (omarchy)...
+  kde (linux)": newsboat wired up for Linux (`os/linux/newsboat/
+  os.newsboat` existed but no script ever linked it), the Omarchy
+  `hypr/bindings.lua`+`autostart.lua` (previously a manual step
+  link-linux.sh only printed instructions for) and KDE's `kwinrc`
+  (previously only in `os/linux/README.md`'s manual `ln -sf`
+  instructions) are now real modules. `kglobalshortcutsrc-kzones` was
+  deliberately left out — a partial fragment, not a whole-file
+  replacement; see `installer/README.md`.
+  Open questions for the user (none blocked implementation, both are
+  documented in `installer/README.md`): (1) the required set
+  `{nvim, fish, starship}` is still provisional per the original
+  instruction — in particular, `starship` is required here but macOS's
+  own `os/mac/Brewfile` deliberately comments it out in favor of
+  `powerlevel10k`; this manifest now installs/links both on mac,
+  which could mean both are "active" in `.zshrc` depending on existing
+  init order — worth an explicit decision later rather than leaving
+  both wired. (2) AUR helper detection (`platform.DetectPkgManagerFor`)
+  is implemented and tested but not yet threaded through
+  `internal/app.Apply`'s package-install step, since no module needs
+  an AUR-only package yet; a small follow-up if one ever does.
 
 ## Phase 1 merge decisions
 
@@ -598,7 +718,7 @@ Three layers per common config, loaded in order: `os.*` (linux/mac/windows)
 | `os/linux/ghostty/os.ghostty` | `~/.config/hatdots/os.ghostty` | `link-linux.sh` (added phase 3) |
 | `os/mac/ghostty/os.ghostty` | `~/.config/hatdots/os.ghostty` | `link-mac.sh` (added) |
 | `os/mac/zsh/os.zsh` | `~/.config/hatdots/os.zsh` | `link-mac.sh` (added) |
-| `os/linux/newsboat/os.newsboat` | `~/.config/hatdots/os.newsboat` | not yet linked (Linux never linked newsboat before; out of phase 3 scope) |
+| `os/linux/newsboat/os.newsboat` | `~/.config/hatdots/os.newsboat` | now wired by the phase-4 `modules.toml` `newsboat` module (was unlinked by any script through phase 3) |
 | `os/mac/newsboat/os.newsboat` | `~/.config/hatdots/os.newsboat` | `link-mac.sh` (added) |
 | `os/omarchy/tmux/omarchy.tmux.conf` | `~/.config/hatdots/omarchy.tmux.conf` | `link-linux.sh` (renamed from `os.tmux.conf`, see Phase 3 decisions) |
 | `os/omarchy/ghostty/omarchy.ghostty` | `~/.config/hatdots/omarchy.ghostty` | `link-linux.sh` (added phase 3) |
@@ -613,6 +733,12 @@ have `os.*`/`omarchy.*`/`local.*` hooks ready for when one is (zsh/fish
 
 ## Next step
 
-Phase 3 is complete (P3-1 through P3-5 all done). Phase 4: installer
-(module manifest format and parser, platform detection/plan/linker/package
-adapters, Bubbletea TUI, release workflow and bootstrap scripts).
+Phase 4a is complete (module manifest schema+parser, platform
+detection, plan builder, linker, package adapters, non-interactive CLI,
+real `modules.toml`, parity tests against the three old scripts — see
+`installer/README.md` and the Phase 4a progress entry above for full
+detail, open questions, and known deviations). Phase 4b: Bubbletea TUI
+(teatest), release workflow, bootstrap scripts (`bootstrap.sh`/
+`bootstrap.ps1`), and removing `link-linux.sh`/`link-mac.sh`/
+`link-windows.ps1` once the TUI/bootstrap path is proven. Phase 5 after
+that: user verifies macOS and Windows, then merge to `main`.
