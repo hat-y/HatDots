@@ -1,0 +1,202 @@
+# herdr — HatDots/HatMac
+
+[herdr](https://github.com/herdrdev/herdr) es un runtime persistente para terminales donde corren agentes de IA (Claude Code, Codex, Cursor, OpenCode, Grok). Es un binario Rust que corre como daemon: las terminales viven adentro, sobreviven cierres de tapa, caídas de red y reinicios.
+
+## ¿Por qué lo incluye HatMac?
+
+Si trabajás con agentes de IA en terminal, herdr te da:
+- **Persistencia real**: tu sesión de Claude Code sigue corriendo aunque cierres la laptop o se corte la red.
+- **Visibilidad de estado**: cada pane está marcado como `working`, `blocked` o `idle` — sabés qué agente espera input tuyo.
+- **Reanudación nativa**: al restaurar sesión, retoma la conversación del agente (no la pierde).
+- **Mouse + teclado**: prefix tmux-style (`ctrl+b`) y clicks/drags/splits.
+
+**NO reemplaza a tmux.** Convive con tu setup:
+- **tmux** = sesión de trabajo (nvim, shell, scripts)
+- **herdr** = capa de agentes de IA persistentes
+
+Si solo usás agentes desde tu laptop y nunca perdés sesiones, probablemente no lo necesites. Si te pasó de perder una conversación de Claude Code de 2 horas porque se te cerró la tapa, lo necesitás.
+
+## Instalación
+
+Ya está en el `Brewfile` de HatMac:
+```bash
+brew install herdr      # o ./link-mac.sh
+```
+
+Alternativas (sin brew):
+```bash
+curl -fsSL https://herdr.dev/install.sh | sh
+mise use -g herdr
+```
+
+## Auto-arranque en boot/login (LaunchAgent)
+
+Para que herdr server arranque automáticamente al hacer login (sin abrir terminal) y sobreviva reinicios:
+
+```bash
+./HatMac/herdr/install.sh             # instala + carga el LaunchAgent
+./HatMac/herdr/install.sh --restart   # recarga después de cambiar config
+./HatMac/herdr/install.sh --uninstall # desinstala
+```
+
+**Lo que hace:**
+- Detecta el path del binario herdr (`/opt/homebrew/bin/herdr` o `/usr/local/bin/herdr`).
+- Genera `~/Library/LaunchAgents/com.user.herdr.plist` con `herdr server`.
+- Lo carga con `launchctl load -w` (persiste entre logins).
+- Configura `KeepAlive` para que re-arranque si crashea.
+
+**Verificación:**
+```bash
+launchctl list | grep herdr           # debe mostrar com.user.herdr
+herdr status server                   # debe decir "running"
+tail -f ~/Library/Logs/herdr/server.log
+```
+
+**Si querés saltarlo durante `./link-mac.sh`:**
+```bash
+./link-mac.sh --no-herdr-autostart
+```
+
+**Integración con Ghostty:**
+El `HatMac/ghostty/config` ya tiene:
+```
+command = /opt/homebrew/bin/herdr
+```
+Cuando abrís Ghostty, ejecuta `herdr` → si el server está corriendo (LaunchAgent), hace attach; si no, crea uno nuevo + attach.
+
+**tmux queda como herramienta interna:** dentro de cualquier pane de herdr podés correr `tmux` si necesitás splits/workspaces adicionales. La sesión "main" de tmux sigue configurada por si querés usarla.
+
+## Uso básico
+
+```bash
+herdr                          # inicia (o re-attacha si ya hay server)
+ctrl+b q                       # detach (el server sigue corriendo)
+herdr                          # re-attach desde otra terminal / SSH
+herdr --help                   # ver todos los comandos
+```
+
+Adentro de herdr (con prefix `ctrl+b`):
+- `prefix + c` — nuevo pane
+- `prefix + %` — split vertical
+- `prefix + "` — split horizontal
+- `prefix + h/j/k/l` — focus entre panes (vim-style)
+- `prefix + n/p` — siguiente/anterior pane
+- `prefix + ,` — renombrar pane
+- `prefix + x` — cerrar pane
+- `prefix + ?` — ayuda de keybinds
+
+Custom de HatDots (definidos en `config.toml`):
+- `prefix + shift + h` — `hat-news` (RSS headlines con notif nativa)
+- `prefix + shift + o` — abrir Obsidian
+
+HatDots explícitamente seteado (porque es unset por default en herdr):
+- `prefix + shift + 1..9` — saltar al workspace N (equivalente a `SUPER+1..9` de Hyprland)
+
+> **Nota:** Las keybinds `prefix + g` (nueva sesión tmux) y `prefix + shift + t` (tmux-work) fueron removidas — HatMac es herdr-first, no tmux-first. Si querés tmux de todas formas, los scripts `tmux-work` y `ghostty-tmux-new` siguen instalados; solo no tienen keybind automático.
+
+## Workspaces — estrategia "un workspace = un proyecto"
+
+En Hyprland vos tenías `SUPER+1..9` para saltar entre proyectos. La equivalente en herdr es el concepto de **workspace** (sesión lógica adentro del server, no ventana nueva). Estrategia adoptada por HatMac:
+
+### Naming
+
+Cada workspace se llama como el proyecto/contexto: `hatdots`, `cliente-x`, `lab`, `home`, etc. El nombre aparece en la sidebar y en `prefix + w` (workspace picker).
+
+### Creación y navegación
+
+| Acción | Keybind |
+|---|---|
+| Crear nuevo workspace (te pide nombre) | `prefix + shift + n` (default herdr) |
+| Listar/saltar workspaces con fuzzy picker | `prefix + w` (default herdr) |
+| Saltar directo al workspace N | `prefix + shift + 1..9` (custom HatDots) |
+
+### Setup inicial sugerido
+
+Después de `link-mac.sh`, crear los workspaces base una vez:
+
+```bash
+herdr                    # abre el server, queda en workspace "home" por default
+# prefix + shift + n → nombre: "hatdots"
+# prefix + shift + n → nombre: "cliente-x"
+# prefix + shift + n → nombre: "agentes"
+```
+
+Los workspaces se guardan en `~/.config/herdr/` y se restauran automáticamente al reiniciar (incluso los agentes que pausaste con `resume_agents_on_restore = true`).
+
+### Cómo trabajar día a día
+
+1. Abrís Ghostty → `command = herdr` → attach al server (LaunchAgent ya está corriendo)
+2. `prefix + shift + 1..9` para saltar al workspace del proyecto en el que querés laburar
+3. Dentro de cada workspace: tabs (`prefix + c` para nueva, `prefix + n` / `prefix + p` para switch) y panes (`prefix + %` / `prefix + "`)
+4. Para agentes de IA (Claude Code, Codex): `prefix + shift + n` para nuevo workspace dedicado, corrés el agente ahí
+
+> **Tip:** Un workspace puede tener su propio cwd. Cuando lo creás, primero `cd` al directorio del proyecto en un pane y después creás más panes en ese workspace — heredan el cwd.
+
+## Config
+
+Ubicación: `~/.config/herdr/config.toml` (symlink a `HatMac/herdr/config.toml` via `link-mac.sh`).
+
+Override por env:
+```bash
+HERDR_CONFIG_PATH=/custom/path/config.toml herdr
+```
+
+La config de HatMac está optimizada para integrarse con el resto:
+- `[terminal] default_shell = "/bin/zsh"` — matchea `HatMac/zsh/.zshrc`
+- `[theme] name = "kanagawa"` — mismo theme que Ghostty y tmux Gentleman
+- `[keys] prefix = "ctrl+b"` — mismo prefix que tmux (⚠️ si corrés herdr DENTRO de tmux, cambiá uno de los dos prefix)
+- `[keys] switch_workspace = "prefix+shift+1..9"` — equivalente a SUPER+1..9 de Hyprland (estategia one-workspace-per-project)
+- Custom keybinds `hat-news` y Obsidian que llaman scripts/binarios del repo
+
+## Temas
+
+18 themes built-in. Para listarlos:
+```bash
+herdr theme list
+```
+
+Cambiar:
+```toml
+[theme]
+name = "kanagawa"  # o catppuccin, tokyo-night, dracula, nord, gruvbox, etc.
+```
+
+## Marketplace de plugins
+
+[herdr.dev/plugins/](https://herdr.dev/plugins/) — plugins comunitarios para extender panes y workflows.
+
+## Agentes soportados
+
+Claude Code, Codex, Cursor, OpenCode, Grok, y más. Lista completa: [herdr.dev/docs/agents/](https://herdr.dev/docs/agents/).
+
+Los agentes se conectan vía socket API — ver [herdr.dev/docs/socket-api/](https://herdr.dev/docs/socket-api/).
+
+## Troubleshooting
+
+### "Address already in use" al hacer `herdr`
+Ya hay un server corriendo. Hacé `herdr` (sin flag) para re-attachear, o matá el server con `pkill herdr-server`.
+
+### Conflicto de prefix con tmux
+Si herdr corre dentro de tmux, ambos tienen `prefix = ctrl+b`. Cambiá uno:
+- En herdr: editá `[keys] prefix = "ctrl+a"` en `config.toml`
+- En tmux: editá `set -g prefix C-a` en `~/.tmux.conf` y reiniciá tmux (`prefix + R`)
+
+### Ver logs
+```bash
+~/.local/state/herdr/server.log      # o donde diga `herdr info`
+herdr info                           # muestra paths de log/state/config
+```
+
+### Reset completo (⚠️ pierde sesiones)
+```bash
+rm -rf ~/.config/herdr ~/.local/state/herdr
+herdr                                 # vuelve a generar config default
+```
+
+## Links
+
+- [Repo](https://github.com/herdrdev/herdr)
+- [Docs](https://herdr.dev/docs/)
+- [Quick start](https://herdr.dev/docs/quick-start/)
+- [Configuration](https://herdr.dev/docs/configuration/)
+- [Plugins](https://herdr.dev/plugins/)

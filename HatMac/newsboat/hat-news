@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# ──────────────────────────────────────────────────────────────────────────────
+# hat-news — Fetch top headlines and show as macOS notification
+#   Also opens Newsboat in Ghostty when called with --open
+#
+# HatDots/HatMac: usa `osascript` (nativo en macOS) en lugar de notify-send,
+# y lanza ghostty directo (sin uwsm-app, que es específico de Omarchy).
+# ──────────────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+# Config
+CACHE_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/hat-news/headlines.txt"
+MAX_HEADLINES=5
+FEEDS=(
+  "https://news.google.com/rss?hl=es-419&gl=AR&ceid=AR:es"
+  "https://hnrss.org/frontpage"
+)
+
+# ── Open Newsboat ───────────────────────────────────────────────────────────
+if [[ "${1:-}" == "--open" ]]; then
+  exec ghostty --class=com.ghostty.newsboat --title=newsboat -e newsboat
+fi
+
+# ── Fetch headlines ─────────────────────────────────────────────────────────
+mkdir -p "$(dirname "$CACHE_FILE")"
+HEADLINES=""
+
+for feed in "${FEEDS[@]}"; do
+  FEED_TITLES=$(curl -sL --max-time 10 "$feed" \
+    | grep -o '<title>[^<]*</title>' \
+    | sed 's/<title><!\[CDATA\[//; s/\]\]><\/title>//; s/<title>//; s/<\/title>//' \
+    | tail -n +2 \
+    | head -n 3)
+  HEADLINES+="$FEED_TITLES"$'\n'
+done
+
+# Remove duplicates and empty lines
+HEADLINES=$(echo "$HEADLINES" \
+  | awk '!seen[$0]++' \
+  | sed '/^$/d' \
+  | head -n 6)
+
+if [[ -z "$HEADLINES" ]]; then
+  # Fallback: mostrar las últimas guardadas
+  HEADLINES=$(head -n "$MAX_HEADLINES" "$CACHE_FILE" 2>/dev/null || echo "Sin conexión")
+fi
+
+# Cachear
+echo "$HEADLINES" > "$CACHE_FILE"
+
+# ── Notificación (macOS nativo via osascript) ───────────────────────────────
+TITLE="Noticias del momento"
+# Escapar comillas dobles para AppleScript
+BODY=$(echo "$HEADLINES" | sed 's/^/• /' | sed 's/"/\\"/g' | tr '\n' ' ')
+
+osascript -e "display notification \"$BODY\" with title \"$TITLE\""

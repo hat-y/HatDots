@@ -1,0 +1,30 @@
+# ── General ─────────────────────────────────────────────────────────────────
+browser "open %u"
+max-items 200
+reload-time 60
+reload-threads 5
+show-read-feeds no
+show-read-articles no
+scrolloff 5
+
+# ── Visual ──────────────────────────────────────────────────────────────────
+articlelist-format "%4i %?D? ?& ?%f %u %?T?| %T ?&| %t ?"
+feedlist-format " %n %4i %11u %?T?| %-40T ?&| %-40t ?"
+datetime-format "%Y-%m-%d %H:%M"
+
+# ── Keys (sintaxis: bind-key <tecla> <acción>) ──────────────────────────────
+# Navegación vim
+bind-key k up
+bind-key j down
+bind-key g home
+bind-key G end
+bind-key ^D page_down
+bind-key ^U page_up
+
+# Acciones
+bind-key o open-in-browser
+bind-key Space toggle-article-read
+bind-key d mark-all-feeds-read
+bind-key r reload
+bind-key R reload-all
+bind-key ENTER open-in-browser
