@@ -1,1 +1,0 @@
-/home/hat/.config/omarchy/current/theme/neovim.lua

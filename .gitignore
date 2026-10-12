@@ -78,3 +78,5 @@ env/
 HatArch/themes/*/vesktop/*
 !HatArch/themes/*/vesktop/*.css
 *.ldb
+# Local Pi runtime state
+.atl/

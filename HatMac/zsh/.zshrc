@@ -37,6 +37,12 @@ fi
 # --- Inicialización de completions ---
 autoload -Uz compinit && compinit -u
 
+# --- Salesforce CLI (sf) completions ---
+# Reemplazan al viejo _sfdx. Se generan al abrir shell si `sf` está en PATH.
+if command -v sf >/dev/null 2>&1; then
+  sf completion zsh > "${fpath[1]}/_sf" 2>/dev/null
+fi
+
 # --- Plugins: zsh-autosuggestions (brew o local) ---
 if [ -f "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
   source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
@@ -57,6 +63,24 @@ alias ls='eza --icons=auto --group-directories-first --classify'
 alias ll='eza -lh --git --icons=auto --group-directories-first --classify'
 alias la='eza -lha --git --icons=auto --group-directories-first --classify'
 alias lt='eza --tree --level=2 --icons=auto --group-directories-first'
+
+# --- Salesforce ---
+alias sforgs='sf org list'
+alias sfopen='sf org open'
+alias sftest='sf apex run test --code-coverage --result-format human'
+alias sflog='sf apex log tail --color'
+alias sfdeploy='sf project deploy start --source-dir force-app'
+alias sfretrieve='sf project retrieve start --source-dir force-app'
+
+# Java 21 (Adoptium Temurin via brew openjdk@21). Necesario para apex-jdtls
+# (LSP de Apex en nvim) y sf CLI plugins que lo requieren.
+export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"
+
+# Acceso rápido al proyecto SF (cd + abrir editor)
+alias cdsf='cd ~/projects/dapsa-sf/dapsa-sf'
+alias hatsf='cd ~/projects/dapsa-sf/dapsa-sf && nvim'
+alias hatsfc='cd ~/projects/dapsa-sf/dapsa-sf && code .'
 
 # --- Powerlevel10k (brew o local) ---
 if [ -f "$HOMEBREW_PREFIX/opt/powerlevel10k/share/powerlevel10k/powerlevel10k.zsh-theme" ]; then
@@ -86,3 +110,17 @@ export PATH="$HOME/.local/bin:$PATH"
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# study-pipeline defaults for quill's on_stop hook (added 2026-08-26)
+export STUDY_MATERIA="General"
+# Uncomment and edit to override per session:
+# export STUDY_LANG="es"
+# export STUDY_PROVIDER="ollama"

@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# hat-theme — Derive a Peachy palette from a wallpaper and apply it on macOS.
+#
+# What it does:
+#   1. Validates the wallpaper path and required commands (peachy, osascript).
+#   2. Runs Peachy to generate the palette for that wallpaper.
+#   3. Exports the saved Peachy theme into ~/.config/peachy/generated/hat-wallpaper.
+#   4. Sets the macOS desktop wallpaper to that image (skipped under --dry-run).
+#   5. Sets the macOS appearance (Light with --light, Dark by default).
+#
+# App templates (Ghostty, Neovim, terminals, ...) are intentionally NOT updated
+# yet. That step lands in a follow-up wrapper that reads from the generated dir.
+#
+# Usage:
+#   hat-theme /path/to/wallpaper.jpg
+#   hat-theme /path/to/wallpaper.jpg --light
+#   hat-theme /path/to/wallpaper.jpg --dry-run
+#
+# Requires: bash 3+, peachy, osascript (macOS only).
+
+set -euo pipefail
+
+OUT_DIR="${HOME}/.config/peachy/generated/hat-wallpaper"
+WALLPAPER=""
+LIGHT=0    # default: dark
+DRY_RUN=0
+
+log() { printf '\033[1;36m▸\033[0m %s\n' "$*"; }
+ok()  { printf '\033[1;32m✓\033[0m %s\n' "$*"; }
+err() { printf '\033[1;31m✗\033[0m %s\n' "$*" >&2; }
+
+usage() {
+    cat <<EOF
+Usage: hat-theme <wallpaper> [--light] [--dry-run]
+
+  <wallpaper>   Path to an image file (jpg, png, heic, heif, webp, bmp, tiff, gif).
+  --light       Set macOS appearance to Light (default: Dark).
+  --dry-run     Generate palette only; do not change wallpaper or appearance.
+  -h, --help    Show this help.
+
+Generated palette goes to: ${OUT_DIR}
+EOF
+}
+
+# ── Parse args ──────────────────────────────────────────────────────────────────
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help) usage; exit 0 ;;
+        --light)   LIGHT=1; shift ;;
+        --dry-run) DRY_RUN=1; shift ;;
+        --*)       err "Unknown flag: $1"; usage; exit 2 ;;
+        *)
+            if [ -n "$WALLPAPER" ]; then
+                err "Only one wallpaper path is allowed (got '$WALLPAPER' and '$1')"
+                exit 2
+            fi
+            WALLPAPER="$1"
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$WALLPAPER" ]; then
+    err "Missing wallpaper path"
+    usage
+    exit 2
+fi
+
+# ── Validate required commands ──────────────────────────────────────────────────
+for cmd in peachy osascript; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        err "Required command not found in PATH: $cmd"
+        if [ "$cmd" = "peachy" ]; then
+            err "Install Peachy from https://github.com/bjarneo/peachy (no Homebrew formula is required)"
+        fi
+        exit 1
+    fi
+done
+
+# ── Validate wallpaper file ─────────────────────────────────────────────────────
+if [ ! -e "$WALLPAPER" ]; then
+    err "Wallpaper not found: $WALLPAPER"
+    exit 1
+fi
+if [ ! -f "$WALLPAPER" ]; then
+    err "Not a regular file: $WALLPAPER"
+    exit 1
+fi
+if [ ! -r "$WALLPAPER" ]; then
+    err "Not readable: $WALLPAPER"
+    exit 1
+fi
+
+case "$(printf '%s' "$WALLPAPER" | tr '[:upper:]' '[:lower:]')" in
+    *.jpg|*.jpeg|*.png|*.heic|*.heif|*.webp|*.bmp|*.tiff|*.gif) ;;
+    *) err "Unsupported image extension: $WALLPAPER"; exit 1 ;;
+esac
+
+# Resolve to an absolute POSIX path; Peachy and osascript both want that.
+WALLPAPER_ABS="$(cd "$(dirname "$WALLPAPER")" && pwd)/$(basename "$WALLPAPER")"
+THEME_NAME="hat-wallpaper"
+
+log "Wallpaper:  $WALLPAPER_ABS"
+log "Theme name: $THEME_NAME"
+log "Output dir: $OUT_DIR"
+[ "$LIGHT"  -eq 1 ] && log "Appearance:  light" || log "Appearance:  dark"
+[ "$DRY_RUN" -eq 1 ] && log "Mode:        dry-run"
+
+# ── Run Peachy ──────────────────────────────────────────────────────────────────
+mkdir -p "$OUT_DIR"
+
+log "Generating palette with Peachy..."
+# ponytail: two-step peachy invocation — generate (with --save + --no-apply) then
+# export — because Peachy keeps the active palette in memory and `export` is what
+# writes the embedded theme files into OUT_DIR.
+peachy generate "$WALLPAPER_ABS" --save "$THEME_NAME" --no-apply
+
+peachy export "$THEME_NAME" "$OUT_DIR"
+
+ok "Exported Peachy theme files into $OUT_DIR"
+
+# ── Apply on macOS ──────────────────────────────────────────────────────────────
+if [ "$DRY_RUN" -eq 0 ]; then
+    log "Setting macOS desktop wallpaper..."
+    osascript -e "tell application \"System Events\" to set picture of every desktop to POSIX file \"$WALLPAPER_ABS\""
+    ok "Wallpaper applied"
+
+    if [ "$LIGHT" -eq 1 ]; then
+        log "Setting macOS appearance to light..."
+        osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to false'
+        ok "Appearance: light"
+    else
+        log "Setting macOS appearance to dark..."
+        osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to true'
+        ok "Appearance: dark"
+    fi
+else
+    log "Skipping wallpaper and appearance changes (--dry-run)"
+fi
+
+log "Done."
+echo
+echo "App templates (Ghostty, Neovim, ...) are NOT updated by this wrapper yet."
+echo "They will read from: $OUT_DIR"

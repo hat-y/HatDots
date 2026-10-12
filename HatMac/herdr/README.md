@@ -86,10 +86,51 @@ Adentro de herdr (con prefix `ctrl+b`):
 - `prefix + ?` — ayuda de keybinds
 
 Custom de HatDots (definidos en `config.toml`):
-- `prefix + g` — `ghostty-tmux-new` (nueva sesión tmux en ghostty)
-- `prefix + shift + t` — `tmux-work` (sesión Work con 3 windows)
-- `prefix + shift + n` — `hat-news` (RSS headlines)
+- `prefix + shift + h` — `hat-news` (RSS headlines con notif nativa)
 - `prefix + shift + o` — abrir Obsidian
+
+HatDots explícitamente seteado (porque es unset por default en herdr):
+- `prefix + shift + 1..9` — saltar al workspace N (equivalente a `SUPER+1..9` de Hyprland)
+
+> **Nota:** Las keybinds `prefix + g` (nueva sesión tmux) y `prefix + shift + t` (tmux-work) fueron removidas — HatMac es herdr-first, no tmux-first. Si querés tmux de todas formas, los scripts `tmux-work` y `ghostty-tmux-new` siguen instalados; solo no tienen keybind automático.
+
+## Workspaces — estrategia "un workspace = un proyecto"
+
+En Hyprland vos tenías `SUPER+1..9` para saltar entre proyectos. La equivalente en herdr es el concepto de **workspace** (sesión lógica adentro del server, no ventana nueva). Estrategia adoptada por HatMac:
+
+### Naming
+
+Cada workspace se llama como el proyecto/contexto: `hatdots`, `cliente-x`, `lab`, `home`, etc. El nombre aparece en la sidebar y en `prefix + w` (workspace picker).
+
+### Creación y navegación
+
+| Acción | Keybind |
+|---|---|
+| Crear nuevo workspace (te pide nombre) | `prefix + shift + n` (default herdr) |
+| Listar/saltar workspaces con fuzzy picker | `prefix + w` (default herdr) |
+| Saltar directo al workspace N | `prefix + shift + 1..9` (custom HatDots) |
+
+### Setup inicial sugerido
+
+Después de `link-mac.sh`, crear los workspaces base una vez:
+
+```bash
+herdr                    # abre el server, queda en workspace "home" por default
+# prefix + shift + n → nombre: "hatdots"
+# prefix + shift + n → nombre: "cliente-x"
+# prefix + shift + n → nombre: "agentes"
+```
+
+Los workspaces se guardan en `~/.config/herdr/` y se restauran automáticamente al reiniciar (incluso los agentes que pausaste con `resume_agents_on_restore = true`).
+
+### Cómo trabajar día a día
+
+1. Abrís Ghostty → `command = herdr` → attach al server (LaunchAgent ya está corriendo)
+2. `prefix + shift + 1..9` para saltar al workspace del proyecto en el que querés laburar
+3. Dentro de cada workspace: tabs (`prefix + c` para nueva, `prefix + n` / `prefix + p` para switch) y panes (`prefix + %` / `prefix + "`)
+4. Para agentes de IA (Claude Code, Codex): `prefix + shift + n` para nuevo workspace dedicado, corrés el agente ahí
+
+> **Tip:** Un workspace puede tener su propio cwd. Cuando lo creás, primero `cd` al directorio del proyecto en un pane y después creás más panes en ese workspace — heredan el cwd.
 
 ## Config
 
@@ -104,7 +145,8 @@ La config de HatMac está optimizada para integrarse con el resto:
 - `[terminal] default_shell = "/bin/zsh"` — matchea `HatMac/zsh/.zshrc`
 - `[theme] name = "kanagawa"` — mismo theme que Ghostty y tmux Gentleman
 - `[keys] prefix = "ctrl+b"` — mismo prefix que tmux (⚠️ si corrés herdr DENTRO de tmux, cambiá uno de los dos prefix)
-- Custom keybinds que llaman scripts del repo (tmux-work, hat-news, etc.)
+- `[keys] switch_workspace = "prefix+shift+1..9"` — equivalente a SUPER+1..9 de Hyprland (estategia one-workspace-per-project)
+- Custom keybinds `hat-news` y Obsidian que llaman scripts/binarios del repo
 
 ## Temas
 

@@ -42,6 +42,12 @@ brew "newsboat"
 # Convive con tmux. Ver HatMac/herdr/README.md
 brew "herdr"
 
+# ── Salesforce CLI (sf v2) ─────────────────────────────────────────────────────
+# Reemplaza a sfdx (deprecado en 2023). Soporta orgs scratch, metadata deploy,
+# Apex tests, etc. La completions se carga en .zshrc vía `sf completion zsh`.
+# bin/hat-sf-install baja el apex-jdtls.jar por separado.
+brew "sf"
+
 # ── Fonts (cask) ───────────────────────────────────────────────────────────────
 cask "font-jetbrains-mono-nerd-font"
 cask "font-iosevka-nerd-font"

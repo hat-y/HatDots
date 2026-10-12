@@ -16,9 +16,19 @@ shell_mode = "login"                # ejecuta zsh como login shell (lee .zshrc)
 new_cwd = "current"                 # nuevos panes heredan el cwd del pane activo
 
 # ── Theme ──────────────────────────────────────────────────────────────────────
-# Kanagawa — consistente con Ghostty y tmux Gentleman theme.
+# Basado en Gentleman.Dots — one-dark base + custom overrides para matchear
+# la palette Gentleman del host (Ghostty).
 [theme]
-name = "kanagawa"
+name = "one-dark"
+
+[theme.custom]
+panel_bg = "#06080f"
+# Match Pi's Gentle theme, with a muted cyan for Herdr chrome.
+accent = "#6FA0AF"
+green = "#B7CC85"
+blue = "#6FA0AF"
+red = "#CB7C94"
+yellow = "#DEBA87"
 
 # ── Session persistence ────────────────────────────────────────────────────────
 # Reanudar agentes de IA en su sesión nativa al restaurar (Claude Code, Codex,
@@ -27,47 +37,57 @@ name = "kanagawa"
 resume_agents_on_restore = true
 
 # ── Keybinds ───────────────────────────────────────────────────────────────────
-# prefix = ctrl+b (mismo que tmux). Para evitar conflicto con tmux cuando
-# corrés herdr DENTRO de tmux, cambiá el prefix a algo distinto (ej: "ctrl+a").
+# prefix = ctrl+a (mismo que tmux y zellij, para mantener memoria muscular).
+# Para evitar conflicto con tmux cuando corrés herdr DENTRO de tmux,
+# cambiá el prefix a algo distinto (ej: "ctrl+b").
 [keys]
-prefix = "ctrl+b"
+prefix = "ctrl+a"
 
-# Custom: integración con el resto del setup HatDots
-[[keys.custom]]
-key = "prefix+g"
-description = "HatDots: lanzar ghostty-tmux-new (nueva sesión tmux)"
-command = "ghostty-tmux-new"
-action_type = "shell"
+# Equivalente a SUPER+1..9 de Hyprland: salta directo al workspace N.
+# Default de herdr es unset, por eso lo seteamos acá (estrategia
+# "one workspace = one project").
+switch_workspace = "prefix+shift+1..9"
 
-[[keys.custom]]
-key = "prefix+shift+t"
-description = "HatDots: abrir tmux-work (sesión Work con 3 windows)"
-command = "tmux-work"
-action_type = "shell"
+# Mover entre agentes en la sidebar (estilo Gentleman.Dots).
+# Usamos prefix+alt+k/j (no prefix+shift+j/k) para no chocar con swap panes
+# built-in de herdr (swap_pane_down/up = "prefix+shift+j/k").
+previous_agent = "prefix+alt+k"
+next_agent = "prefix+alt+j"
 
-[[keys.custom]]
-key = "prefix+shift+n"
+# Salto directo al agente N (1..9) listado en la sidebar.
+# Alt+number es de skhd/yabai spaces; Shift+number no llegaba de forma
+# consistente en Ghostty. Ctrl después del prefix es la opción segura.
+focus_agent = "prefix+ctrl+1..9"
+
+# Custom: integración con el resto del setup HatDots.
+# Nota: la tabla oficial es [[keys.command]] (no [[keys.custom]]) y la key
+# es `type` (no `action_type`). Ver https://herdr.dev/docs/configuration/#custom-command-keybindings.
+[[keys.command]]
+key = "prefix+shift+h"
 description = "HatDots: hat-news (RSS headlines con osascript notif)"
 command = "hat-news"
-action_type = "shell"
+type = "shell"
 
-[[keys.custom]]
+[[keys.command]]
 key = "prefix+shift+o"
 description = "HatDots: abrir Obsidian"
 command = "open -a Obsidian"
-action_type = "shell"
+type = "shell"
 
 # ── UI ─────────────────────────────────────────────────────────────────────────
 [ui]
-# Sidebar con agentes a la izquierda. Útil para ver Claude/Codex/OpenCode corriendo.
-sidebar_visible = true
-sidebar_position = "left"
-status_indicator_style = "blocks"    # "blocks" | "dots" | "text" — visual del estado del pane
+# Sidebar expandida al arrancar (mostrar agentes de IA a la izquierda).
+sidebar_start_collapsed = false
+
+# Indicadores de estado de agentes: "dots" (default, dots de colores) o
+# "symbols" (símbolos estáticos distinguen working/blocked/done/idle/unknown).
+status_indicators = "dots"
 
 # ── Server ─────────────────────────────────────────────────────────────────────
+# Ajustes de layout virtual cuando no hay cliente attached. Defaults razonables.
 [server]
-# Default: escuchar en localhost:7777 para el socket API que usan los agentes.
-# No cambiar salvo que sepas lo que hacés.
+headless_cols = 120
+headless_rows = 40
 
 # ── Update ─────────────────────────────────────────────────────────────────────
 [update]
