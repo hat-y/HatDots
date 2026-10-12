@@ -3,8 +3,7 @@
 # ghostty-multiplexer-new — HatDots multiplexer-aware session starter.
 #
 # Invoked by:
-#   - HatLinux/ghostty/config (command = ...)
-#   - HatLinux/tmux/.tmux.conf   (bind N command-prompt ... run-shell ...)
+#   - common/ghostty/config (command = ...)
 #
 # Arity: one OPTIONAL positional session name; default = "main".
 # Extra args are ignored (intentional; matches the legacy ghostty-tmux-new arity).

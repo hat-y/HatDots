@@ -1,0 +1,3 @@
+# macOS overlay for common/newsboat/config. Linked by link-mac.sh into
+# ~/.config/hatdots/os.newsboat.
+browser "open %u"

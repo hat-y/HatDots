@@ -1,0 +1,12 @@
+# macOS overlay for common/ghostty/config. Linked by link-mac.sh into
+# ~/.config/hatdots/os.ghostty.
+
+# Launch herdr directly (brew-installed, kept alive by the LaunchAgent in
+# os/mac/herdr/). Overrides the common ghostty-multiplexer-new launcher.
+command = /opt/homebrew/bin/herdr
+
+# Font (overrides the common font)
+font-family = IosevkaTerm NF
+font-size = 18
+
+background-opacity-cells = true

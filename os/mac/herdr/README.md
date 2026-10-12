@@ -34,9 +34,9 @@ mise use -g herdr
 Para que herdr server arranque automáticamente al hacer login (sin abrir terminal) y sobreviva reinicios:
 
 ```bash
-./HatMac/herdr/install.sh             # instala + carga el LaunchAgent
-./HatMac/herdr/install.sh --restart   # recarga después de cambiar config
-./HatMac/herdr/install.sh --uninstall # desinstala
+./os/mac/herdr/install.sh             # instala + carga el LaunchAgent
+./os/mac/herdr/install.sh --restart   # recarga después de cambiar config
+./os/mac/herdr/install.sh --uninstall # desinstala
 ```
 
 **Lo que hace:**
@@ -58,7 +58,7 @@ tail -f ~/Library/Logs/herdr/server.log
 ```
 
 **Integración con Ghostty:**
-El `HatMac/ghostty/config` ya tiene:
+El overlay `os/mac/ghostty/os.ghostty` ya tiene:
 ```
 command = /opt/homebrew/bin/herdr
 ```
@@ -134,19 +134,21 @@ Los workspaces se guardan en `~/.config/herdr/` y se restauran automáticamente 
 
 ## Config
 
-Ubicación: `~/.config/herdr/config.toml` (symlink a `HatMac/herdr/config.toml` via `link-mac.sh`).
+Ubicación: `~/.config/herdr/config.toml` (symlink a `common/herdr/config.toml` via `link-mac.sh`).
 
 Override por env:
 ```bash
 HERDR_CONFIG_PATH=/custom/path/config.toml herdr
 ```
 
-La config de HatMac está optimizada para integrarse con el resto:
-- `[terminal] default_shell = "/bin/zsh"` — matchea `HatMac/zsh/.zshrc`
-- `[theme] name = "kanagawa"` — mismo theme que Ghostty y tmux Gentleman
-- `[keys] prefix = "ctrl+b"` — mismo prefix que tmux (⚠️ si corrés herdr DENTRO de tmux, cambiá uno de los dos prefix)
-- `[keys] switch_workspace = "prefix+shift+1..9"` — equivalente a SUPER+1..9 de Hyprland (estategia one-workspace-per-project)
-- Custom keybinds `hat-news` y Obsidian que llaman scripts/binarios del repo
+Desde la unificación de Phase 2, HatMac usa la **misma** config de herdr que
+Linux (`common/herdr/config.toml`) — ver `common/herdr/README.md` para el
+detalle completo de keybinds y theme. Lo que la vieja config mac-only tenía y
+ya **no** existe en ningún tracked file (ver `odd/tasks/hatdots-unify.md`
+Phase 2 para el detalle): el override `[terminal] default_shell`, el bind
+`switch_workspace`, y los custom keybinds `hat-news` / abrir Obsidian. Si los
+querés de vuelta, agregalos a tu `~/.config/herdr/config.toml` local (no
+versionado) o a un override en `~/.config/hatdots/local.*`.
 
 ## Temas
 

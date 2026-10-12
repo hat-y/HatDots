@@ -6,7 +6,7 @@ onboarding = false
 # (https://github.com/Gentleman-Programming/Gentleman.Dots)
 #
 # Tested against Herdr v0.4.x. Upstream license: NOASSERTION.
-# See HatLinux/herdr/README.md for install instructions, version notes,
+# See common/herdr/README.md for install instructions, version notes,
 # and the Windows / WSL guidance.
 
 [theme]

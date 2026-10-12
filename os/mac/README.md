@@ -45,7 +45,7 @@ chmod +x link-mac.sh
 ./link-mac.sh
 ```
 
-Esto corre `brew bundle --file HatMac/Brewfile` y crea todos los symlinks con backups timestamped.
+Esto corre `brew bundle --file os/mac/Brewfile` y crea todos los symlinks con backups timestamped.
 
 ### Instalación parcial
 
@@ -56,36 +56,35 @@ Esto corre `brew bundle --file HatMac/Brewfile` y crea todos los symlinks con ba
 
 ## 📁 Estructura
 
+Desde la unificación de Phase 2, lo que es igual en todos los OS vive en
+`common/` (tmux, ghostty, zsh, newsboat, herdr/config.toml) y acá en
+`os/mac/` sólo queda lo mac-only:
+
 ```
-HatMac/
+os/mac/
 ├── README.md                 # este archivo
 ├── Brewfile                  # dependencias Homebrew
 ├── zsh/
-│   ├── .zshrc                # paths Homebrew-aware (Apple Silicon + Intel)
-│   └── .p10k.zsh             # tema Powerlevel10k (configurable con p10k configure)
-├── tmux/
-│   ├── tmux.conf             # Gentleman theme + TPM + continuum + vi-mode
-│   └── scripts/
-│       ├── tmux-work             # sesión Work con 3 windows (nvim/shell/pi)
-│       └── ghostty-tmux-new      # nueva sesión en ghostty (Ctrl+Space N)
+│   └── os.zsh                # overlay: brew shellenv, sf/JAVA_HOME, nvm, p10k/fzf vía brew
 ├── ghostty/
-│   ├── config                # command = herdr + Gentleman theme palette + Cmd+K clear
-│   ├── shaders/              # 52 shaders GLSL
-│   └── themes/               # catppuccin-mocha
+│   └── os.ghostty            # overlay: command=herdr, font, background-opacity-cells
 ├── newsboat/
-│   ├── config                # browser = "open %u" (macOS nativo)
-│   ├── urls                  # feeds: Google News AR/US, HN, LWN, Ars, etc.
+│   ├── os.newsboat           # overlay: browser = "open %u" (macOS nativo)
 │   └── hat-news              # script: headlines + osascript notif
-├── herdr/
-│   ├── config.toml           # kanagawa theme + prefix=ctrl+b + custom keybinds
-│   └── README.md             # qué es, instalación, atajos, troubleshooting
-└── nvim/                     # LazyVim completo
-    ├── init.lua              # con rama is_mac explícita
-    ├── lua/config/
-    │   └── options.lua       # clipboard: pbcopy/pbpaste + reattach-to-user-namespace fallback
-    └── lua/plugins/          # TODO el set de plugins Omarchy
-        (excepto omarchy-theme-hotreload.lua que no aplica)
+├── bin/
+│   ├── ghostty-tmux-new      # nueva sesión en ghostty (Ctrl+Space N)
+│   ├── hat-sf-install         # instala el Apex LSP jar de Salesforce
+│   └── hat-theme              # palette desde wallpaper (peachy + osascript)
+└── herdr/
+    ├── install.sh             # LaunchAgent install/restart/uninstall
+    ├── com.user.herdr.plist.template
+    └── README.md              # qué es, instalación, atajos, troubleshooting
 ```
+
+`HatMac/nvim/` (LazyVim, sin cambios — Neovim queda igual hasta Phase 3).
+Lo que era mac-only en tmux/zsh/ghostty vivía en `HatMac/`; ya no — ver
+`common/` para el default usado en todos los OS y `odd/tasks/hatdots-unify.md`
+Phase 2 para el detalle de cada decisión de duplicado.
 
 ## ⌨️ Atajos (dentro del terminal)
 
@@ -137,7 +136,7 @@ Verificá:
 which tmux
 # Debería devolver /opt/homebrew/bin/tmux (Apple Silicon) o /usr/local/bin/tmux (Intel)
 ```
-Si usás `brew bundle` debería estar. Si no, editá `HatMac/ghostty/config` y cambiá la línea `command = ...`.
+Si usás `brew bundle` debería estar. Si no, editá `os/mac/ghostty/os.ghostty` y cambiá la línea `command = ...` (overridea la del `common/ghostty/config` base).
 
 ### Newsboat no abre links
 ```bash
@@ -158,7 +157,7 @@ HatMac es minimal a propósito. Si más adelante querés replicar SUPER+RETURN, 
 brew install --cask yabai skhd
 ```
 
-Y armá un `~/Library/Application Support/skhd/skhdrc` mapeando los binds de `HatLinux/hypr/bindings.lua`. Eso queda fuera del alcance de este dotfile.
+Y armá un `~/Library/Application Support/skhd/skhdrc` mapeando los binds de `os/omarchy/hypr/bindings.lua`. Eso queda fuera del alcance de este dotfile.
 
 ## 🤝 Diferencias clave vs Linux (omarchy-config-merge)
 

@@ -1,5 +1,5 @@
 # ============================================================================
-    # HatDots Fish Configuration  —  HatDots/HatLinux/fish/config.fish
+    # HatDots Fish Configuration  —  HatDots/common/fish/config.fish
     # ----------------------------------------------------------------------------
     # ⚠️  When this file is symlinked to ~/.config/fish/config.fish, it REPLACES
     # any existing config.fish. If you had a previous Fish setup, back it up FIRST:
@@ -8,7 +8,7 @@
     #
     # Then symlink:
     #
-    #     ln -sfn ~/projects/HatDots/HatLinux/fish/config.fish \
+    #     ln -sfn ~/projects/HatDots/common/fish/config.fish \
     #              ~/.config/fish/config.fish
     #
     # Source: adapted from Gentleman.Dots/GentlemanFish/fish/config.fish.
@@ -53,7 +53,7 @@
     # end
 
     # ─── 3. Multiplexer auto-start (Herdr > Tmux > nothing) ────────────────────
-    # Mirrors the Zsh guard in HatLinux/zsh/.zshrc. Identical priority, three guard
+    # Mirrors the Zsh guard in common/zsh/.zshrc. Identical priority, three guard
     # vars (HERDR_ENV, TMUX, ZELLIJ). See spec §5 DG-5.
 
     if status is-interactive; and not set -q HERDR_ENV; and not set -q TMUX; and not set -q ZELLIJ
@@ -153,4 +153,15 @@
     set -g fish_pager_color_description $comment
 
     set -gx PATH $HOME/bin $PATH
-    set -gx PATH /home/hat/.local/share/pnpm/bin $PATH
+    if test -d $HOME/.local/share/pnpm
+        set -gx PATH $HOME/.local/share/pnpm/bin $PATH
+    end
+
+    # ─── 11. OS / local overlays ────────────────────────────────────────────────
+    # Linked by the installer into ~/.config/hatdots/.
+    if test -f ~/.config/hatdots/os.fish
+        source ~/.config/hatdots/os.fish
+    end
+    if test -f ~/.config/hatdots/local.fish
+        source ~/.config/hatdots/local.fish
+    end

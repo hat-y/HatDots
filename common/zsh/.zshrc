@@ -42,6 +42,20 @@ alias ll='eza -lh --git --icons=auto --group-directories-first --classify'
 alias la='eza -lha --git --icons=auto --group-directories-first --classify'
 alias lt='eza --tree --level=2 --icons=auto --group-directories-first'
 
+# --- Salesforce CLI (sf) completions ---
+# Reemplazan al viejo _sfdx. Se generan al abrir shell si `sf` está en PATH.
+if command -v sf >/dev/null 2>&1; then
+  sf completion zsh > "${fpath[1]}/_sf" 2>/dev/null
+fi
+
+# --- Salesforce ---
+alias sforgs='sf org list'
+alias sfopen='sf org open'
+alias sftest='sf apex run test --code-coverage --result-format human'
+alias sflog='sf apex log tail --color'
+alias sfdeploy='sf project deploy start --source-dir force-app'
+alias sfretrieve='sf project retrieve start --source-dir force-app'
+
 # Disable gitstatusd auto-install (avoids errors when build tools are missing)
 export GITSTATUS_AUTO_INSTALL=0
 
@@ -89,3 +103,10 @@ command -v ng >/dev/null 2>&1 && source <(ng completion script)
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# --- OS / local overlays ---
+# Linked by the installer into ~/.config/hatdots/. Sourced last: nothing
+# above depends on overlay-set state, and this still lets the overlay's own
+# zsh-syntax-highlighting attempt (if any) run after everything else.
+[ -f ~/.config/hatdots/os.zsh ] && source ~/.config/hatdots/os.zsh
+[ -f ~/.config/hatdots/local.zsh ] && source ~/.config/hatdots/local.zsh

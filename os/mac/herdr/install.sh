@@ -7,9 +7,9 @@
 # persistent background daemon that survives reboots and lid closes.
 #
 # Usage:
-#   ./HatMac/herdr/install.sh             # install + load
-#   ./HatMac/herdr/install.sh --uninstall # stop + unload + remove
-#   ./HatMac/herdr/install.sh --restart   # unload + load
+#   ./os/mac/herdr/install.sh             # install + load
+#   ./os/mac/herdr/install.sh --uninstall # stop + unload + remove
+#   ./os/mac/herdr/install.sh --restart   # unload + load
 # ──────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail

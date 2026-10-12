@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # HatDots/HatMac — Brewfile para macOS
-# Instalá todo con: brew bundle --file HatMac/Brewfile
+# Instalá todo con: brew bundle --file os/mac/Brewfile
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── Terminal (cask) ────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ brew "newsboat"
 
 # ── herdr (terminal server para agentes de IA) ─────────────────────────────────
 # Binario Rust. Persiste sesiones de Claude Code / Codex / OpenCode / Cursor.
-# Convive con tmux. Ver HatMac/herdr/README.md
+# Convive con tmux. Ver os/mac/herdr/README.md
 brew "herdr"
 
 # ── Salesforce CLI (sf v2) ─────────────────────────────────────────────────────

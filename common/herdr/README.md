@@ -22,13 +22,13 @@ After installing, link the config into place:
 
 ```bash
 mkdir -p ~/.config/herdr
-ln -sfn ~/projects/HatDots/HatLinux/herdr/config.toml \
+ln -sfn ~/projects/HatDots/common/herdr/config.toml \
           ~/.config/herdr/config.toml
 ```
 
 ## Keybindings
 
-`HatLinux/herdr/config.toml` defines:
+`common/herdr/config.toml` defines:
 
 | Binding | Action |
 |---|---|
@@ -42,7 +42,7 @@ ln -sfn ~/projects/HatDots/HatLinux/herdr/config.toml \
 - `Shift+1..9` was unreliable in the tested terminal setup.
 
 When Herdr is absent and Tmux takes over, the equivalent keybind inside Tmux
-is `Ctrl+Space N` (Tmux prefix is `Ctrl+Space`, set in `HatLinux/tmux/.tmux.conf`).
+is `Ctrl+Space N` (Tmux prefix is `Ctrl+Space`, set in `common/tmux/tmux.conf`).
 
 ## Guard vars
 
@@ -54,7 +54,7 @@ Three environment variables prevent nested multiplexer sessions:
 | `TMUX` | Tmux | An inner shell is running inside a Tmux session |
 | `ZELLIJ` | Zellij | An inner shell is running inside a Zellij session |
 
-The shell guards (`HatLinux/zsh/.zshrc` and `HatLinux/fish/config.fish`) check
+The shell guards (`common/zsh/.zshrc` and `common/fish/config.fish`) check
 all three. If any is set, the shell does **not** auto-start a multiplexer.
 
 ## Known-good version
@@ -66,7 +66,7 @@ shipped fast — config keys may be renamed between minor releases (e.g.
 1. Diff your installed Herdr version's expected config schema against this file.
 2. If a key was renamed, update `config.toml` first, then this README.
 3. If the change is breaking, pin to the last-known-good commit per the
-   `HatLinux/README.md` migration notes.
+   `os/linux/README.md` migration notes.
 
 ## ⚠️ License caveat
 

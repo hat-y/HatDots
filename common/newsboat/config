@@ -1,5 +1,7 @@
 # ── General ─────────────────────────────────────────────────────────────────
-browser "xdg-open %u"
+# OS overlay (required): sets `browser`. Linked by the installer into
+# ~/.config/hatdots/os.newsboat.
+include ~/.config/hatdots/os.newsboat
 max-items 200
 reload-time 60
 reload-threads 5
