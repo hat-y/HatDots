@@ -66,9 +66,14 @@ stop it.
 
 ### Phase 1 — Merge lines
 
-- [ ] P1-1 Create `unify` from `main`; merge work branch, `origin/omarchy-config-merge`,
-      `origin/feat/harmac-config`; resolve 9 real conflicts.
-- [ ] P1-2 Verify Linux still works (nvim headless startup, shells syntax).
+- [x] P1-1 Create `unify` from `main`; merge work branch, `origin/omarchy-config-merge`,
+      `origin/feat/harmac-config`; resolve 9 real conflicts. Route: delegated direct
+      (dedicated writer agent). Commits: `efdf151` (work branch, 0 conflicts, clean
+      ff-capable fast merge), `a85c1b1` (omarchy-config-merge, 5 content conflicts +
+      1 rename duplicate + 1 type-change conflict), `7fbc7a0` (feat/harmac-config, 2
+      conflicts: `.gitignore`, `SETUP.md`).
+- [x] P1-2 Verify Linux still works (nvim headless startup, shells syntax). All
+      checks observed passing (see Progress below).
 
 ### Phase 2 — Restructure
 
@@ -101,6 +106,71 @@ stop it.
 - 2026-10-12: Phase 0 done. Checks: `require("hatnotes.creation")` true on full
   nvim startup; `creation_smoke.lua` passed; `fish -n` and `bash -n` OK. Tags and
   backup are local only (not pushed).
+- 2026-10-12: Phase 1 done in worktree `/home/hat/projects/HatDots-worktrees/unify`
+  (branch `unify`, HEAD `7fbc7a0`). Checks: no conflict markers left anywhere
+  (`rg` scan clean); all `lazyvim.json`/`lazy-lock.json` for Linux/Mac/Windows
+  valid JSON (`python3 -m json.tool`); `bash -n` clean on every `*.sh` and
+  executable script under `HatLinux/scripts`, `HatMac`, `terminals/tmux`,
+  `link-linux.sh`, `link-mac.sh` (one script, `HatMac/tmux/scripts/ghostty-tmux-new`,
+  is zsh — checked with `zsh -n`, also OK); `zsh -n` clean on `HatLinux/zsh/.zshrc`
+  and `HatMac/zsh/.zshrc`; `fish -n` clean on `HatLinux/fish/config.fish`; headless
+  `nvim --headless -i NONE` startup of the merged `HatLinux/nvim` config printed
+  `STARTUP_OK` and `HATNOTES true` (no errors, no lazy.nvim install attempts);
+  `nvim -u NONE -i NONE -l shared/nvim/tests/creation_smoke.lua` printed
+  `creation smoke passed`. No fix commit was needed.
+
+## Phase 1 merge decisions
+
+- `HatLinux/nvim/lazyvim.json`: union of both `extras` lists (dap.core, lang.angular,
+  lang.docker, lang.prisma, lang.python, lang.rust, lang.typescript), deduped.
+- `HatLinux/nvim/lua/config/lazy.lua`: kept work branch's `lang.java` import and
+  `performance.rtp.reset = false`; unioned in omarchy's `install.colorscheme` and
+  `performance.rtp.disabled_plugins` list (non-overlapping sub-keys, merged into one
+  `performance.rtp` table).
+- `HatLinux/nvim/lua/plugins/obsidian.lua`: dropped omarchy's inline `onk`/`ona`/`onp`
+  quick-note-creation blocks — functionally superseded by the work branch's shared
+  `shared/nvim/lua/hatnotes/creation.lua` module (`creation.keys`) already wired into
+  this file. Kept omarchy's `onm` (MOC creation in `5-MOCs`) verbatim: it is the one
+  quick-note feature with no equivalent in `hatnotes.creation.lua`.
+- `HatLinux/nvim/lua/plugins/theme.lua`: type conflict (work branch = 164-line regular
+  file; omarchy = symlink to `/home/hat/.config/omarchy/current/theme/neovim.lua`).
+  Kept the work-branch regular file per the approved policy. **Omarchy dynamic
+  theming must be re-added in phase 3 under `os/omarchy`.**
+- `HatLinux/nvim/lua/plugins/omarchy-theme-hotreload.lua` vs `theme-hotreload.lua`:
+  byte-identical rename/copy conflict; dropped the `omarchy-` named duplicate, kept
+  `theme-hotreload.lua` (work-branch name).
+- `terminals/tmux/tmux.conf`: reconstructed as one coherent file (4 overlapping
+  conflict hunks caused by reordering). Work branch wins same-setting conflicts:
+  `default-shell /bin/zsh` (dropped omarchy's `default-command fish`, contradictory
+  once shell is zsh), `prefix2 C-b` kept (dropped omarchy's `unbind C-b`),
+  `escape-time 0` (not 10), copy-mode `y` bound to `copy-selection-and-cancel` (not
+  omarchy's extra `copy-pipe-and-cancel "clip"`), and the work-branch's own
+  minimal/blue status-bar theme over omarchy's "Gentleman Theme" colors (same status
+  options, different values). Unioned in non-conflicting additions from omarchy:
+  `set -g mode-keys vi` (session-level, in addition to the existing `setw` one),
+  `set -s extended-keys on`, `set -g -a terminal-overrides '*:Ms=...'` (OSC52 clip
+  passthrough, additive to the existing RGB override), `status-justify left`,
+  `unbind %` / `unbind '"'` plus the `d` split key (non-overlapping with work's
+  existing `h`/`v` split keys), and the `K` confirm-before bulk-session-kill override
+  appended after the existing `bind K kill-session`. Removed one literal duplicate of
+  the "smart C-l" passthrough binding that existed twice in the work branch's own
+  content (kept the one correctly placed after `run '~/.tmux/plugins/tpm/tpm'`, per
+  its own comment: "Must come AFTER TPM run").
+- `.gitignore`: trivial union, kept work branch's extra entries (`.pi/`,
+  `.pi-subagents/`, `*.bak`); harmac side had nothing new here.
+- `SETUP.md`: kept work branch's "Referencia Técnica" doc first (unchanged), closed
+  out and completed harmac's truncated Windows/Linux quick-install blocks (the 3-way
+  diff had silently dropped their continuation — closing fence, Linux steps,
+  `Requisitos`, `Características`, `Configuración Post-Instalación`, `Atajos
+  Útiles`, `Problemas Comunes`, `Contribuciones`, `Licencia` — because they fell
+  outside the two marked conflict hunks), and appended all of that unique harmac
+  content at the end of the file, each section tagged "(desde feat/harmac-config)".
+  Deliberately did **not** duplicate harmac's own "📁 Estructura del Repositorio"
+  section: it's a stale, pre-merge directory listing that would contradict the
+  work branch's accurate "Estructura del repo" section already in the doc; no
+  decisions or features were lost by skipping it. Per policy, no further polish
+  was done — SETUP.md gets rewritten in a later phase.
+- `HatMac/*` (full tree, 100+ files): added cleanly, no conflicts.
 
 ## Known issues found
 
@@ -108,7 +178,11 @@ stop it.
   in it now expands; superseded by the Go installer in phase 4.
 - `HatLinux/fish/config.fish` hardcodes `/home/hat/.local/share/pnpm/bin`;
   `HatLinux/zsh/.zshrc` hardcodes `/home/hat/.opencode/bin` and `/home/hat/.bun`.
+- Omarchy dynamic theming (symlink-based `theme.lua` sourcing
+  `/home/hat/.config/omarchy/current/theme/neovim.lua`) was dropped in the merge in
+  favor of the work branch's regular-file `theme.lua`; must be reintroduced under
+  `os/omarchy` in phase 3.
 
 ## Next step
 
-Phase 1: create `unify` and merge the three lines.
+Phase 2: restructure into `common/` + `os/*`.
