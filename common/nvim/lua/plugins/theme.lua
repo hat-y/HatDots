@@ -1,4 +1,8 @@
-return {
+-- Static fallback theme spec (aether). On Omarchy, this is overridden by
+-- Omarchy's own current theme (~/.config/omarchy/current/theme/neovim.lua)
+-- when that file is readable - see lua/config/omarchy_theme.lua and
+-- plugins/omarchy-theme-watch.lua (user decision, task P3-5).
+local fallback = {
 	{
 		"bjarneo/aether.nvim",
 		branch = "v3",
@@ -162,3 +166,5 @@ return {
 		},
 	},
 }
+
+return require("config.omarchy_theme").spec(fallback)
