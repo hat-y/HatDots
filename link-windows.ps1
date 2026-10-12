@@ -11,6 +11,8 @@ Set-StrictMode -Version Latest
 
 $Repo = Join-Path $PSScriptRoot "HatWindows"
 $Shared = Join-Path $PSScriptRoot "shared"
+$OsWin = Join-Path $PSScriptRoot "os\windows"
+$Common = Join-Path $PSScriptRoot "common"
 
 function Write-Step($message) {
     Write-Host "📦 $message" -ForegroundColor Cyan
@@ -138,9 +140,9 @@ Write-Step "Creando symlinks..."
 
 $Paths = @{
     NvimDir     = "$Repo\nvim"
-    WeztermFile = "$Repo\wezterm\wezterm.lua"
-    PSProfile   = "$Repo\powershell\Microsoft.PowerShell_profile.ps1"
-    Starship    = "$Shared\starship.toml"
+    WeztermFile = "$OsWin\wezterm\wezterm.lua"
+    PSProfile   = "$OsWin\powershell\Microsoft.PowerShell_profile.ps1"
+    Starship    = "$Common\starship\starship.toml"
 }
 
 $Targets = @{
@@ -151,7 +153,7 @@ $Targets = @{
 }
 
 # Ensure directories exist
-New-Item -ItemType Directory -Force "$Repo\nvim", "$Repo\wezterm", "$Repo\powershell", "$HOME\.config", "$HOME\Documents\PowerShell" | Out-Null
+New-Item -ItemType Directory -Force "$Repo\nvim", "$OsWin\wezterm", "$OsWin\powershell", "$HOME\.config", "$HOME\Documents\PowerShell" | Out-Null
 
 # Create symlinks
 New-DirLink $Targets.NvimDir $Paths.NvimDir

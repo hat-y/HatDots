@@ -115,12 +115,17 @@ main() {
     echo "📂 Creando symlinks..."
 
     safe_link "$HOME/.config/nvim" "$REPO/HatLinux/nvim"
-    safe_link "$HOME/.config/tmux/tmux.conf" "$REPO/terminals/tmux/tmux.conf"
-    safe_link "$HOME/.config/ghostty/shaders" "$REPO/terminals/ghostty/shaders"
+    safe_link "$HOME/.config/tmux/tmux.conf" "$REPO/common/tmux/tmux.conf"
+    safe_link "$HOME/.config/ghostty/shaders" "$REPO/common/ghostty/shaders"
+
+    # OS overlay for common/tmux/tmux.conf (tmux.conf is linked above, so link
+    # its overlay too; see common/tmux/tmux.conf's "OS / local overlays").
+    mkdir -p "$HOME/.config/hatdots"
+    safe_link "$HOME/.config/hatdots/os.tmux.conf" "$REPO/os/omarchy/tmux/os.tmux.conf"
 
     # p10k
-    if [ -f "$REPO/HatLinux/zsh/.p10k.zsh" ]; then
-        safe_copy "$HOME/.p10k.zsh" "$REPO/HatLinux/zsh/.p10k.zsh"
+    if [ -f "$REPO/common/zsh/.p10k.zsh" ]; then
+        safe_copy "$HOME/.p10k.zsh" "$REPO/common/zsh/.p10k.zsh"
     fi
 
     # 4. Ghostty config (solo si no existe)

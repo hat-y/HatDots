@@ -59,7 +59,7 @@ sudo pacman -S neovim tmux ghostty ghostty-shell-integration ghostty-terminfo ez
 
 ### Multiplexor (opcional, recomendado)
 
-HatDots prefiere **Herdr** sobre Tmux cuando el binario `herdr` está en PATH, con Tmux como fallback automático. El wrapper `HatLinux/scripts/ghostty-multiplexer-new` decide en cada arranque. Fish shell (`HatLinux/fish/config.fish`) y Zsh (`HatLinux/zsh/.zshrc`) aplican el mismo guard.
+HatDots prefiere **Herdr** sobre Tmux cuando el binario `herdr` está en PATH, con Tmux como fallback automático. El wrapper `common/bin/ghostty-multiplexer-new` decide en cada arranque. Fish shell (`common/fish/config.fish`) y Zsh (`common/zsh/.zshrc`) aplican el mismo guard.
 
 ```bash
 brew install herdr        # Linuxbrew (Omarchy trae Homebrew)
@@ -72,7 +72,7 @@ cargo install herdr       # alternativa Linux
 
 🪟 **Windows**: Herdr no tiene binario nativo. Usá WSL, o quedate en Tmux fallback.
 
-Ver `HatLinux/herdr/README.md` para detalles completos y `HatLinux/README.md` para el setup.
+Ver `common/herdr/README.md` para detalles completos y `os/linux/README.md` para el setup.
 
 ---
 
@@ -88,7 +88,7 @@ chmod +x link-linux.sh
 Esto crea:
 ```
 ~/.config/nvim              → ~/projects/HatDots/HatLinux/nvim
-~/.config/tmux/tmux.conf     → ~/projects/HatDots/terminals/tmux/tmux.conf
+~/.config/tmux/tmux.conf     → ~/projects/HatDots/common/tmux/tmux.conf
 ```
 
 Tmux plugins (TPM): dentro de tmux → `Ctrl+Space + I`
@@ -150,7 +150,7 @@ mouse-scroll-multiplier = 0.95
 EOF
 
 # Shaders symlink
-ln -sfn ~/projects/HatDots/terminals/ghostty/shaders ~/.config/ghostty/shaders
+ln -sfn ~/projects/HatDots/common/ghostty/shaders ~/.config/ghostty/shaders
 ```
 
 ---
@@ -259,7 +259,7 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 Powerlevel10k custom:
 ```bash
-cp ~/projects/HatDots/HatLinux/zsh/.p10k.zsh ~/.p10k.zsh
+cp ~/projects/HatDots/common/zsh/.p10k.zsh ~/.p10k.zsh
 ```
 
 ---

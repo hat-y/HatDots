@@ -15,7 +15,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${HATDOTS_REPO:-$SCRIPT_DIR}"
 HATMAC="$REPO/HatMac"
-BREWFILE="$HATMAC/Brewfile"
+BREWFILE="$REPO/os/mac/Brewfile"
 
 if [ ! -f "$BREWFILE" ]; then
   echo "❌ Brewfile no encontrado en: $BREWFILE"
@@ -104,36 +104,44 @@ safe_link() {
 safe_link "$HOME/.config/nvim"                  "$HATMAC/nvim"
 
 # Zsh
-safe_link "$HOME/.zshrc"                        "$HATMAC/zsh/.zshrc"
-safe_link "$HOME/.p10k.zsh"                     "$HATMAC/zsh/.p10k.zsh"
+safe_link "$HOME/.zshrc"                        "$REPO/common/zsh/.zshrc"
+safe_link "$HOME/.p10k.zsh"                     "$REPO/common/zsh/.p10k.zsh"
 
 # Ghostty (directorio completo: config + shaders + themes)
-safe_link "$HOME/.config/ghostty"               "$HATMAC/ghostty"
+safe_link "$HOME/.config/ghostty"               "$REPO/common/ghostty"
 
 # Tmux
-safe_link "$HOME/.tmux.conf"                    "$HATMAC/tmux/tmux.conf"
-safe_link "$HOME/.local/bin/tmux-work"          "$HATMAC/tmux/scripts/tmux-work"
-safe_link "$HOME/.local/bin/ghostty-tmux-new"   "$HATMAC/tmux/scripts/ghostty-tmux-new"
+safe_link "$HOME/.tmux.conf"                    "$REPO/common/tmux/tmux.conf"
+safe_link "$HOME/.local/bin/tmux-work"          "$REPO/common/bin/tmux-work"
+safe_link "$HOME/.local/bin/ghostty-tmux-new"   "$REPO/os/mac/bin/ghostty-tmux-new"
+
+# OS overlays for the common configs linked above
+mkdir -p "$HOME/.config/hatdots"
+safe_link "$HOME/.config/hatdots/os.zsh"        "$REPO/os/mac/zsh/os.zsh"
+safe_link "$HOME/.config/hatdots/os.ghostty"    "$REPO/os/mac/ghostty/os.ghostty"
 
 # Newsboat
-safe_link "$HOME/.config/newsboat/config"       "$HATMAC/newsboat/config"
-safe_link "$HOME/.config/newsboat/urls"         "$HATMAC/newsboat/urls"
-safe_link "$HOME/.local/bin/hat-news"           "$HATMAC/newsboat/hat-news"
+safe_link "$HOME/.config/newsboat/config"       "$REPO/common/newsboat/config"
+safe_link "$HOME/.config/newsboat/urls"         "$REPO/common/newsboat/urls"
+safe_link "$HOME/.local/bin/hat-news"           "$REPO/os/mac/newsboat/hat-news"
+safe_link "$HOME/.config/hatdots/os.newsboat"   "$REPO/os/mac/newsboat/os.newsboat"
 
 # herdr (terminal server para agentes de IA)
-safe_link "$HOME/.config/herdr/config.toml"     "$HATMAC/herdr/config.toml"
-chmod +x "$HATMAC/herdr/install.sh"
+# config.toml: HatDots uses the same config on every OS (common/herdr/).
+safe_link "$HOME/.config/herdr/config.toml"     "$REPO/common/herdr/config.toml"
+HATMAC_HERDR="$REPO/os/mac/herdr"
+chmod +x "$HATMAC_HERDR/install.sh"
 
 # Instalar LaunchAgent para que herdr server arranque al login
 # (skip con --no-herdr-autostart)
-if [ "${HERDR_AUTOSTART:-yes}" != "no" ] && [ -f "$HATMAC/herdr/install.sh" ]; then
+if [ "${HERDR_AUTOSTART:-yes}" != "no" ] && [ -f "$HATMAC_HERDR/install.sh" ]; then
   if command -v herdr >/dev/null 2>&1; then
     echo ""
     echo "🚀 Instalando LaunchAgent para herdr server..."
-    "$HATMAC/herdr/install.sh" || echo "⚠️  Falló la instalación del LaunchAgent. Reintentá con: $HATMAC/herdr/install.sh"
+    "$HATMAC_HERDR/install.sh" || echo "⚠️  Falló la instalación del LaunchAgent. Reintentá con: $HATMAC_HERDR/install.sh"
   else
     echo "�️  herdr no instalado todavía. Después de 'brew install herdr' corré:"
-    echo "   $HATMAC/herdr/install.sh"
+    echo "   $HATMAC_HERDR/install.sh"
   fi
 fi
 

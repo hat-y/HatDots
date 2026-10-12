@@ -66,29 +66,30 @@ Las configuraciones de Obsidian para Neovim en Linux y Windows resuelven `HATNOT
 
 ```
 HatDots/
-├── terminals/
+├── common/                         # usado en todo OS
 │   ├── tmux/
-│   │   └── tmux.conf              # Omarchy style + HatDots TPM plugins
-│   └── ghostty/
-│       ├── config                  # Referencia de config
-│       ├── shaders/                # 52 shaders GLSL
-│       └── themes/
+│   │   └── tmux.conf               # Omarchy style + HatDots TPM plugins + overlays
+│   ├── ghostty/
+│   │   ├── config                  # Referencia de config + overlays
+│   │   ├── shaders/                # 52 shaders GLSL
+│   │   └── themes/
+│   ├── zsh/.zshrc, fish/config.fish, newsboat/, herdr/, starship/, bin/
+├── os/
+│   ├── linux/                      # Linux genérico (kde/, overlays)
+│   ├── omarchy/                    # Hyprland/Omarchy (hypr/, overlays)
+│   ├── mac/                        # Brewfile, bin/, herdr LaunchAgent, overlays
+│   └── windows/                    # powershell/, wezterm/, docs/
 ├── HatLinux/
-│   ├── nvim/                       # LazyVim completo
-│   │   ├── lua/plugins/
-│   │   │   ├── theme.lua           # Aether (activo)
-│   │   │   ├── all-themes.lua      # 20 themes (lazy)
-│   │   │   ├── theme-hotreload.lua # Hot-reload de themes
-│   │   │   ├── colorscheme.lua     # Desactivado (oxocarbon/kanagawa comentados)
-│   │   │   └── ...                 # LSP, DAP, keymaps, etc.
-│   │   └── plugin/after/
-│   │       └── transparency.lua   # Fondos transparentes
-│   └── zsh/
-│       ├── .zshrc                  # Referencia
-│       └── .p10k.zsh               # Powerlevel10k custom
-├── HatWindows/                     # Configuración inicial de Neovim, WezTerm y PowerShell
-├── shared/
-│   └── starship.toml               # Kanagawa Dragon (disponible, no activo)
+│   └── nvim/                       # LazyVim completo
+│       ├── lua/plugins/
+│       │   ├── theme.lua           # Aether (activo)
+│       │   ├── all-themes.lua      # 20 themes (lazy)
+│       │   ├── theme-hotreload.lua # Hot-reload de themes
+│       │   ├── colorscheme.lua     # Desactivado (oxocarbon/kanagawa comentados)
+│       │   └── ...                 # LSP, DAP, keymaps, etc.
+│       └── plugin/after/
+│           └── transparency.lua   # Fondos transparentes
+├── HatWindows/nvim/                # Neovim de Windows (ver os/windows/ para lo demás)
 ├── link-linux.sh                   # Symlinks base
 ├── link-windows.ps1                # Reemplaza destinos sin backups
 └── README.md                       # Guía de reinstalación
@@ -112,7 +113,7 @@ Estos archivos **NO son symlinks** a HatDots — están editados directamente en
 ## Tmux
 
 ### Config
-`~/.config/tmux/tmux.conf` → symlink a `HatDots/terminals/tmux/tmux.conf`
+`~/.config/tmux/tmux.conf` → symlink a `HatDots/common/tmux/tmux.conf`
 
 Base: **Omarchy** (keybindings, status bar, pane style, base-index 1, aggressive-resize)
 
@@ -189,7 +190,7 @@ Componentes:
 - **Auto-launch**: Al abrir Ghostty → tmux con layout nvim|shell|shell
 
 ### Shaders
-`~/.config/ghostty/shaders` → symlink a `HatDots/terminals/ghostty/shaders`
+`~/.config/ghostty/shaders` → symlink a `HatDots/common/ghostty/shaders`
 
 52 shaders disponibles. Activo: `cursor_smear_gentleman.glsl`
 
