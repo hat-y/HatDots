@@ -1,5 +1,34 @@
 # HatDots — Guía de Reinstalación
 
+## Alcance y portabilidad
+
+HatDots contiene configuraciones de editor y terminal; **HatNotes** es el vault de Obsidian separado. HatDots no clona, enlaza ni respalda HatNotes.
+
+| Plataforma | Alcance actual |
+|------------|----------------|
+| Linux | Soportado para una instalación basada en Omarchy mediante `link-linux.sh`. Incluye la configuración Linux de Neovim y los enlaces/launchers que ese script ya administra. |
+| Windows | Slice inicial mediante `link-windows.ps1`: enlaza Neovim, WezTerm, el perfil de PowerShell y Starship. No incluye Omarchy, Ghostty, Zsh, Tmux, Herdr ni paridad de funciones con Linux. |
+| macOS | Fuera de alcance actualmente. |
+
+### Vault de Obsidian
+
+HatNotes es un compañero **requerido solo para los comandos de creación de Obsidian/Neovim**. Antes de usarlos, cloná o sincronizá HatNotes y verificá que las diez plantillas estén en `$HATNOTES_PATH/7-Tmpl`; el resto de los dotfiles de HatDots sigue siendo usable sin HatNotes.
+
+Las configuraciones de Neovim en Linux y Windows usan `HATNOTES_PATH` si está definido; si no, Neovim expande `~/HatNotes`. Ambas resuelven el módulo compartido desde `shared/nvim` a partir del symlink o junction de la configuración de la plataforma.
+
+```bash
+export HATNOTES_PATH="$HOME/ruta/a/HatNotes" # Linux, antes de abrir nvim
+```
+
+```powershell
+$env:HATNOTES_PATH = "C:\ruta\a\HatNotes" # PowerShell, antes de abrir nvim
+```
+
+### Reemplazos y backups
+
+- `link-linux.sh` respalda archivos o directorios existentes que reemplaza como `*.bak.<timestamp>` y deja intactos los symlinks existentes. El copy de `.p10k.zsh` elimina un symlink existente sin backup; Ghostty y los launchers no se sobrescriben.
+- `link-windows.ps1` elimina los destinos existentes que enlaza y **no crea backups**. Revisá `NvimDir`, `WeztermFile`, `PSProfile` y `Starship` antes de ejecutarlo.
+
 ## Flujo completo: Omarchy fresco → HatDots
 
 Cuando reinstalés Omarchy o tengas un sistema limpio, seguí estos pasos en orden.
@@ -33,7 +62,7 @@ sudo pacman -S neovim tmux ghostty ghostty-shell-integration ghostty-terminfo ez
 HatDots prefiere **Herdr** sobre Tmux cuando el binario `herdr` está en PATH, con Tmux como fallback automático. El wrapper `HatLinux/scripts/ghostty-multiplexer-new` decide en cada arranque. Fish shell (`HatLinux/fish/config.fish`) y Zsh (`HatLinux/zsh/.zshrc`) aplican el mismo guard.
 
 ```bash
-brew install herdr        # macOS / Linuxbrew (Omarchy trae Homebrew)
+brew install herdr        # Linuxbrew (Omarchy trae Homebrew)
 cargo install herdr       # alternativa Linux
 ```
 
@@ -69,7 +98,7 @@ Tmux plugins (TPM): dentro de tmux → `Ctrl+Space + I`
 ## 4. Ghostty — config fusionada
 
 ```bash
-cat > ~/.config/ghostty/config << 'EOF'
+cat > ~/.config/ghostty/config << EOF
 # ═══════════════════════════════════════════════════════════════════════════════
 # Ghostty — Fused with Omarchy + HatDots
 # Theme: Omarchy (dynamic) | Shader: HatDots | Tmux: HatDots auto-launch
@@ -100,7 +129,7 @@ cursor-style-blink = false
 shell-integration-features = no-cursor,ssh-env
 
 # ─── Tmux auto-launch (HatDots) ────────────────────────────────────────────
-command = /home/hat/.local/bin/tmux-session-layout main
+command = $HOME/.local/bin/tmux-session-layout main
 
 # ─── Shader: cursor_smear_gentleman (HatDots) ──────────────────────────────
 custom-shader = shaders/cursor_smear_gentleman.glsl

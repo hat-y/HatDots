@@ -2,6 +2,22 @@
 
 Documentación interna para debugging y casos borde. Para reinstalación, ver [README.md](README.md).
 
+## Alcance portable y HatNotes
+
+HatDots guarda configuraciones; **HatNotes** es un vault de Obsidian separado. Ningún instalador de HatDots clona, enlaza ni respalda el vault.
+
+HatNotes es un compañero **requerido solo para los comandos de creación de Obsidian/Neovim**. Antes de usarlos, cloná o sincronizá HatNotes y verificá que las diez plantillas estén en `$HATNOTES_PATH/7-Tmpl`; el resto de los dotfiles de HatDots sigue siendo usable sin HatNotes.
+
+Las configuraciones de Obsidian para Neovim en Linux y Windows resuelven `HATNOTES_PATH` con expansión de Neovim y usan `~/HatNotes` si la variable no está definida. Definila antes de abrir Neovim cuando el vault esté en otra ubicación. El runtimepath encuentra `shared/nvim` desde el symlink o junction de la configuración de cada plataforma.
+
+| Plataforma | Límite actual |
+|------------|---------------|
+| Linux | Soportado para el flujo basado en Omarchy y `link-linux.sh`. |
+| Windows | `link-windows.ps1` enlaza Neovim, WezTerm, el perfil de PowerShell y Starship; no tiene paridad con Linux ni configura Omarchy, Ghostty, Zsh, Tmux o Herdr. |
+| macOS | Fuera de alcance. |
+
+`link-linux.sh` respalda archivos/directorios que reemplaza como `*.bak.<timestamp>`, conserva symlinks existentes y no sobrescribe Ghostty ni launchers; un symlink existente de `.p10k.zsh` se elimina sin backup al copiarlo. `link-windows.ps1` elimina los destinos existentes que enlaza y no crea backups.
+
 ## Estructura del repo
 
 ```
@@ -26,9 +42,11 @@ HatDots/
 │   └── zsh/
 │       ├── .zshrc                  # Referencia
 │       └── .p10k.zsh               # Powerlevel10k custom
+├── HatWindows/                     # Configuración inicial de Neovim, WezTerm y PowerShell
 ├── shared/
 │   └── starship.toml               # Kanagawa Dragon (disponible, no activo)
 ├── link-linux.sh                   # Symlinks base
+├── link-windows.ps1                # Reemplaza destinos sin backups
 └── README.md                       # Guía de reinstalación
 ```
 
