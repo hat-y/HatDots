@@ -7,6 +7,27 @@ return {
 		config = function()
 			local transparency_file = vim.fn.stdpath("config") .. "/plugin/after/transparency.lua"
 
+			-- On Omarchy, plugins/theme.lua is a regular file, so lazy.nvim's change
+			-- detection never fires on `omarchy-theme-set`. Watch the Omarchy theme
+			-- and trigger the same LazyReload path below. Started here (not in a
+			-- separate local plugin) because lazy.nvim dedupes specs sharing `dir`.
+			local omarchy_theme = require("config.omarchy_theme")
+			if omarchy_theme.is_omarchy() and not omarchy_theme.active_watch then
+				local handle = omarchy_theme.watch(function()
+					vim.api.nvim_exec_autocmds("User", { pattern = "LazyReload" })
+				end)
+				if handle then
+					omarchy_theme.active_watch = handle
+					vim.api.nvim_create_autocmd("VimLeavePre", {
+						once = true,
+						callback = function()
+							handle.stop()
+							omarchy_theme.active_watch = nil
+						end,
+					})
+				end
+			end
+
 			vim.api.nvim_create_autocmd("User", {
 				pattern = "LazyReload",
 				callback = function()
