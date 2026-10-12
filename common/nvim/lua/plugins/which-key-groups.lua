@@ -39,6 +39,8 @@ return {
 			map("<leader>Stt", "<cmd>SF test allTestsInClass<cr>", "[S]alesforce: tests for this class")
 			map("<leader>Soo", "<cmd>SF org open<cr>", "[S]alesforce: open org in browser")
 			map("<leader>Smd", "<cmd>SF md list<cr>", "[S]alesforce: list metadata")
+			map("<leader>Smt", "<cmd>SF mdtype list<cr>", "[S]alesforce: retrieve metadata by type")
+			map("<leader>Sa", "<cmd>SF currentFile RunAsAnonymous<cr>", "[S]alesforce: run file as anonymous Apex")
 			map("<leader>Sc", "<cmd>check sf<cr>", "[S]alesforce: plugin health check")
 		end,
 	},
