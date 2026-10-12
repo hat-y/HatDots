@@ -9,8 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$Repo = "$HOME\HatDots\HatWindows"
-$Shared = "$HOME\HatDots\shared"
+$Repo = Join-Path $PSScriptRoot "HatWindows"
+$Shared = Join-Path $PSScriptRoot "shared"
 
 function Write-Step($message) {
     Write-Host "📦 $message" -ForegroundColor Cyan
@@ -56,7 +56,7 @@ function Install-Dependencies {
         } else {
             Write-Host "  ✗ $($tool.Name) - instalando..." -ForegroundColor Yellow
             try {
-                & $tool.Invoke
+                & $tool.Install
                 Write-Host "  ✓ $($tool.Name) instalado" -ForegroundColor Green
             } catch {
                 Write-Host "  ⚠ $($tool.Name) no se pudo instalar" -ForegroundColor Yellow

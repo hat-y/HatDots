@@ -127,7 +127,7 @@ main() {
     if [ ! -f "$HOME/.config/ghostty/config" ]; then
         echo ""
         echo "📝 Creando ghostty config..."
-        cat > "$HOME/.config/ghostty/config" << 'GHOSTTY_EOF'
+        cat > "$HOME/.config/ghostty/config" << GHOSTTY_EOF
 # ═══════════════════════════════════════════════════════════════════════════════
 # Ghostty — Fused with Omarchy + HatDots
 # Theme: Omarchy (dynamic) | Shader: HatDots | Tmux: HatDots auto-launch
@@ -158,7 +158,7 @@ cursor-style-blink = false
 shell-integration-features = no-cursor,ssh-env
 
 # ─── Tmux auto-launch (HatDots) ────────────────────────────────────────────
-command = /home/hat/.local/bin/tmux-session-layout main
+command = $HOME/.local/bin/tmux-session-layout main
 
 # ─── Shader: cursor_smear_gentleman (HatDots) ──────────────────────────────
 custom-shader = shaders/cursor_smear_gentleman.glsl
@@ -180,7 +180,7 @@ GHOSTTY_EOF
         echo "✓  ~/.config/ghostty/config"
     else
         echo "⚠  ~/.config/ghostty/config ya existe — no se sobreescribe"
-        echo "   Verificá que tenga: command = /home/hat/.local/bin/tmux-session-layout main"
+        echo "   Verificá que tenga: command = $HOME/.local/bin/tmux-session-layout main"
     fi
 
     # 5. Launcher scripts (solo si no existen)
