@@ -57,11 +57,12 @@ stop it.
 
 ### Phase 0 — Safety net
 
-- [ ] P0-1 Tag pre-unification refs (`pre-unify/main`, `pre-unify/work`). Route: inline.
-- [ ] P0-2 Rename ambiguous local branch `origin/omarchy-config-merge` to
+- [x] P0-1 Tag pre-unification refs (`pre-unify/main` -> 8d6f687, `pre-unify/work` -> 0414783). Route: inline.
+- [x] P0-2 Rename ambiguous local branch `origin/omarchy-config-merge` to
       `work/linux-salesforce-herdr` and drop its confusing upstream. Route: inline.
-- [ ] P0-3 Commit uncommitted work as work-unit commits. Route: inline (git state only).
-- [ ] P0-4 Create `backup/pre-unify-wip` pointing at the committed work. Route: inline.
+- [x] P0-3 Commit uncommitted work as work-unit commits (4a6ab57, b1c7a79, 21b4aa1,
+      87c6d73, 152b421, 477e2f6, 95adee7). Route: inline (git state only).
+- [x] P0-4 Create `backup/pre-unify-wip` pointing at the committed work. Route: inline.
 
 ### Phase 1 — Merge lines
 
@@ -97,6 +98,9 @@ stop it.
 ## Progress
 
 - 2026-10-12: Plan approved; phase 0 started.
+- 2026-10-12: Phase 0 done. Checks: `require("hatnotes.creation")` true on full
+  nvim startup; `creation_smoke.lua` passed; `fish -n` and `bash -n` OK. Tags and
+  backup are local only (not pushed).
 
 ## Known issues found
 
