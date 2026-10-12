@@ -38,9 +38,13 @@ previous_agent = "prefix+alt+k"
 next_agent = "prefix+alt+j"
 
 # Jump straight to agent N (1..9) as listed in the sidebar.
-# Use Ctrl after the prefix: Alt+number is owned by skhd/yabai spaces,
-# and Shift+number did not reach Herdr reliably in the current terminal setup.
-focus_agent = "prefix+ctrl+1..9"
+# Use Alt after the prefix — matches upstream's recommended binding
+# (`prefix+alt+1..9`) and reaches Herdr reliably in Ghostty on Linux.
+# The previous `prefix+ctrl+1..9` choice was justified to avoid skhd/yabai
+# Alt+number conflicts, but that reasoning only applies on macOS and on
+# Linux the Ctrl chord often gets swallowed by the terminal before Herdr
+# sees it (verified against herdr 0.7.3).
+focus_agent = "prefix+alt+1..9"
 
 [ui.toast]
 delivery = "system"
