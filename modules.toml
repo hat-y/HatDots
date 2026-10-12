@@ -1,0 +1,389 @@
+# HatDots module manifest.
+#
+# Read by installer/internal/manifest (schema documented in
+# installer/README.md) and built into plans by installer/internal/domain.
+# This file lives at the repo root because every link `src` is repo-relative.
+#
+# Each [[modules]] entry is one independently selectable unit. A module's
+# `required = true` means it is always installed on every platform it
+# supports (see each module's `os`); everything else is optional and only
+# installed when selected (`--all`, `--only <id>,...`, or the future TUI).
+# `default = true` records whether the module was linked by the three
+# shell installers it replaces, for the phase-4b TUI to pre-select; it has
+# no effect on `--all`/`--only`, which always mean exactly what they say.
+#
+# A single module can serve every OS it supports while still expressing
+# OS/desktop-specific overlay files: give the shared bits one link with no
+# `os`/`desktop` filter, and each OS- or desktop-specific bit its own
+# `[[modules.links]]` entry with `os = [...]` and/or `desktop = [...]`.
+# `dst_linux`/`dst_mac`/`dst_windows` override `dst` for one OS when the
+# destination path itself differs (e.g. tmux's `~/.tmux.conf` on mac vs
+# `~/.config/tmux/tmux.conf` elsewhere).
+
+# ─── Required on every OS ────────────────────────────────────────────────
+
+[[modules]]
+id = "nvim"
+name = "Neovim"
+description = "Neovim editor config (LazyVim-based, OS-conditional)"
+required = true
+
+  [[modules.links]]
+  src = "common/nvim"
+  dst = "~/.config/nvim"
+  dst_windows = "%LOCALAPPDATA%/nvim"
+
+[modules.packages]
+pacman = ["neovim"]
+apt = ["neovim"]
+dnf = ["neovim"]
+zypper = ["neovim"]
+brew = ["neovim"]
+winget = ["Neovim.Neovim"]
+
+[[modules]]
+id = "fish"
+name = "Fish"
+description = "Fish shell config (tmux's preferred default-shell)"
+required = true
+os = ["linux"]
+
+  [[modules.links]]
+  src = "common/fish/config.fish"
+  dst = "~/.config/fish/config.fish"
+
+[modules.packages]
+pacman = ["fish"]
+apt = ["fish"]
+dnf = ["fish"]
+zypper = ["fish"]
+
+[[modules]]
+id = "starship"
+name = "Starship"
+description = "Cross-shell prompt"
+required = true
+
+  [[modules.links]]
+  src = "common/starship/starship.toml"
+  dst = "~/.config/starship.toml"
+
+[modules.packages]
+pacman = ["starship"]
+dnf = ["starship"]
+zypper = ["starship"]
+brew = ["starship"]
+winget = ["Starship.Starship"]
+
+# ─── Linux + macOS ────────────────────────────────────────────────────────
+
+[[modules]]
+id = "tmux"
+name = "Tmux"
+description = "Tmux config, plugins (via TPM) and helper scripts"
+default = true
+os = ["linux", "mac"]
+
+  [[modules.links]]
+  src = "common/tmux/tmux.conf"
+  dst = "~/.config/tmux/tmux.conf"
+  dst_mac = "~/.tmux.conf"
+
+  [[modules.links]]
+  src = "common/bin/tmux-work"
+  dst = "~/.local/bin/tmux-work"
+
+  [[modules.links]]
+  src = "common/bin/ghostty-tmux-new"
+  dst = "~/.local/bin/ghostty-tmux-new"
+  os = ["linux"]
+
+  [[modules.links]]
+  src = "os/mac/bin/ghostty-tmux-new"
+  dst = "~/.local/bin/ghostty-tmux-new"
+  os = ["mac"]
+
+  [[modules.links]]
+  src = "os/omarchy/tmux/omarchy.tmux.conf"
+  dst = "~/.config/hatdots/omarchy.tmux.conf"
+  os = ["linux"]
+  desktop = ["omarchy"]
+
+  [[modules.post_install]]
+  # Idempotent: only clones TPM when it isn't already there. Mirrors
+  # link-linux.sh's `[ ! -d "$tpm_dir/tpm" ] || git clone ...`; link-mac.sh
+  # never installed TPM (left as a manual `prefix + I` step there too, per
+  # os/mac/Brewfile's own comment that TPM plugins aren't brew formulas).
+  command = "mkdir -p ~/.config/tmux/plugins/tpm && [ -d ~/.config/tmux/plugins/tpm/tpm ] || git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm/tpm"
+  os = ["linux"]
+
+[modules.packages]
+pacman = ["tmux"]
+apt = ["tmux"]
+dnf = ["tmux"]
+zypper = ["tmux"]
+brew = ["tmux"]
+
+[[modules]]
+id = "ghostty"
+name = "Ghostty"
+description = "Ghostty terminal config, shaders and themes"
+default = true
+os = ["linux", "mac"]
+
+  [[modules.links]]
+  # Whole-dir link (config + shaders/ + themes/), both OSes. link-linux.sh
+  # historically only linked shaders/, leaving common/ghostty/config itself
+  # unlinked (a known issue the phase-3 tracker flagged); this link
+  # supersedes that with a superset, not a narrower link, so Linux now
+  # gets the same whole-dir treatment link-mac.sh already used.
+  src = "common/ghostty"
+  dst = "~/.config/ghostty"
+
+  [[modules.links]]
+  src = "common/bin/ghostty-multiplexer-new"
+  dst = "~/.local/bin/ghostty-multiplexer-new"
+
+  [[modules.links]]
+  src = "os/linux/ghostty/os.ghostty"
+  dst = "~/.config/hatdots/os.ghostty"
+  os = ["linux"]
+
+  [[modules.links]]
+  src = "os/mac/ghostty/os.ghostty"
+  dst = "~/.config/hatdots/os.ghostty"
+  os = ["mac"]
+
+  [[modules.links]]
+  src = "os/omarchy/ghostty/omarchy.ghostty"
+  dst = "~/.config/hatdots/omarchy.ghostty"
+  os = ["linux"]
+  desktop = ["omarchy"]
+
+[modules.packages]
+pacman = ["ghostty", "ghostty-shell-integration", "ghostty-terminfo"]
+
+[modules.casks]
+brew = ["ghostty"]
+
+[[modules]]
+id = "salesforce"
+name = "Salesforce tooling"
+description = "apex-jdtls.jar installer used by common/nvim's sf.nvim setup"
+default = true
+os = ["linux", "mac"]
+
+  [[modules.links]]
+  src = "common/bin/hat-sf-install"
+  dst = "~/.local/bin/hat-sf-install"
+
+[modules.packages]
+brew = ["sf"]
+
+[[modules]]
+id = "newsboat"
+name = "Newsboat"
+description = "RSS reader config"
+default = true
+os = ["linux", "mac"]
+
+  [[modules.links]]
+  src = "common/newsboat/config"
+  dst = "~/.config/newsboat/config"
+
+  [[modules.links]]
+  src = "common/newsboat/urls"
+  dst = "~/.config/newsboat/urls"
+
+  [[modules.links]]
+  src = "os/linux/newsboat/os.newsboat"
+  dst = "~/.config/hatdots/os.newsboat"
+  os = ["linux"]
+
+  [[modules.links]]
+  src = "os/mac/newsboat/os.newsboat"
+  dst = "~/.config/hatdots/os.newsboat"
+  os = ["mac"]
+
+  [[modules.links]]
+  # Omarchy's notifier uses uwsm-app; plain (non-Omarchy) Linux desktops
+  # have no tracked notifier script at all yet — a pre-existing gap, not
+  # introduced here.
+  src = "os/omarchy/newsboat/hat-news"
+  dst = "~/.local/bin/hat-news"
+  os = ["linux"]
+  desktop = ["omarchy"]
+
+  [[modules.links]]
+  src = "os/mac/newsboat/hat-news"
+  dst = "~/.local/bin/hat-news"
+  os = ["mac"]
+
+[modules.packages]
+pacman = ["newsboat"]
+apt = ["newsboat"]
+dnf = ["newsboat"]
+zypper = ["newsboat"]
+brew = ["newsboat"]
+
+[[modules]]
+id = "herdr"
+name = "Herdr"
+description = "Terminal multiplexer/session server for AI coding agents"
+default = true
+os = ["linux", "mac"]
+
+  [[modules.links]]
+  src = "common/herdr/config.toml"
+  dst = "~/.config/herdr/config.toml"
+
+  [[modules.post_install]]
+  command = "os/mac/herdr/install.sh"
+  os = ["mac"]
+
+[modules.packages]
+brew = ["herdr"]
+
+# ─── Linux (Omarchy) ───────────────────────────────────────────────────────
+
+[[modules]]
+id = "hypr"
+name = "Hyprland bindings (Omarchy)"
+description = "Hyprland keybindings and autostart, layered on Omarchy's own hypr config"
+default = true
+os = ["linux"]
+desktop = ["omarchy"]
+
+  [[modules.links]]
+  src = "os/omarchy/hypr/bindings.lua"
+  dst = "~/.config/hypr/bindings.lua"
+
+  [[modules.links]]
+  src = "os/omarchy/hypr/autostart.lua"
+  dst = "~/.config/hypr/autostart.lua"
+
+# ─── Linux (generic / non-Omarchy desktop) ─────────────────────────────────
+
+[[modules]]
+id = "kde"
+name = "KDE Plasma"
+description = "KWin + KZones tiling config for a KDE Plasma desktop"
+default = true
+os = ["linux"]
+
+  [[modules.links]]
+  # kglobalshortcutsrc-kzones is intentionally NOT linked: it is a partial
+  # fragment meant to be merged into the user's real ~/.config/kglobalshortcutsrc
+  # (which carries many unrelated app shortcuts), not a whole-file
+  # replacement; os/linux/README.md's own manual instructions only
+  # symlink kwinrc for the same reason. See installer/README.md.
+  src = "os/linux/kde/kwin/kwinrc"
+  dst = "~/.config/kwinrc"
+
+[[modules]]
+id = "linux-cli-tools"
+name = "Linux CLI tools"
+description = "Modern CLI replacements used across the other Linux configs"
+default = true
+os = ["linux"]
+
+[modules.packages]
+pacman = ["eza", "zoxide", "fzf", "ripgrep", "fd"]
+apt = ["git", "zsh", "ripgrep", "fd-find", "eza", "zoxide", "fzf"]
+dnf = ["git", "zsh", "ripgrep", "fd-find", "eza", "zoxide", "fzf"]
+zypper = ["git", "zsh", "ripgrep", "fd", "eza", "zoxide", "fzf"]
+
+# ─── macOS ──────────────────────────────────────────────────────────────
+
+[[modules]]
+id = "zsh"
+name = "Zsh"
+description = "Zsh config (powerlevel10k prompt); the .zshrc/os.zsh overlay is macOS-only, but link-linux.sh has always copied .p10k.zsh on Linux too"
+default = true
+os = ["linux", "mac"]
+
+  [[modules.links]]
+  src = "common/zsh/.zshrc"
+  dst = "~/.zshrc"
+  os = ["mac"]
+
+  [[modules.links]]
+  # No os filter: link-linux.sh has always placed this on Linux too (as a
+  # copy, not a symlink — unified to a symlink here like mac already did,
+  # see installer/README.md's "known deviations from the old scripts").
+  src = "common/zsh/.p10k.zsh"
+  dst = "~/.p10k.zsh"
+
+  [[modules.links]]
+  src = "os/mac/zsh/os.zsh"
+  dst = "~/.config/hatdots/os.zsh"
+  os = ["mac"]
+
+[modules.packages]
+brew = ["zsh", "zsh-autosuggestions", "zsh-syntax-highlighting", "powerlevel10k"]
+
+[[modules]]
+id = "mac-cli-tools"
+name = "macOS CLI tools"
+description = "Modern CLI replacements and dev tools from os/mac/Brewfile"
+default = true
+os = ["mac"]
+
+[modules.packages]
+brew = ["ripgrep", "fd", "eza", "zoxide", "fzf", "atuin", "git", "gh", "lazygit", "jq", "bat", "tree"]
+
+[[modules]]
+id = "fonts"
+name = "Fonts"
+description = "Nerd Fonts used by Ghostty/Neovim icon rendering"
+default = true
+os = ["mac"]
+
+[modules.casks]
+brew = ["font-jetbrains-mono-nerd-font", "font-iosevka-nerd-font"]
+
+# ─── Windows ───────────────────────────────────────────────────────────────
+
+[[modules]]
+id = "wezterm"
+name = "WezTerm"
+description = "WezTerm terminal config"
+default = true
+os = ["windows"]
+
+  [[modules.links]]
+  src = "os/windows/wezterm/wezterm.lua"
+  dst = "~/.wezterm.lua"
+
+[modules.packages]
+winget = ["WezTerm.WezTerm"]
+
+[[modules]]
+id = "powershell"
+name = "PowerShell profile"
+description = "PowerShell profile script"
+default = true
+os = ["windows"]
+
+  [[modules.links]]
+  src = "os/windows/powershell/Microsoft.PowerShell_profile.ps1"
+  dst = "~/Documents/PowerShell/Microsoft.PowerShell_profile.ps1"
+
+[[modules]]
+id = "windows-core-tools"
+name = "Windows core tools"
+description = "Tools link-windows.ps1 always installs: git, ripgrep, fd, lazygit"
+default = true
+os = ["windows"]
+
+[modules.packages]
+winget = ["Git.Git", "BurntSushi.ripgrep.MSVC", "sharkdp.fd", "JesseDuffield.lazygit"]
+
+[[modules]]
+id = "windows-optional-tools"
+name = "Windows optional tools"
+description = "Tools link-windows.ps1 offers but doesn't require: zig, llvm, eza, zoxide"
+os = ["windows"]
+
+[modules.packages]
+winget = ["Zig.Zig", "LLVM.LLVM", "eza-community.eza", "ajeetdsouza.zoxide"]
