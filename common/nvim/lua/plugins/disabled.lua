@@ -28,4 +28,23 @@ return {
 		"marcinjahn/gemini-cli.nvim",
 		enabled = false,
 	},
+	{
+		-- AI plugins removed from this config (user decision, phase 3 of the
+		-- HatDots unification): keep them force-disabled in case a LazyVim
+		-- extra ever pulls one of these in transitively.
+		"zbirenbaum/copilot.lua",
+		enabled = false,
+	},
+	{
+		"yetone/avante.nvim",
+		enabled = false,
+	},
+	{
+		"coder/claudecode.nvim",
+		enabled = false,
+	},
+	{
+		"supermaven-inc/supermaven-nvim",
+		enabled = false,
+	},
 	}

@@ -105,7 +105,6 @@ return {
 				-- Spell & UI
 				{ "<leader>ms", desc = "Spell correct  (<leader>sz)", icon = "✓" },
 				{ "<leader>mz", desc = "Zen mode  (<leader>zz)", icon = "🧘" },
-				{ "<leader>mu", desc = "Toggle Supermaven  (<leader>us)", icon = "🤖" },
 				{ "<leader>mp", desc = "Paste image  (Ctrl+V)", icon = "🖼" },
 				{ "<leader>mP", desc = "Markdown preview  (:MarkdownPreview)", icon = "👁" },
 
