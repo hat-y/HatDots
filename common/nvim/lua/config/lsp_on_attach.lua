@@ -1,5 +1,6 @@
--- Shared LSP on_attach handler. Extracted from lua/plugins/lsp.lua so it can be
--- reused by other modules (e.g. salesforce/lsp.lua) without duplication.
+-- Shared LSP on_attach handler. Extracted from lua/plugins/lsp.lua so it can
+-- be reused by other LSP setups without duplication (e.g. the removed
+-- custom Salesforce module used to reuse it for apex_ls).
 
 local M = {}
 

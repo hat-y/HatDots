@@ -88,7 +88,7 @@ HatDots/
 │   │   ├── colorscheme.lua         # Desactivado (oxocarbon/kanagawa comentados)
 │   │   └── ...                     # LSP, DAP, keymaps, etc.
 │   ├── lua/config/omarchy_theme.lua # path()/available()/spec()/watch()
-│   ├── parked/salesforce-mac/      # sf.nvim de Mac, en espera de la decisión P3-3
+│   ├── lua/plugins/xixiaofinland-sf.lua # Salesforce: sf.nvim (decisión P3-3)
 │   └── plugin/after/
 │       └── transparency.lua        # Fondos transparentes
 ├── link-linux.sh                   # Symlinks base

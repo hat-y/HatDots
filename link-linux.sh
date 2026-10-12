@@ -118,6 +118,10 @@ main() {
     safe_link "$HOME/.config/tmux/tmux.conf" "$REPO/common/tmux/tmux.conf"
     safe_link "$HOME/.config/ghostty/shaders" "$REPO/common/ghostty/shaders"
 
+    # Salesforce (apex-ls JAR installer, used by common/nvim's sf.nvim setup)
+    mkdir -p "$HOME/.local/bin"
+    safe_link "$HOME/.local/bin/hat-sf-install" "$REPO/common/bin/hat-sf-install"
+
     # OS / desktop overlays (see common/tmux/tmux.conf's and
     # common/ghostty/config's "OS / desktop / local overlays"). os.* overlays
     # are generic Linux; omarchy.* overlays only apply on an Omarchy machine

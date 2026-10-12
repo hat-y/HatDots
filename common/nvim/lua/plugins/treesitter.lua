@@ -9,7 +9,7 @@ return {
         "lua", "vim", "vimdoc", "markdown", "markdown_inline",
         "bash", "html", "css", "javascript", "typescript", "json", "yaml", "toml",
         "python", "rust", "java", "tsx",
-        "apex", "soql", "sosl", "sflog", -- Salesforce (lua/salesforce/*)
+        "apex", "soql", "sosl", "sflog", -- Salesforce (xixiaofinland/sf.nvim)
         -- visualforce: no official nvim-treesitter parser. Alias to html in
         -- after/ftplugin/visualforce.lua if you need it.
       },

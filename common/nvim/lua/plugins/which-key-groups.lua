@@ -27,13 +27,19 @@ return {
 			map("<leader>hs", "<cmd>silent !herdr status<cr>", "[H]erdr: status (server + client)")
 			map("<leader>hx", "<cmd>silent !herdr server stop<cr>", "[H]erdr: stop server")
 
-			-- NOTE: a Salesforce `<leader>S*` group existed here on macOS,
-			-- bound to xixiaofinland/sf.nvim's `:SF` commands. Dropped: it
-			-- collides with the active Linux lua/salesforce/* module, which
-			-- already owns the whole <leader>S* namespace (<leader>So,
-			-- <leader>Sp, <leader>Sr, <leader>St, <leader>SO, ...) and whose
-			-- implementation is the one phase 3 decided to keep active. See
-			-- odd/tasks/hatdots-unify.md, "Phase 3 decisions".
+			-- ── [S]alesforce ──────────────────────────────────────────
+			-- Commands for the xixiaofinland/sf.nvim plugin (lazy-loaded
+			-- via :SF). Capital S so this doesn't shadow LazyVim's `s`
+			-- (search) group.
+			map("<leader>So", "<cmd>SF org fetchList<cr>", "[S]alesforce: list all orgs")
+			map("<leader>SO", "<cmd>SF org setTarget<cr>", "[S]alesforce: set target org")
+			map("<leader>Sp", "<cmd>SF currentFile push<cr>", "[S]alesforce: push current file")
+			map("<leader>Sr", "<cmd>SF currentFile retrieve<cr>", "[S]alesforce: retrieve current file")
+			map("<leader>St", "<cmd>SF test allTestsInFile<cr>", "[S]alesforce: Apex tests for this file")
+			map("<leader>Stt", "<cmd>SF test allTestsInClass<cr>", "[S]alesforce: tests for this class")
+			map("<leader>Soo", "<cmd>SF org open<cr>", "[S]alesforce: open org in browser")
+			map("<leader>Smd", "<cmd>SF md list<cr>", "[S]alesforce: list metadata")
+			map("<leader>Sc", "<cmd>check sf<cr>", "[S]alesforce: plugin health check")
 		end,
 	},
 }

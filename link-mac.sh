@@ -114,6 +114,9 @@ safe_link "$HOME/.tmux.conf"                    "$REPO/common/tmux/tmux.conf"
 safe_link "$HOME/.local/bin/tmux-work"          "$REPO/common/bin/tmux-work"
 safe_link "$HOME/.local/bin/ghostty-tmux-new"   "$REPO/os/mac/bin/ghostty-tmux-new"
 
+# Salesforce (apex-ls JAR installer, used by common/nvim's sf.nvim setup)
+safe_link "$HOME/.local/bin/hat-sf-install"     "$REPO/common/bin/hat-sf-install"
+
 # OS overlays for the common configs linked above
 mkdir -p "$HOME/.config/hatdots"
 safe_link "$HOME/.config/hatdots/os.zsh"        "$REPO/os/mac/zsh/os.zsh"
