@@ -114,9 +114,13 @@ stop it.
       **Lost features** (sf.nvim doesn't cover these; the custom module did):
       Apex/LWC/trigger scaffolding (`new_apex_class`/`new_lwc`/`new_trigger`
       in the deleted `salesforce/scaffolds.lua`), a SOQL query picker, a
-      debug-log picker, and the lualine org-indicator component. Scaffolding
-      could be ported later as a thin layer on top of sf.nvim if wanted — not
-      done without asking, out of this task's scope.
+      debug-log picker, and the lualine org-indicator component. The old
+      `<leader>Sd`/`Ss`/`SsA`/`SsC` test-granularity keys have no 1:1 sf.nvim
+      mapping (`St`/`Stt` cover file/class). Anonymous Apex (`<leader>Sa`) and
+      retrieve-by-type (`<leader>Smt`) WERE recovered via sf.nvim's own
+      `SF currentFile RunAsAnonymous` / `SF mdtype list` (commit `adaca92`).
+      Scaffolding could be ported later as a thin layer on top of sf.nvim if
+      wanted — not done without asking, out of this task's scope.
       Verified: `+Lazy! restore` installed `sf.nvim`/`fzf-lua`/`overseer.nvim`
       cleanly (no further lock drift this time); isolated startup still
       prints `STARTUP_OK`/`HATNOTES true`/`THEME aether`, no errors;
@@ -137,7 +141,7 @@ stop it.
       a real `+Lazy! restore`, unrelated to merge decisions — see that commit).
 - [x] P3-5 Follow the Omarchy theme (Ghostty + Neovim), with live reload.
       Commits `ce64d33` (nvim: `lua/config/omarchy_theme.lua` +
-      `plugins/omarchy-theme-watch.lua` + tests), `5518224` (desktop overlay
+      `plugins/omarchy-theme-watch.lua` + tests; the watch plugin was later folded into `theme-hotreload.lua` in `f5f884b`), `5518224` (desktop overlay
       layer: `omarchy.tmux.conf`, `omarchy.ghostty`), `233c55c` (link-linux.sh
       wiring). RED/GREEN evidence:
       - `tests/omarchy_theme_smoke.lua` (path/available/spec/is_omarchy): RED
@@ -271,6 +275,21 @@ stop it.
      already flagged) — paths checked by hand.
   7) `fd -t d '^(HatLinux|HatMac|HatWindows|shared)$' --max-depth 1` → empty.
      `git status` → clean.
+- 2026-10-12: Independent phase 3 verification + parent runtime check. Found:
+  (1) `plugins/omarchy-theme-watch.lua` NEVER loaded — lazy.nvim dedupes local
+  specs sharing `dir` with `theme-hotreload`, so Omarchy theme switches did not
+  reach Neovim (module-level watcher tests passed, wiring was untested). RED:
+  new full-config check `tests/omarchy_theme_wiring_check.lua` printed
+  "FAIL: omarchy theme watcher is not running after startup". Fix `f5f884b`:
+  watcher started from `theme-hotreload` config, duplicate plugin deleted.
+  GREEN: wiring check passed; touching the real Omarchy `neovim.lua` mtime
+  fired `User LazyReload` and aether reloaded. (2) `obsidian.lua` sent Windows
+  to Linux hunspell path/`xdg-open`, and macOS crashed-to-concat on unset
+  `HOMEBREW_PREFIX`; fix `5d49649` (`vim.ui.open`, per-OS guarded hunspell).
+  (3) undisclosed Salesforce key losses; two recovered in `adaca92`, rest
+  disclosed under P3-3. Checks after fixes: 0 duplicate normal-mode lhs,
+  obsidian loads, all smoke tests GREEN (run from repo root; they are
+  cwd-relative).
 - 2026-10-12: P3-3 decided and done, HEAD `b883cee`. User chose sf.nvim over
   the custom module; see task P3-3 above for the full restore/delete/verify
   detail. One real finding during verification: `+checkhealth sf` initially
