@@ -81,7 +81,9 @@ os/mac/
     └── README.md              # qué es, instalación, atajos, troubleshooting
 ```
 
-`HatMac/nvim/` (LazyVim, sin cambios — Neovim queda igual hasta Phase 3).
+Neovim vive en `common/nvim/` desde Phase 3 (antes `HatMac/nvim/`); ver
+`odd/tasks/hatdots-unify.md` Phase 3 para el detalle de cada decisión de
+fusión con Linux/Windows.
 Lo que era mac-only en tmux/zsh/ghostty vivía en `HatMac/`; ya no — ver
 `common/` para el default usado en todos los OS y `odd/tasks/hatdots-unify.md`
 Phase 2 para el detalle de cada decisión de duplicado.

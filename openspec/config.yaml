@@ -45,9 +45,6 @@ phase_rules:
 
 # ─── Convention notes (for cross-platform nvim work) ───────────────────────
 platforms:
-  - path: HatLinux/nvim
-    plugin_manager: lazy.nvim
-    base: LazyVim
-  - path: HatWindows/nvim
+  - path: common/nvim
     plugin_manager: lazy.nvim
     base: LazyVim

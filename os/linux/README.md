@@ -17,9 +17,9 @@ HatDots/
 │   └── kde/
 │       ├── kwin/kwinrc              # Config de KWin + KZones
 │       └── config/kglobalshortcutsrc-kzones
-├── os/omarchy/                      # Hyprland/Omarchy-only (hypr/, tmux ? help overlay, ...)
+├── os/omarchy/                      # Hyprland/Omarchy-only (hypr/, tmux/ghostty overlays, ...)
 ├── common/                          # tmux, ghostty, zsh, fish, newsboat, herdr
-├── HatLinux/nvim/                   # Neovim (sin cambios hasta Phase 3)
+├── common/nvim/                     # Neovim, unificado desde Phase 3 (antes HatLinux/nvim)
 └── link-linux.sh                    # Script para linking
 ```
 

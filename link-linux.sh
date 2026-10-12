@@ -114,14 +114,21 @@ main() {
     echo ""
     echo "📂 Creando symlinks..."
 
-    safe_link "$HOME/.config/nvim" "$REPO/HatLinux/nvim"
+    safe_link "$HOME/.config/nvim" "$REPO/common/nvim"
     safe_link "$HOME/.config/tmux/tmux.conf" "$REPO/common/tmux/tmux.conf"
     safe_link "$HOME/.config/ghostty/shaders" "$REPO/common/ghostty/shaders"
 
-    # OS overlay for common/tmux/tmux.conf (tmux.conf is linked above, so link
-    # its overlay too; see common/tmux/tmux.conf's "OS / local overlays").
+    # OS / desktop overlays (see common/tmux/tmux.conf's and
+    # common/ghostty/config's "OS / desktop / local overlays"). os.* overlays
+    # are generic Linux; omarchy.* overlays only apply on an Omarchy machine
+    # and are gated on the same ~/.local/share/omarchy marker
+    # lua/config/omarchy_theme.lua's is_omarchy() checks.
     mkdir -p "$HOME/.config/hatdots"
-    safe_link "$HOME/.config/hatdots/os.tmux.conf" "$REPO/os/omarchy/tmux/os.tmux.conf"
+    safe_link "$HOME/.config/hatdots/os.ghostty" "$REPO/os/linux/ghostty/os.ghostty"
+    if [ -d "$HOME/.local/share/omarchy" ]; then
+        safe_link "$HOME/.config/hatdots/omarchy.tmux.conf" "$REPO/os/omarchy/tmux/omarchy.tmux.conf"
+        safe_link "$HOME/.config/hatdots/omarchy.ghostty" "$REPO/os/omarchy/ghostty/omarchy.ghostty"
+    fi
 
     # p10k
     if [ -f "$REPO/common/zsh/.p10k.zsh" ]; then

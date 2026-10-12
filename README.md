@@ -14,7 +14,7 @@ HatDots contiene configuraciones de editor y terminal; **HatNotes** es el vault 
 
 HatNotes es un compañero **requerido solo para los comandos de creación de Obsidian/Neovim**. Antes de usarlos, cloná o sincronizá HatNotes y verificá que las diez plantillas estén en `$HATNOTES_PATH/7-Tmpl`; el resto de los dotfiles de HatDots sigue siendo usable sin HatNotes.
 
-Las configuraciones de Neovim en Linux y Windows usan `HATNOTES_PATH` si está definido; si no, Neovim expande `~/HatNotes`. Ambas resuelven el módulo compartido desde `shared/nvim` a partir del symlink o junction de la configuración de la plataforma.
+Las configuraciones de Neovim en Linux y Windows usan `HATNOTES_PATH` si está definido; si no, Neovim expande `~/HatNotes`. El módulo compartido vive en `common/nvim/lua/hatnotes/` (parte de la config unificada desde Phase 3, ya no un `shared/nvim` aparte).
 
 ```bash
 export HATNOTES_PATH="$HOME/ruta/a/HatNotes" # Linux, antes de abrir nvim
@@ -87,7 +87,7 @@ chmod +x link-linux.sh
 
 Esto crea:
 ```
-~/.config/nvim              → ~/projects/HatDots/HatLinux/nvim
+~/.config/nvim              → ~/projects/HatDots/common/nvim
 ~/.config/tmux/tmux.conf     → ~/projects/HatDots/common/tmux/tmux.conf
 ```
 

@@ -149,7 +149,7 @@ may not contain `sfdx-project.json`.
 ## File layout
 
 ```
-HatLinux/nvim/
+common/nvim/
 ├── lua/
 │   ├── config/
 │   │   ├── lsp_on_attach.lua        # shared LSP on_attach helper (new)

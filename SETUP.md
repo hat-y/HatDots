@@ -4,7 +4,7 @@ Documentación interna para debugging y casos borde. Para reinstalación, ver [R
 
 Este repositorio contiene dotfiles multiplataforma para **Linux**, **Windows** y **macOS** con Neovim (LazyVim), terminales, shells y herramientas de productividad.
 
-> **🆕 macOS** — La rama `omarchy-config-merge` trae configs de Hyprland. `HatMac/` es un subset portable de esa rama, **sin** WM/keybinds globales (elección consciente: minimal). Ver `HatMac/README.md` para el detalle.
+> **🆕 macOS** — La rama `omarchy-config-merge` trae configs de Hyprland. `HatMac/` (hoy `os/mac/` + lo que comparte con `common/`) es un subset portable de esa rama, **sin** WM/keybinds globales (elección consciente: minimal). Ver `os/mac/README.md` para el detalle.
 
 ## Alcance portable y HatNotes
 
@@ -52,7 +52,7 @@ chmod +x link-linux.sh
 
 HatNotes es un compañero **requerido solo para los comandos de creación de Obsidian/Neovim**. Antes de usarlos, cloná o sincronizá HatNotes y verificá que las diez plantillas estén en `$HATNOTES_PATH/7-Tmpl`; el resto de los dotfiles de HatDots sigue siendo usable sin HatNotes.
 
-Las configuraciones de Obsidian para Neovim en Linux y Windows resuelven `HATNOTES_PATH` con expansión de Neovim y usan `~/HatNotes` si la variable no está definida. Definila antes de abrir Neovim cuando el vault esté en otra ubicación. El runtimepath encuentra `shared/nvim` desde el symlink o junction de la configuración de cada plataforma.
+Las configuraciones de Obsidian para Neovim en Linux y Windows resuelven `HATNOTES_PATH` con expansión de Neovim y usan `~/HatNotes` si la variable no está definida. Definila antes de abrir Neovim cuando el vault esté en otra ubicación. El módulo vive en `common/nvim/lua/hatnotes/`, dentro de la config unificada desde Phase 3 (ya no un `shared/nvim` separado que dependía del symlink o junction de cada plataforma).
 
 | Plataforma | Límite actual |
 |------------|---------------|
@@ -79,17 +79,18 @@ HatDots/
 │   ├── omarchy/                    # Hyprland/Omarchy (hypr/, overlays)
 │   ├── mac/                        # Brewfile, bin/, herdr LaunchAgent, overlays
 │   └── windows/                    # powershell/, wezterm/, docs/
-├── HatLinux/
-│   └── nvim/                       # LazyVim completo
-│       ├── lua/plugins/
-│       │   ├── theme.lua           # Aether (activo)
-│       │   ├── all-themes.lua      # 20 themes (lazy)
-│       │   ├── theme-hotreload.lua # Hot-reload de themes
-│       │   ├── colorscheme.lua     # Desactivado (oxocarbon/kanagawa comentados)
-│       │   └── ...                 # LSP, DAP, keymaps, etc.
-│       └── plugin/after/
-│           └── transparency.lua   # Fondos transparentes
-├── HatWindows/nvim/                # Neovim de Windows (ver os/windows/ para lo demás)
+├── common/nvim/                    # LazyVim unificado (Linux/Mac/Windows) desde Phase 3
+│   ├── lua/plugins/
+│   │   ├── theme.lua               # Aether, o el tema activo de Omarchy si existe
+│   │   ├── all-themes.lua          # 20 themes (lazy)
+│   │   ├── theme-hotreload.lua     # Hot-reload de themes
+│   │   ├── omarchy-theme-watch.lua # Watcher de ~/.config/omarchy (solo Omarchy)
+│   │   ├── colorscheme.lua         # Desactivado (oxocarbon/kanagawa comentados)
+│   │   └── ...                     # LSP, DAP, keymaps, etc.
+│   ├── lua/config/omarchy_theme.lua # path()/available()/spec()/watch()
+│   ├── parked/salesforce-mac/      # sf.nvim de Mac, en espera de la decisión P3-3
+│   └── plugin/after/
+│       └── transparency.lua        # Fondos transparentes
 ├── link-linux.sh                   # Symlinks base
 ├── link-windows.ps1                # Reemplaza destinos sin backups
 └── README.md                       # Guía de reinstalación
@@ -140,7 +141,7 @@ Si la sesión ya existe → attach directo.
 ## Neovim
 
 ### Config
-`~/.config/nvim` → symlink a `HatDots/HatLinux/nvim`
+`~/.config/nvim` → symlink a `HatDots/common/nvim`
 
 Base: **LazyVim** con extras para Python, Prisma, Docker, Angular, Rust.
 
@@ -384,12 +385,6 @@ curl -Ls https://github.com/atuinsh/atuin/releases/latest/download/atuin-x86_64-
 3. Ejecuta `:Mason` para instalar servidores LSP
 4. Instala formateadores: `:MasonInstall prettierd stylua ruff`
 5. Actualiza Treesitter: `:TSUpdate`
-
-### Claves API (Plugins de IA - Windows)
-Configura las variables de entorno para plugins de IA:
-- Gemini: `GEMINI_API_KEY`
-- Claude: `ANTHROPIC_API_KEY`
-- Ver guía completa en `HatWindows/API_KEYS.md`
 
 ### Fonts
 Installa una Nerd Font para soporte de iconos:

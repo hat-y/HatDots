@@ -9,8 +9,6 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$Repo = Join-Path $PSScriptRoot "HatWindows"
-$Shared = Join-Path $PSScriptRoot "shared"
 $OsWin = Join-Path $PSScriptRoot "os\windows"
 $Common = Join-Path $PSScriptRoot "common"
 
@@ -139,7 +137,7 @@ Write-Host ""
 Write-Step "Creando symlinks..."
 
 $Paths = @{
-    NvimDir     = "$Repo\nvim"
+    NvimDir     = "$Common\nvim"
     WeztermFile = "$OsWin\wezterm\wezterm.lua"
     PSProfile   = "$OsWin\powershell\Microsoft.PowerShell_profile.ps1"
     Starship    = "$Common\starship\starship.toml"
@@ -153,7 +151,7 @@ $Targets = @{
 }
 
 # Ensure directories exist
-New-Item -ItemType Directory -Force "$Repo\nvim", "$OsWin\wezterm", "$OsWin\powershell", "$HOME\.config", "$HOME\Documents\PowerShell" | Out-Null
+New-Item -ItemType Directory -Force "$Common\nvim", "$OsWin\wezterm", "$OsWin\powershell", "$HOME\.config", "$HOME\Documents\PowerShell" | Out-Null
 
 # Create symlinks
 New-DirLink $Targets.NvimDir $Paths.NvimDir

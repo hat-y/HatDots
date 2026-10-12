@@ -14,7 +14,6 @@ set -Eeuo pipefail
 # Override con env: HATDOTS_REPO=/custom/path ./link-mac.sh
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${HATDOTS_REPO:-$SCRIPT_DIR}"
-HATMAC="$REPO/HatMac"
 BREWFILE="$REPO/os/mac/Brewfile"
 
 if [ ! -f "$BREWFILE" ]; then
@@ -101,7 +100,7 @@ safe_link() {
 }
 
 # Neovim
-safe_link "$HOME/.config/nvim"                  "$HATMAC/nvim"
+safe_link "$HOME/.config/nvim"                  "$REPO/common/nvim"
 
 # Zsh
 safe_link "$HOME/.zshrc"                        "$REPO/common/zsh/.zshrc"
