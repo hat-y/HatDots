@@ -190,6 +190,11 @@ stop it.
       `git rm` had already staged the deletion before the TUI files were
       added; not rewritten after the fact per the no-history-rewrite
       rule). Docs commit `94efc94`.
+- [x] P4-6 Independent review fixes on phase 4b (new task). 6 commits:
+      `377b582` (lock `--dry-run`), `4bc088f` (require `y` to apply),
+      `40029aa` (label dry-run results), `a3be06a` (bootstrap.ps1
+      `$LASTEXITCODE` checks), `6acc097` (docs). See the Progress entry
+      below for RED/GREEN and full verification.
 
 ### Phase 5 — Close
 
@@ -704,6 +709,100 @@ stop it.
   mapping function is test-covered; `ensure_repo`'s clone/update/refuse
   branches and the sha256-verify-then-extract-then-run path are
   reviewed but not run.
+- 2026-10-12: Phase 4b independent review fixes (P4-6), HEAD `6acc097`,
+  6 commits (`377b582`, `4bc088f`, `40029aa`, `a3be06a`, `6acc097`; the
+  review's item list had 5 items, item 1's main.go comment fix landed
+  in the same commit as the behavior change rather than a separate one
+  — no separate commit was asked for beyond the 5 listed). Found by an
+  independent review of the phase-4b TUI/bootstrap work:
+  1. **`--dry-run` wasn't authoritative** (`377b582`): the preview
+     screen's "d" could silently turn a command-line `--dry-run` back
+     off. Added `Model.dryRunLocked`, set by
+     `tui.WithInitialDryRun(true)`; `updatePreview`'s "d" case now
+     checks it before toggling, and the preview shows "Dry run: on
+     (locked by --dry-run)". Fixed `WithInitialDryRun`'s doc comment
+     and the CLI's `--dry-run` flag help text, both of which previously
+     said the user could still turn it back off. RED:
+     `TestUpdatePreview_DCannotUnlockDryRunGivenOnCommandLine` failed
+     (dryRun became false after "d") before `dryRunLocked` existed;
+     GREEN after.
+  2. **`enter` applied the plan** (`4bc088f`): too easy to trigger by
+     accident while just browsing the preview. Applying now requires
+     the distinct "y" key; "enter" is a no-op on preview. Hint changed
+     to "y: apply · d: toggle dry run · esc: back". RED:
+     `TestUpdatePreview_EnterDoesNotApply`/`TestUpdatePreview_YApplies`
+     failed (enter still applied, y did nothing) before the switch;
+     `TestRapidEnterFromDetect_NeverReachesApply` (5 rapid enters from
+     the detect screen) failed after the 3rd enter reached
+     screenApply/applying=true before the fix. GREEN after all three.
+     Regenerated only `TestGolden_PreviewScreen.golden` (the only
+     golden scenario whose hint-line text actually changed) and
+     diffed it before committing — one line differs.
+     `TestGolden_ApplyAndResultScreen.golden` needed no update: that
+     scripted session's Preview frame with the old hint text was never
+     actually flushed by Bubbletea's render loop before the result
+     screen took over, so the removed text was never in that golden
+     file to begin with.
+  3. **Dry-run results looked real** (`40029aa`): apply/result screen
+     titles and the result screen's bucket labels
+     ("Created"/"Replaced"/"Backed up (backup kept)"/"Packages /
+     post-install") said the same thing whether or not a dry run was
+     on. Titles now append `" (dry run)"` when `Model.dryRun`; a new
+     `resultLabels(dryRun)` switches the four affected labels to "Would
+     create"/"Would replace"/"Would back up (backup kept)"/"Would run
+     (packages / post-install)" ("Skipped (already linked)" needs no
+     dry-run variant — equally true either way). RED:
+     `TestViewApply_TitleShowsDryRun`/`TestViewResult_DryRunTitleAndLabels`
+     failed (no "(dry run)"/"Would ..." text) before this change; GREEN
+     after, with `TestViewApply_TitleOmitsDryRunWhenReal`/
+     `TestViewResult_RealApplyKeepsPastTenseLabels` confirming the
+     real-apply path is unaffected. Regenerated only
+     `TestGolden_ApplyAndResultScreen.golden` (the only golden scenario
+     that runs with dry-run on) and diffed it: title gains " (dry run)",
+     "Created" becomes "Would create".
+  4. **bootstrap.ps1 swallowed native failures** (`a3be06a`):
+     `$ErrorActionPreference = 'Stop'` only governs PowerShell's own
+     terminating errors, not a failing external process's exit code —
+     `git clone`, the `hatdots.exe` invocation, and the `go run`
+     fallback could all fail silently. Added `Invoke-NativeOrThrow`
+     (checks `$LASTEXITCODE`, throws a clear message), used for both
+     `git clone --depth=1` sites, `& $bin --repo ...`, and `go run
+     ./installer/cmd/hatdots`. `git -C $Dir pull --ff-only` stays
+     intentionally non-fatal (mirrors bootstrap.sh's `|| log ...`) but
+     now checks `$LASTEXITCODE` explicitly instead of a try/catch that
+     could never fire for a plain non-zero git exit. No `git
+     rev-parse` call exists in this script (repo detection uses
+     Test-Path/Get-ChildItem/the schema marker), so nothing to fix
+     there. Still unverified: no `pwsh` in this environment, hand-
+     reviewed only.
+  5. **Cosmetic + docs** (`6acc097`): removed bootstrap.sh's dead
+     `case "$pair" in *windows*) ext="zip" ;; esac` — the Linux/macOS
+     script's `hatdots_asset_pair` never returns a windows_* pair
+     (bootstrap.ps1 handles Windows), so the branch could never match;
+     always `tar.gz` now, with a comment explaining why. Fixed
+     installer/README.md's `default` field doc, which still said "the
+     future phase-4b TUI" after phase 4b shipped. Documented the
+     y-to-apply and locked-dry-run behavior in README.md/SETUP.md/
+     installer/README.md.
+  Full verification (all observed): `go vet ./...` clean; `gofmt -l .`
+  empty; `go test ./... -race -count=1` passes across all 9 packages;
+  `go test ./internal/tui/... -run TestGolden -count=5` byte-identical
+  every run. Cross-builds: darwin amd64/arm64, windows amd64, linux
+  arm64 all build cleanly. `~/.local/bin/actionlint` (repo root, both
+  workflows, embedded shellcheck): clean. `sh -n bootstrap.sh`/`bash -n
+  bootstrap.sh`: clean. `sh installer/scripts/test/test_asset_pair.sh`:
+  all 9 assertions pass. `shellcheck bootstrap.sh` directly: clean. Pty
+  smoke (real binary, real `tmux` pty, fake `HOME`, `--repo <this repo>
+  --dry-run --os linux --desktop none`): preview screen showed `Dry
+  run: on (locked by --dry-run)` and the hint `y: apply · d: toggle dry
+  run · esc: back`; pressing `enter` left the screen unchanged
+  (confirmed by capturing the pane before/after — identical); pressing
+  `y` reached a result screen titled `Result (dry run)` with `Would
+  create (15):` and `Would run (packages / post-install) (7):`
+  sections. Real non-interactive dry-run, `go run ./cmd/hatdots --repo
+  .. --dry-run --all --yes`: before/after `ls -la ~/.config | md5sum`
+  identical (`78aaca9eaa275ef93639dde0ed1995e8`) — confirmed nothing
+  was ever touched. `git status --short` clean after every commit.
 
 ## Phase 1 merge decisions
 
