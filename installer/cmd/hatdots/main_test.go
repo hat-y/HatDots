@@ -200,6 +200,35 @@ required = true
 	}
 }
 
+func TestPrintPlan_WarnsAboutFilesThatWillBeReplaced(t *testing.T) {
+	plan := domain.Plan{Actions: []domain.Action{
+		{Kind: domain.ActionLinkCreate, ModuleID: "nvim", Src: "/repo/common/nvim", Dst: "/home/u/.config/nvim"},
+		{Kind: domain.ActionBackupThenLink, ModuleID: "starship", Src: "/repo/common/starship/starship.toml", Dst: "/home/u/.config/starship.toml"},
+	}}
+	var stdout bytes.Buffer
+	printPlan(&stdout, plan)
+
+	out := stdout.String()
+	if !strings.Contains(out, "These files will be replaced (backup kept):") {
+		t.Errorf("stdout = %q, want a backup-warning section", out)
+	}
+	if !strings.Contains(out, "/home/u/.config/starship.toml") {
+		t.Errorf("stdout = %q, want it to list the file that will be backed up", out)
+	}
+}
+
+func TestPrintPlan_NoWarningWhenNothingWillBeReplaced(t *testing.T) {
+	plan := domain.Plan{Actions: []domain.Action{
+		{Kind: domain.ActionLinkCreate, ModuleID: "nvim", Src: "/repo/common/nvim", Dst: "/home/u/.config/nvim"},
+	}}
+	var stdout bytes.Buffer
+	printPlan(&stdout, plan)
+
+	if strings.Contains(stdout.String(), "will be replaced") {
+		t.Errorf("stdout = %q, want no backup-warning section when nothing is backed up", stdout.String())
+	}
+}
+
 func TestRun_NoFlagsSelectsDefaultModulesNotEveryOptionalOne(t *testing.T) {
 	repo := t.TempDir()
 	for _, dir := range []string{"common/nvim", "common/tmux", "common/starship"} {

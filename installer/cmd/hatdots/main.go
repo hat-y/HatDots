@@ -154,6 +154,7 @@ func runInstall(args []string, stdin io.Reader, stdout, stderr io.Writer, isTTY 
 
 func printPlan(stdout io.Writer, plan domain.Plan) {
 	fmt.Fprintf(stdout, "Plan: %d action(s)\n", len(plan.Actions))
+	var toBackUp []string
 	for _, a := range plan.Actions {
 		switch a.Kind {
 		case domain.ActionPackageInstall:
@@ -162,6 +163,17 @@ func printPlan(stdout io.Writer, plan domain.Plan) {
 			fmt.Fprintf(stdout, "  %-22s %-10s %s\n", a.Kind, a.ModuleID, a.Command)
 		default:
 			fmt.Fprintf(stdout, "  %-22s %-10s %s -> %s\n", a.Kind, a.ModuleID, a.Dst, a.Src)
+		}
+		if a.Kind == domain.ActionBackupThenLink {
+			toBackUp = append(toBackUp, a.Dst)
+		}
+	}
+
+	if len(toBackUp) > 0 {
+		fmt.Fprintln(stdout)
+		fmt.Fprintln(stdout, "These files will be replaced (backup kept):")
+		for _, dst := range toBackUp {
+			fmt.Fprintf(stdout, "  %s\n", dst)
 		}
 	}
 }
