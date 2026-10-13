@@ -25,7 +25,7 @@ func (m Model) updatePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case "enter":
+	case "y":
 		if m.planErr != nil {
 			return m, nil
 		}
@@ -38,6 +38,13 @@ func (m Model) updatePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmd, m.spin.Tick)
 		}
 		return m, cmd
+
+	case "enter":
+		// Applying is destructive; it requires the distinct "y" key
+		// above, never enter (too easy to hit by accident while just
+		// browsing the preview — see
+		// odd/tasks/hatdots-unify.md's phase-4b review fixes).
+		return m, nil
 	}
 	return m, nil
 }
@@ -80,7 +87,7 @@ func (m Model) viewPreview() string {
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("Dry run: %s\n", dryRunLabel(m.dryRun, m.dryRunLocked)))
 	b.WriteString("\n")
-	b.WriteString(hintStyle.Render("d: toggle dry-run   enter: apply   esc: back   q: quit"))
+	b.WriteString(hintStyle.Render("y: apply · d: toggle dry run · esc: back"))
 	return b.String()
 }
 

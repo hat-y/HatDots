@@ -82,9 +82,10 @@ func TestGolden_PreviewScreen(t *testing.T) {
 func TestGolden_ApplyAndResultScreen(t *testing.T) {
 	m := New(newFixturePort(), WithoutAnimation())
 	// enter -> select, enter -> preview, "d" dry-run on (no terminal
-	// commands, no real exec), enter -> apply; it chains through the fake
-	// port's synchronous actions to the result screen on its own.
+	// commands, no real exec), "y" -> apply (not enter: applying requires
+	// the distinct y key); it chains through the fake port's synchronous
+	// actions to the result screen on its own.
 	out := runSessionUntil(t, m, "Result", key("q"),
-		key("enter"), key("enter"), key("d"), key("enter"))
+		key("enter"), key("enter"), key("d"), key("y"))
 	teatest.RequireEqualOutput(t, out)
 }

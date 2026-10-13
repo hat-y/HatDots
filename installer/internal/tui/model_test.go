@@ -150,6 +150,53 @@ func TestUpdatePreview_EscGoesBackToSelect(t *testing.T) {
 	}
 }
 
+// Applying is a destructive action: it must require the distinct "y"
+// key, never "enter" (too easy to hit by accident while just browsing
+// the preview).
+func TestUpdatePreview_EnterDoesNotApply(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation())
+	m = update(t, m, key("enter")) // -> select
+	m = update(t, m, key("enter")) // -> preview
+	m = update(t, m, key("enter"))
+	if m.screen != screenPreview {
+		t.Errorf("screen = %v, want screenPreview (enter must not apply)", m.screen)
+	}
+	if m.applying {
+		t.Error("enter on the preview screen must not start applying")
+	}
+}
+
+func TestUpdatePreview_YApplies(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation())
+	m = update(t, m, key("enter")) // -> select
+	m = update(t, m, key("enter")) // -> preview
+	m = update(t, m, key("y"))
+	if m.screen != screenApply {
+		t.Errorf("screen = %v, want screenApply", m.screen)
+	}
+	if !m.applying {
+		t.Error("y on the preview screen must start applying")
+	}
+}
+
+// Several rapid "enter" presses starting from the very first screen must
+// never reach the apply screen: enter advances detect->select and
+// select->preview, but on preview it must be a no-op (see
+// TestUpdatePreview_EnterDoesNotApply) — not "apply once more, which
+// happens to also be enter".
+func TestRapidEnterFromDetect_NeverReachesApply(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation())
+	for i := 0; i < 5; i++ {
+		m = update(t, m, key("enter"))
+		if m.screen == screenApply || m.applying {
+			t.Fatalf("reached the apply screen after %d rapid enter presses; screen=%v applying=%v", i+1, m.screen, m.applying)
+		}
+	}
+	if m.screen != screenPreview {
+		t.Errorf("screen = %v, want screenPreview after 5 enters (detect->select->preview, then stuck)", m.screen)
+	}
+}
+
 func TestUpdatePreview_DTogglesDryRun(t *testing.T) {
 	m := New(newFixturePort(), WithoutAnimation())
 	m = update(t, m, key("enter"))
@@ -200,7 +247,7 @@ func TestApply_DryRunCompletesWithoutTerminalCommandsAndReachesResult(t *testing
 	m = update(t, m, key("enter")) // -> select
 	m = update(t, m, key("enter")) // -> preview
 	m = update(t, m, key("d"))     // dry run on
-	m, cmd := applyUpdate(t, m, key("enter"))
+	m, cmd := applyUpdate(t, m, key("y"))
 
 	m = drain(t, m, cmd)
 
