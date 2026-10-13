@@ -32,6 +32,29 @@ function Write-BootstrapLog {
     Write-Host "bootstrap: $Message"
 }
 
+function Invoke-NativeOrThrow {
+    <#
+        Runs a native (non-cmdlet) command and throws a clear,
+        terminating error if it exits non-zero. $ErrorActionPreference =
+        'Stop' only governs PowerShell's own terminating errors; a
+        failing external process (git, go, hatdots.exe) does not throw
+        on its own — it only sets $LASTEXITCODE, which PowerShell is
+        otherwise happy to silently ignore. Every native invocation in
+        this script goes through this helper instead of being called
+        bare, so a real failure (bad network, git not installed, a
+        corrupt clone, hatdots itself failing) always stops the script
+        with a clear message instead of continuing past it.
+    #>
+    param(
+        [Parameter(Mandatory)] [string]$FilePath,
+        [Parameter(ValueFromRemainingArguments = $true)] [string[]]$ArgumentList = @()
+    )
+    & $FilePath @ArgumentList
+    if ($LASTEXITCODE -ne 0) {
+        throw "'$FilePath $($ArgumentList -join ' ')' exited with code $LASTEXITCODE"
+    }
+}
+
 function Get-HatdotsAssetPair {
     <#
         Maps the current process architecture to the "<goos>_<goarch>"
@@ -66,14 +89,19 @@ function Ensure-HatdotsRepo {
         $existingItems = Get-ChildItem -LiteralPath $Dir -Force -ErrorAction SilentlyContinue
         if (-not $existingItems) {
             Write-BootstrapLog "cloning HatDots into empty directory $Dir"
-            git clone --depth=1 $HatdotsRepoUrl $Dir
+            Invoke-NativeOrThrow git clone --depth=1 $HatdotsRepoUrl $Dir
             return
         }
         if (Test-HatdotsClone -Dir $Dir) {
             Write-BootstrapLog "updating existing HatDots clone at $Dir"
-            try {
-                git -C $Dir pull --ff-only
-            } catch {
+            # Intentionally not Invoke-NativeOrThrow: a failed fast-forward
+            # (e.g. local changes) is not fatal here, same as
+            # bootstrap.sh's `git pull --ff-only || log ...` — just keep
+            # using the existing checkout. $LASTEXITCODE (not try/catch:
+            # a non-zero git exit code is not a terminating PowerShell
+            # error) is what actually tells us it failed.
+            git -C $Dir pull --ff-only
+            if ($LASTEXITCODE -ne 0) {
                 Write-BootstrapLog "update failed or not possible (local changes?); continuing with the existing checkout"
             }
             return
@@ -82,7 +110,7 @@ function Ensure-HatdotsRepo {
     }
 
     Write-BootstrapLog "cloning HatDots into $Dir"
-    git clone --depth=1 $HatdotsRepoUrl $Dir
+    Invoke-NativeOrThrow git clone --depth=1 $HatdotsRepoUrl $Dir
 }
 
 function Get-Sha256 {
@@ -160,7 +188,7 @@ function Invoke-HatdotsRelease {
             throw "extracted archive did not contain hatdots.exe"
         }
 
-        & $bin --repo $Dir @ExtraArgs
+        Invoke-NativeOrThrow $bin --repo $Dir @ExtraArgs
         return $true
     } finally {
         Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
@@ -179,7 +207,7 @@ function Invoke-HatdotsFromSource {
     Write-BootstrapLog "no published release available; falling back to 'go run ./installer/cmd/hatdots'"
     Push-Location $Dir
     try {
-        & go run ./installer/cmd/hatdots --repo $Dir @ExtraArgs
+        Invoke-NativeOrThrow go run ./installer/cmd/hatdots --repo $Dir @ExtraArgs
     } finally {
         Pop-Location
     }
