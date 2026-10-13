@@ -20,12 +20,15 @@ HatDots/
 ├── os/omarchy/                      # Hyprland/Omarchy-only (hypr/, tmux/ghostty overlays, ...)
 ├── common/                          # tmux, ghostty, zsh, fish, newsboat, herdr
 ├── common/nvim/                     # Neovim, unificado desde Phase 3 (antes HatLinux/nvim)
-└── link-linux.sh                    # Script para linking
+└── installer/                       # Go + Bubbletea installer (ver installer/README.md)
 ```
 
 ## Instalación
 
-1. **Hacer link de archivos** (ver también `link-linux.sh`):
+Recomendado: `./bootstrap.sh` (o `hatdots` si ya tenés el binario), ver
+`SETUP.md`. Lo que sigue es el equivalente manual, módulo por módulo:
+
+1. **Hacer link de archivos** (ver también `modules.toml`):
 ```bash
 # Para tmux
 ln -sf ~/HatDots/common/tmux/tmux.conf ~/.config/tmux/tmux.conf
@@ -60,7 +63,7 @@ ln -sf ~/HatDots/common/bin/ghostty-multiplexer-new ~/.local/bin/ghostty-multipl
   - `prefix + Ctrl+1..9` = focus agent N
 
 ### Herdr (configuración específica)
-- Instalación (manual — link-linux.sh no la hace):
+- Instalación (manual — ni `hatdots` ni el viejo script la hacen en pacman/sin brew):
   ```bash
   brew install herdr          # macOS / Linuxbrew
   cargo install herdr         # desde crates.io

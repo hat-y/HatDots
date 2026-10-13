@@ -4,11 +4,7 @@
 
 HatDots contiene configuraciones de editor y terminal; **HatNotes** es el vault de Obsidian separado. HatDots no clona, enlaza ni respalda HatNotes.
 
-| Plataforma | Alcance actual |
-|------------|----------------|
-| Linux | Soportado para una instalación basada en Omarchy mediante `link-linux.sh`. Incluye la configuración Linux de Neovim y los enlaces/launchers que ese script ya administra. |
-| Windows | Slice inicial mediante `link-windows.ps1`: enlaza Neovim, WezTerm, el perfil de PowerShell y Starship. No incluye Omarchy, Ghostty, Zsh, Tmux, Herdr ni paridad de funciones con Linux. |
-| macOS | Fuera de alcance actualmente. |
+La instalación corre a través de un único instalador Go + Bubbletea (`hatdots`, ver `installer/README.md`) manejado por `modules.toml`. Para ver qué módulos aplican a cada plataforma, correé `hatdots list` o mirá ese manifest directamente.
 
 ### Vault de Obsidian
 
@@ -26,8 +22,7 @@ $env:HATNOTES_PATH = "C:\ruta\a\HatNotes" # PowerShell, antes de abrir nvim
 
 ### Reemplazos y backups
 
-- `link-linux.sh` respalda archivos o directorios existentes que reemplaza como `*.bak.<timestamp>` y deja intactos los symlinks existentes. El copy de `.p10k.zsh` elimina un symlink existente sin backup; Ghostty y los launchers no se sobrescriben.
-- `link-windows.ps1` elimina los destinos existentes que enlaza y **no crea backups**. Revisá `NvimDir`, `WeztermFile`, `PSProfile` y `Starship` antes de ejecutarlo.
+`hatdots` respalda cualquier archivo o directorio real que vaya a reemplazar (acción `backup-then-link`, con un nombre de backup libre de colisiones) antes de crear el symlink; un symlink ya apuntando al destino correcto se deja intacto (`link-skip-identical`). La preview (CLI o TUI) siempre lista qué se va a respaldar antes de aplicar nada.
 
 ## Flujo completo: Omarchy fresco → HatDots
 
@@ -79,13 +74,12 @@ Ver `common/herdr/README.md` para detalles completos y `os/linux/README.md` para
 ## 3. Instalar HatDots
 
 ```bash
-git clone https://github.com/hat-y/HatDots.git ~/projects/HatDots
-cd ~/projects/HatDots
-chmod +x link-linux.sh
-./link-linux.sh
+curl -fsSL https://raw.githubusercontent.com/hat-y/HatDots/main/bootstrap.sh | sh
 ```
 
-Esto crea:
+`bootstrap.sh` clona el repo en `${HATDOTS_DIR:-$HOME/projects/HatDots}`, descarga el binario `hatdots` de la última release (verificando su sha256) y lo corre. Con una terminal real abre una TUI interactiva (detección → selección de módulos → preview con dry-run opcional → aplicar); no interactivo (`hatdots --all --yes`) para scripting. Ver `installer/README.md` y `SETUP.md` para el detalle completo, incluidos los overlays `~/.config/hatdots/os.*`/`omarchy.*`/`local.*`.
+
+Esto crea, entre otros:
 ```
 ~/.config/nvim              → ~/projects/HatDots/common/nvim
 ~/.config/tmux/tmux.conf     → ~/projects/HatDots/common/tmux/tmux.conf

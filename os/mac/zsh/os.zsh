@@ -1,4 +1,4 @@
-# macOS overlay for common/zsh/.zshrc. Linked by link-mac.sh into
+# macOS overlay for common/zsh/.zshrc. Linked by the hatdots installer into
 # ~/.config/hatdots/os.zsh. Sourced at the very end of the common file, so
 # ordering relative to common's own sections does not matter: nothing below
 # depends on compinit/theme state set up earlier, and ~/.p10k.zsh (already

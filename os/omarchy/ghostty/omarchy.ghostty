@@ -1,4 +1,4 @@
-# Omarchy overlay for common/ghostty/config. Linked by link-linux.sh into
+# Omarchy overlay for common/ghostty/config. Linked by the hatdots installer into
 # ~/.config/hatdots/omarchy.ghostty (desktop-layer overlay, only linked when
 # ~/.local/share/omarchy exists - see odd/tasks/hatdots-unify.md, task P3-5).
 #

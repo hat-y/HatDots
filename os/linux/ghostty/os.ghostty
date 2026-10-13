@@ -1,5 +1,5 @@
 # Generic Linux (GTK build) overlay for common/ghostty/config. Linked by
-# link-linux.sh into ~/.config/hatdots/os.ghostty.
+# the hatdots installer into ~/.config/hatdots/os.ghostty.
 
 # Ocultar tabs (usamos tmux)
 gtk-tabs-location = hidden

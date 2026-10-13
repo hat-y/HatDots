@@ -41,18 +41,18 @@ Dotfiles para macOS, adaptados desde la rama `omarchy-config-merge` de HatDots.
 Desde la raíz del repo:
 
 ```bash
-chmod +x link-mac.sh
-./link-mac.sh
+./bootstrap.sh
 ```
 
-Esto corre `brew bundle --file os/mac/Brewfile` y crea todos los symlinks con backups timestamped.
+Corre la TUI interactiva (o `--all --yes` para no interactivo) de `hatdots`, que instala paquetes por módulo (equivalente a `brew bundle --file os/mac/Brewfile` para los módulos de mac) y crea los symlinks, respaldando lo que reemplaza.
 
 ### Instalación parcial
 
 ```bash
-./link-mac.sh --no-brew    # ya tenés las deps instaladas
-./link-mac.sh --no-cask    # no instala Ghostty (ya lo tenés)
+hatdots --only nvim,zsh --yes    # solo esos módulos (+ los requeridos)
 ```
+
+`hatdots list` muestra todos los módulos disponibles y cuáles son `required`/`default` en esta plataforma.
 
 ## 📁 Estructura
 

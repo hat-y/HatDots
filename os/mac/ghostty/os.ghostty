@@ -1,4 +1,4 @@
-# macOS overlay for common/ghostty/config. Linked by link-mac.sh into
+# macOS overlay for common/ghostty/config. Linked by the hatdots installer into
 # ~/.config/hatdots/os.ghostty.
 
 # Launch herdr directly (brew-installed, kept alive by the LaunchAgent in

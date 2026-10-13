@@ -8,8 +8,10 @@ Linux, with Tmux as a graceful fallback when Herdr is not installed.
 
 ## Install Herdr (manual)
 
-HatDots does **not** install Herdr automatically (the `link-linux.sh` installer
-stays out of scope). Pick one:
+The `herdr` module always links its config; it only installs the `herdr`
+binary itself through `hatdots` when Homebrew is the detected package
+manager (the module's `packages.brew` entry — see `modules.toml`). On a
+Homebrew-less Linux box you still need to install it yourself. Pick one:
 
 ```bash
 brew install herdr                     # macOS / Linuxbrew

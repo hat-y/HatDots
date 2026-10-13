@@ -4,10 +4,16 @@ A small, cross-platform, hexagonal Go program that replaces
 `link-linux.sh`, `link-mac.sh` and `link-windows.ps1` with one declarative
 module manifest (`modules.toml` at the repo root) and one binary.
 
-Phase 4a (this package) ships the core: manifest parsing, platform
-detection, planning, linking, package-manager adapters, and a
-non-interactive CLI. Phase 4b adds the Bubbletea TUI, a release workflow,
-and bootstrap scripts, and removes the three shell/PowerShell scripts.
+Phase 4a shipped the core: manifest parsing, platform detection,
+planning, linking, package-manager adapters, and a non-interactive CLI.
+Phase 4b (done) adds the Bubbletea TUI (`internal/tui`, launched
+automatically on an interactive terminal — see `cmd/hatdots/main.go`'s
+`shouldLaunchTUI`), the release workflow (`.goreleaser.yaml`,
+`.github/workflows/release.yml`/`installer-ci.yml`), and the bootstrap
+scripts (`bootstrap.sh`/`bootstrap.ps1` at the repo root) that download
+and run a release build. The three old shell/PowerShell scripts are gone;
+see `odd/tasks/hatdots-unify.md`'s Phase 4b section for the parity
+evidence that preceded their removal.
 
 ## Architecture
 
@@ -171,3 +177,71 @@ section listing every destination that will go through
 `backup-then-link` (a real file or directory already there, not a
 symlink) before asking for confirmation, so an overwrite is never a
 surprise.
+
+## TUI
+
+`internal/tui` is a Bubbletea presentation adapter over `internal/app` —
+it contains no business logic of its own; every decision (default
+selection, plan contents, package commands) is made by `internal/domain`,
+`internal/app`, or `internal/pkg` and only rendered/dispatched here. Five
+screens, in order: **detect** (OS/desktop/package manager/repo) ->
+**select** (required modules shown checked and locked; optional modules
+toggle with space, `a` toggles all optional; unsupported-on-this-platform
+modules are hidden) -> **preview** (the plan grouped by module, a
+"These files will be replaced" section, package/post-install commands
+listed, `d` toggles dry-run) -> **apply** (spinner/progress per action;
+package-install and post-install commands that may need an interactive
+terminal — e.g. a sudo password prompt — run through `tea.ExecProcess` so
+the TUI suspends itself around them, see `internal/tui/exec.go`) ->
+**result** (created/replaced/backed-up/skipped/failed, with recovery
+hints for any failure).
+
+`cmd/hatdots` launches the TUI (`shouldLaunchTUI` in `main.go`) when both
+stdin and stdout are real terminals and `--yes` was not given; `--dry-run`
+does **not** suppress the TUI (it seeds the preview screen's own dry-run
+toggle instead), so a dry run on a real terminal still gets the full
+interactive experience. `--all`/`--only` are ignored once the TUI takes
+over — module selection becomes the select screen's job.
+
+Tests: `internal/tui/model_test.go` drives `Model.Update` directly against
+a fixed, synchronous fake `Port` (`fake_port_test.go`) for state
+transitions, key handling, the required-module lock, and default
+selection; `internal/tui/golden_test.go` uses `teatest` to drive a real
+`tea.Program` through each screen (fixed 80x24 terminal size, a colorless
+lipgloss profile, and `WithoutAnimation()` to keep the spinner from racing
+a real-time ticker) and golden-compares the full rendered transcript —
+committed under `internal/tui/testdata/`.
+
+## Release and bootstrap
+
+`.goreleaser.yaml` (repo root) builds `hatdots` for linux/amd64,
+linux/arm64, darwin/amd64, darwin/arm64, and windows/amd64 from
+`installer/` (`builds[].dir`), archiving each as `.tar.gz` (`.zip` on
+Windows) plus one `checksums.txt`. `goreleaser` itself is not installed
+in this environment — the file's structure was checked against
+goreleaser's own docs (fetched through the context7 MCP) and basic YAML
+syntax, but never run through a real `goreleaser check`/`--snapshot`
+build; treat it as **unverified** until a maintainer runs one.
+
+`.github/workflows/release.yml` runs the installer's test suite, then
+`goreleaser release --clean`, on every `v*` tag push.
+`.github/workflows/installer-ci.yml` runs `go vet`, a `gofmt` check,
+`go test -race`, and cross-builds (darwin amd64/arm64, windows amd64,
+linux arm64) on every PR/push touching `installer/**` or `modules.toml`.
+Both are `actionlint`-clean.
+
+`bootstrap.sh` (POSIX sh, Linux/macOS) and `bootstrap.ps1` (Windows, not
+verified against a real `pwsh` — none is installed in this environment,
+reviewed by hand instead) clone or update the repo into
+`${HATDOTS_DIR:-$HOME/projects/HatDots}` (`$env:HATDOTS_DIR` or
+`$HOME\projects\HatDots` on Windows), refusing to touch an existing
+directory that isn't already a HatDots clone; download the latest release
+asset for the detected OS/arch, verify its sha256 against the release's
+`checksums.txt` (aborting on a mismatch), extract it, and run `hatdots
+--repo <dir>` with any passed-through arguments. With no release
+published yet and `go` available, both fall back to `go run
+./installer/cmd/hatdots`. The OS/arch -> asset-name mapping is a small,
+independently testable function in each script
+(`hatdots_asset_pair`/`Get-HatdotsAssetPair`);
+`installer/scripts/test/test_asset_pair.sh` exercises bootstrap.sh's
+version directly (`sh installer/scripts/test/test_asset_pair.sh`).

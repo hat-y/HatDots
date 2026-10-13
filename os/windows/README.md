@@ -42,7 +42,7 @@ HatDot/
     powershell/      # Microsoft.PowerShell_profile.ps1
     starship/        # starship.toml
     README.md
-  link-windows.ps1   # script para crear enlaces
+  bootstrap.ps1      # script para clonar/actualizar + bajar hatdots.exe
 ```
 
 ---
@@ -67,10 +67,14 @@ HatDot/
 
 ### A) Script (recomendado)
 
-En la raíz del repo:
+```powershell
+irm https://raw.githubusercontent.com/hat-y/HatDots/main/bootstrap.ps1 | iex
+```
+
+o, con el repo ya clonado, en su raíz:
 
 ```powershell
-.\link-windows.ps1
+.\bootstrap.ps1
 ```
 
 ### B) Manual (resumen)

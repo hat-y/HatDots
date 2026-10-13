@@ -24,9 +24,9 @@ function M.available()
 end
 
 --- True when this machine is running Omarchy at all (same marker
---- directory the installer uses in link-linux.sh to decide whether to
---- link the os/omarchy/* overlays). Overridable via OMARCHY_SHARE_DIR for
---- tests, same pattern as OMARCHY_DIR.
+--- directory the hatdots installer uses, via platform.DetectOmarchy, to
+--- decide whether to link the os/omarchy/* overlays). Overridable via
+--- OMARCHY_SHARE_DIR for tests, same pattern as OMARCHY_DIR.
 function M.is_omarchy()
 	local share_dir = vim.fn.expand(vim.env.OMARCHY_SHARE_DIR or "~/.local/share/omarchy")
 	return vim.fn.isdirectory(share_dir) == 1

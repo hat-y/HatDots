@@ -6,61 +6,48 @@ Este repositorio contiene dotfiles multiplataforma para **Linux**, **Windows** y
 
 > **🆕 macOS** — La rama `omarchy-config-merge` trae configs de Hyprland. `HatMac/` (hoy `os/mac/` + lo que comparte con `common/`) es un subset portable de esa rama, **sin** WM/keybinds globales (elección consciente: minimal). Ver `os/mac/README.md` para el detalle.
 
-## Alcance portable y HatNotes
+## Instalación
 
 HatDots guarda configuraciones; **HatNotes** es un vault de Obsidian separado. Ningún instalador de HatDots clona, enlaza ni respalda el vault.
 
-### macOS (HatMac)
-```bash
-# 1. Instalar Homebrew (si no lo tenés)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+### Linux / macOS
 
-# 2. Clonar y correr el installer (el path no importa, el script auto-detecta)
+```bash
+curl -fsSL https://raw.githubusercontent.com/hat-y/HatDots/main/bootstrap.sh | sh
+```
+
+o, si ya clonaste el repo:
+
+```bash
 git clone https://github.com/hat-y/HatDots.git ~/projects/HatDots
-cd ~/projects/HatDots
-chmod +x link-mac.sh
-./link-mac.sh          # corre brew bundle + crea symlinks
-
-# Flags útiles:
-#   ./link-mac.sh --no-brew    # ya tenés las deps
-#   ./link-mac.sh --no-cask    # no instala Ghostty/WezTerm
+~/projects/HatDots/bootstrap.sh
 ```
 
-> HatMac es **minimal**: Ghostty/WezTerm + tmux + nvim + zsh + newsboat.
-> **No** incluye tiling WM (yabai/skhd) ni keybinds globales estilo Hyprland.
+### Windows (PowerShell)
 
-### Windows
 ```powershell
-# Clonar el repositorio
-git clone https://github.com/hat-y/HatDots.git $HOME\HatDots
-
-# Ejecutar script (instala dependencias + crea symlinks)
-cd $HOME\HatDots
-.\link-windows.ps1
+irm https://raw.githubusercontent.com/hat-y/HatDots/main/bootstrap.ps1 | iex
 ```
 
-### Linux
+`bootstrap.sh`/`bootstrap.ps1` clonan o actualizan el repo en `${HATDOTS_DIR:-$HOME/projects/HatDots}` (Windows: `$env:HATDOTS_DIR` o `$HOME\projects\HatDots`; se niegan a tocar un directorio existente que no sea un clon de HatDots), descargan el binario `hatdots` de la última release para tu OS/arquitectura verificando su sha256 contra `checksums.txt`, y lo ejecutan. Sin ninguna release publicada todavía, y con Go instalado, caen automáticamente a `go run ./installer/cmd/hatdots`.
+
+### El binario `hatdots`
+
+Sin flags, con una terminal real (stdin y stdout son ambas una TTY) y sin `--yes`, `hatdots` abre una TUI interactiva (Bubbletea): pantalla de detección (OS/desktop/package manager/repo), selección de módulos (los requeridos aparecen bloqueados), preview del plan agrupado por módulo (con un toggle de dry-run) y aplicación con progreso en vivo.
+
 ```bash
-# Clonar el repositorio
-git clone https://github.com/hat-y/HatDots.git $HOME/HatDots
-
-# Ejecutar script (instala dependencias + crea symlinks)
-cd $HOME/HatDots
-chmod +x link-linux.sh
-./link-linux.sh
+hatdots                         # TUI interactiva
+hatdots --dry-run                # TUI con el dry-run ya activado
+hatdots --all --yes              # no interactivo: instala todos los módulos compatibles
+hatdots --only nvim,fish --yes   # no interactivo: solo esos módulos (+ los requeridos)
+hatdots list                     # lista los módulos disponibles, con su estado required/default
 ```
+
+Los archivos que `hatdots` reemplaza se respaldan primero (acción `backup-then-link`, con un nombre de backup libre de colisiones); nunca sobrescribe sin dejar backup. Los overlays por-OS/escritorio y los valores específicos de esta máquina viven en `~/.config/hatdots/os.*` (overlay genérico del OS), `~/.config/hatdots/omarchy.*` (solo en Omarchy, encima de `os.*`) y `~/.config/hatdots/local.*` (machine-specific, no versionado, nunca parte del manifest). Para ver qué módulos aplican a tu plataforma concreta, correé `hatdots list` o mirá `modules.toml`.
 
 HatNotes es un compañero **requerido solo para los comandos de creación de Obsidian/Neovim**. Antes de usarlos, cloná o sincronizá HatNotes y verificá que las diez plantillas estén en `$HATNOTES_PATH/7-Tmpl`; el resto de los dotfiles de HatDots sigue siendo usable sin HatNotes.
 
 Las configuraciones de Obsidian para Neovim en Linux y Windows resuelven `HATNOTES_PATH` con expansión de Neovim y usan `~/HatNotes` si la variable no está definida. Definila antes de abrir Neovim cuando el vault esté en otra ubicación. El módulo vive en `common/nvim/lua/hatnotes/`, dentro de la config unificada desde Phase 3 (ya no un `shared/nvim` separado que dependía del symlink o junction de cada plataforma).
-
-| Plataforma | Límite actual |
-|------------|---------------|
-| Linux | Soportado para el flujo basado en Omarchy y `link-linux.sh`. |
-| Windows | `link-windows.ps1` enlaza Neovim, WezTerm, el perfil de PowerShell y Starship; no tiene paridad con Linux ni configura Omarchy, Ghostty, Zsh, Tmux o Herdr. |
-| macOS | Fuera de alcance. |
-
-`link-linux.sh` respalda archivos/directorios que reemplaza como `*.bak.<timestamp>`, conserva symlinks existentes y no sobrescribe Ghostty ni launchers; un symlink existente de `.p10k.zsh` se elimina sin backup al copiarlo. `link-windows.ps1` elimina los destinos existentes que enlaza y no crea backups.
 
 ## Estructura del repo
 
@@ -91,8 +78,10 @@ HatDots/
 │   ├── lua/plugins/xixiaofinland-sf.lua # Salesforce: sf.nvim (decisión P3-3)
 │   └── plugin/after/
 │       └── transparency.lua        # Fondos transparentes
-├── link-linux.sh                   # Symlinks base
-├── link-windows.ps1                # Reemplaza destinos sin backups
+├── installer/                      # Go + Bubbletea installer (reemplaza los link-*.sh/.ps1)
+├── modules.toml                    # Manifest declarativo que consume installer/
+├── bootstrap.sh / bootstrap.ps1    # Clonan/actualizan el repo y bajan la release de hatdots
+├── .goreleaser.yaml                # Build multi-plataforma de hatdots
 └── README.md                       # Guía de reinstalación
 ```
 

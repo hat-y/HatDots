@@ -20,7 +20,7 @@ Si solo usás agentes desde tu laptop y nunca perdés sesiones, probablemente no
 
 Ya está en el `Brewfile` de HatMac:
 ```bash
-brew install herdr      # o ./link-mac.sh
+brew install herdr      # o `hatdots --only herdr` (instala vía brew automáticamente)
 ```
 
 Alternativas (sin brew):
@@ -52,10 +52,12 @@ herdr status server                   # debe decir "running"
 tail -f ~/Library/Logs/herdr/server.log
 ```
 
-**Si querés saltarlo durante `./link-mac.sh`:**
-```bash
-./link-mac.sh --no-herdr-autostart
-```
+**Si querés saltarlo:** `hatdots` no tiene un flag granular solo para el
+autostart — el módulo `herdr` enlaza su config y corre este mismo
+`install.sh` como un único post-install. Deseleccioná el módulo entero
+(en la TUI, o con `--only` sin incluirlo) y, si igual querés el config
+symlink sin el LaunchAgent, corré `hatdots --only herdr --dry-run` para
+ver el plan y aplicá el resto a mano.
 
 **Integración con Ghostty:**
 El overlay `os/mac/ghostty/os.ghostty` ya tiene:
@@ -112,7 +114,7 @@ Cada workspace se llama como el proyecto/contexto: `hatdots`, `cliente-x`, `lab`
 
 ### Setup inicial sugerido
 
-Después de `link-mac.sh`, crear los workspaces base una vez:
+Después de correr `hatdots`, crear los workspaces base una vez:
 
 ```bash
 herdr                    # abre el server, queda en workspace "home" por default
@@ -134,7 +136,7 @@ Los workspaces se guardan en `~/.config/herdr/` y se restauran automáticamente 
 
 ## Config
 
-Ubicación: `~/.config/herdr/config.toml` (symlink a `common/herdr/config.toml` via `link-mac.sh`).
+Ubicación: `~/.config/herdr/config.toml` (symlink a `common/herdr/config.toml`, creado por el módulo `herdr` de `hatdots`).
 
 Override por env:
 ```bash

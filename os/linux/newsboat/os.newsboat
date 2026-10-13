@@ -1,3 +1,3 @@
-# Generic Linux overlay for common/newsboat/config. Linked by link-linux.sh
-# into ~/.config/hatdots/os.newsboat.
+# Generic Linux overlay for common/newsboat/config. Linked by the hatdots
+# installer into ~/.config/hatdots/os.newsboat.
 browser "xdg-open %u"
