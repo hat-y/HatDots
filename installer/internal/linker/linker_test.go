@@ -194,6 +194,59 @@ func TestLinker_Apply_BackupThenLink_PreservesOriginalContent(t *testing.T) {
 	}
 }
 
+func TestLinker_Apply_BackupThenLink_CollisionProofNaming(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	if err := os.WriteFile(src, []byte("new content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	dst := filepath.Join(dir, "dst")
+
+	// Same frozen clock for both applies, so a naive implementation would
+	// compute the exact same backup path twice.
+	l := Linker{Now: fixedClock("2026-10-12T15:04:05Z")}
+
+	if err := os.WriteFile(dst, []byte("first original"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := l.Apply(domain.Action{Kind: domain.ActionBackupThenLink, Src: src, Dst: dst}); err != nil {
+		t.Fatalf("first Apply error: %v", err)
+	}
+
+	// dst is now a symlink; put a second, different real file back in its
+	// place to simulate a second backup-worthy destination occurring
+	// within the same clock second.
+	if err := os.Remove(dst); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dst, []byte("second original"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := l.Apply(domain.Action{Kind: domain.ActionBackupThenLink, Src: src, Dst: dst}); err != nil {
+		t.Fatalf("second Apply error: %v", err)
+	}
+
+	matches, err := filepath.Glob(dst + ".hatdots-bak.*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 2 {
+		t.Fatalf("got %d backup files, want 2 distinct ones: %v", len(matches), matches)
+	}
+
+	contents := map[string]bool{}
+	for _, m := range matches {
+		data, err := os.ReadFile(m)
+		if err != nil {
+			t.Fatalf("reading backup %q: %v", m, err)
+		}
+		contents[string(data)] = true
+	}
+	if !contents["first original"] || !contents["second original"] {
+		t.Fatalf("backups did not preserve both distinct originals: %v", contents)
+	}
+}
+
 func TestLinker_Apply_DryRunNeverTouchesFilesystem(t *testing.T) {
 	dir := t.TempDir()
 	src := filepath.Join(dir, "src")

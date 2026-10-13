@@ -108,7 +108,10 @@ func (l Linker) applyLink(action domain.Action) error {
 			return fmt.Errorf("remove existing symlink %s: %w", action.Dst, err)
 		}
 	case domain.ActionBackupThenLink:
-		backup := action.Dst + ".hatdots-bak." + l.now().Format(backupTimeFormat)
+		backup, err := freeBackupPath(action.Dst, l.now())
+		if err != nil {
+			return fmt.Errorf("find a free backup path for %s: %w", action.Dst, err)
+		}
 		if err := os.Rename(action.Dst, backup); err != nil {
 			return fmt.Errorf("back up %s to %s: %w", action.Dst, backup, err)
 		}
@@ -122,6 +125,30 @@ func (l Linker) applyLink(action domain.Action) error {
 		return l.strategy().link(action.Src, action.Dst)
 	}
 	return os.Symlink(action.Src, action.Dst)
+}
+
+// freeBackupPath returns a backup path for dst at clock time now that
+// does not already exist on disk: "<dst>.hatdots-bak.<timestamp>", or
+// "<dst>.hatdots-bak.<timestamp>-1", "-2", ... when that name is already
+// taken (e.g. two backups of the same dst within the same clock second).
+// It never returns a path that os.Lstat finds, so Apply's os.Rename onto
+// it can never silently clobber an existing backup.
+func freeBackupPath(dst string, now time.Time) (string, error) {
+	base := dst + ".hatdots-bak." + now.Format(backupTimeFormat)
+	candidate := base
+	for i := 0; ; i++ {
+		if i > 0 {
+			candidate = fmt.Sprintf("%s-%d", base, i)
+		}
+		_, err := os.Lstat(candidate)
+		if os.IsNotExist(err) {
+			return candidate, nil
+		}
+		if err != nil {
+			return "", err
+		}
+		// candidate exists (err == nil): try the next suffix.
+	}
 }
 
 func isDirSrc(src string) (bool, error) {
