@@ -13,8 +13,14 @@ import (
 
 	"github.com/hat-y/HatDots/installer/internal/app"
 	"github.com/hat-y/HatDots/installer/internal/domain"
+	"github.com/hat-y/HatDots/installer/internal/manifest"
 	"github.com/hat-y/HatDots/installer/internal/platform"
 )
+
+// executableFunc resolves the running binary's own path; a package-level
+// var (rather than a run()/resolveRepoRoot parameter) so tests can fake
+// it without widening run()'s already-stable public signature.
+var executableFunc = os.Executable
 
 func main() {
 	isTTY := false
@@ -41,7 +47,11 @@ func runList(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
-	repoRoot, err := resolveRepoRoot(*repoFlag)
+	// `list` is read-only, so an auto-detected repo (even via the
+	// executable-fallback path) is used without the confirmation
+	// runInstall requires — nothing destructive can come of printing
+	// the wrong repo's module list.
+	repoRoot, _, err := resolveRepoRoot(*repoFlag)
 	if err != nil {
 		fmt.Fprintln(stderr, "hatdots:", err)
 		return 1
@@ -88,10 +98,32 @@ func runInstall(args []string, stdin io.Reader, stdout, stderr io.Writer, isTTY 
 		return 2
 	}
 
-	repoRoot, err := resolveRepoRoot(*repoFlag)
+	repoRoot, repoSrc, err := resolveRepoRoot(*repoFlag)
 	if err != nil {
 		fmt.Fprintln(stderr, "hatdots:", err)
 		return 1
+	}
+	if repoSrc == repoSourceExecutableFallback {
+		// Nothing told us which repo to use: not --repo, not a
+		// modules.toml anywhere above the current directory. We're
+		// about to act on a directory the user never actually pointed
+		// us at (it just happened to sit next to the binary) — require
+		// an explicit human confirmation rather than silently trusting
+		// a guess, and refuse outright under --yes, since there is no
+		// one to confirm with.
+		fmt.Fprintf(stderr, "hatdots: no --repo given and no modules.toml found above the current directory; using %s (found next to the installer binary).\n", repoRoot)
+		if *yesFlag {
+			fmt.Fprintln(stderr, "hatdots: refusing to proceed with an auto-detected repo under --yes; pass --repo explicitly.")
+			return 1
+		}
+		if !isTTY {
+			fmt.Fprintln(stderr, "hatdots: no terminal available to confirm the auto-detected repo; pass --repo explicitly.")
+			return 1
+		}
+		if !confirmPrompt(stdin, stdout, "Use this repo? [y/N] ") {
+			fmt.Fprintln(stdout, "Aborted.")
+			return 0
+		}
 	}
 	a, err := app.Load(repoRoot)
 	if err != nil {
@@ -179,7 +211,11 @@ func printPlan(stdout io.Writer, plan domain.Plan) {
 }
 
 func confirm(stdin io.Reader, stdout io.Writer) bool {
-	fmt.Fprint(stdout, "Apply this plan? [y/N] ")
+	return confirmPrompt(stdin, stdout, "Apply this plan? [y/N] ")
+}
+
+func confirmPrompt(stdin io.Reader, stdout io.Writer, prompt string) bool {
+	fmt.Fprint(stdout, prompt)
 	scanner := bufio.NewScanner(stdin)
 	if !scanner.Scan() {
 		return false
@@ -188,31 +224,45 @@ func confirm(stdin io.Reader, stdout io.Writer) bool {
 	return answer == "y" || answer == "yes"
 }
 
+// repoSource records how resolveRepoRoot picked a repo root, so callers
+// that care (runInstall) can require extra confirmation for the riskiest
+// case: a guess based on where the binary happens to live.
+type repoSource int
+
+const (
+	repoSourceExplicit repoSource = iota
+	repoSourceWalkUp
+	repoSourceExecutableFallback
+)
+
 // resolveRepoRoot honors an explicit --repo, else auto-detects.
-func resolveRepoRoot(explicit string) (string, error) {
+func resolveRepoRoot(explicit string) (string, repoSource, error) {
 	if explicit != "" {
 		abs, err := filepath.Abs(explicit)
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
-		return abs, nil
+		return abs, repoSourceExplicit, nil
 	}
 	cwd, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	return findRepoRoot(cwd, os.Executable)
+	return findRepoRoot(cwd, executableFunc)
 }
 
-// findRepoRoot walks up from start looking for modules.toml; if none is
-// found, it falls back to the directory holding the running executable
-// (the layout a release/bootstrap install produces: the binary sits next
-// to the repo it was built to install).
-func findRepoRoot(start string, executable func() (string, error)) (string, error) {
+// findRepoRoot walks up from start looking for a modules.toml that
+// declares the HatDots schema marker (manifest.HasSchemaMarker) — a file
+// that merely exists at that name isn't enough, since it might belong to
+// something else entirely. If none is found, it falls back to the
+// directory holding the running executable (the layout a release/
+// bootstrap install produces: the binary sits next to the repo it was
+// built to install), still gated on the same marker check.
+func findRepoRoot(start string, executable func() (string, error)) (string, repoSource, error) {
 	dir := start
 	for {
-		if _, err := os.Stat(filepath.Join(dir, app.ManifestFileName)); err == nil {
-			return dir, nil
+		if manifest.HasSchemaMarker(filepath.Join(dir, app.ManifestFileName)) {
+			return dir, repoSourceWalkUp, nil
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
@@ -224,12 +274,12 @@ func findRepoRoot(start string, executable func() (string, error)) (string, erro
 	exe, err := executable()
 	if err == nil && exe != "" {
 		exeDir := filepath.Dir(exe)
-		if _, err := os.Stat(filepath.Join(exeDir, app.ManifestFileName)); err == nil {
-			return exeDir, nil
+		if manifest.HasSchemaMarker(filepath.Join(exeDir, app.ManifestFileName)) {
+			return exeDir, repoSourceExecutableFallback, nil
 		}
 	}
 
-	return "", fmt.Errorf("could not find %s above %s or next to the executable", app.ManifestFileName, start)
+	return "", 0, fmt.Errorf("could not find a HatDots repo (a %s declaring schema = %q) above %s or next to the executable", app.ManifestFileName, manifest.Schema, start)
 }
 
 func parseOnly(s string) []string {

@@ -330,6 +330,87 @@ func reflectDesktopEqual(got []domain.Desktop, want ...domain.Desktop) bool {
 	return true
 }
 
+func TestLoad_RejectsMissingSchemaMarker(t *testing.T) {
+	repo := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(repo, "common", "nvim"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	data := []byte(`
+[[modules]]
+id = "nvim"
+required = true
+
+  [[modules.links]]
+  src = "common/nvim"
+  dst = "~/.config/nvim"
+`)
+	path := filepath.Join(repo, "modules.toml")
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(path); err == nil {
+		t.Fatal("expected an error loading a modules.toml with no schema marker, got nil")
+	}
+}
+
+func TestLoad_AcceptsCorrectSchemaMarker(t *testing.T) {
+	repo := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(repo, "common", "nvim"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	data := []byte(`
+schema = "hatdots/v1"
+
+[[modules]]
+id = "nvim"
+required = true
+
+  [[modules.links]]
+  src = "common/nvim"
+  dst = "~/.config/nvim"
+`)
+	path := filepath.Join(repo, "modules.toml")
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(path); err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+}
+
+func TestHasSchemaMarker(t *testing.T) {
+	dir := t.TempDir()
+
+	missing := filepath.Join(dir, "does-not-exist.toml")
+	if HasSchemaMarker(missing) {
+		t.Error("HasSchemaMarker(missing file) = true, want false")
+	}
+
+	wrong := filepath.Join(dir, "wrong.toml")
+	if err := os.WriteFile(wrong, []byte("schema = \"something-else\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if HasSchemaMarker(wrong) {
+		t.Error("HasSchemaMarker(wrong schema) = true, want false")
+	}
+
+	none := filepath.Join(dir, "none.toml")
+	if err := os.WriteFile(none, []byte("[[modules]]\nid = \"x\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if HasSchemaMarker(none) {
+		t.Error("HasSchemaMarker(no schema field at all) = true, want false")
+	}
+
+	correct := filepath.Join(dir, "correct.toml")
+	if err := os.WriteFile(correct, []byte("schema = \"hatdots/v1\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !HasSchemaMarker(correct) {
+		t.Error("HasSchemaMarker(correct schema) = false, want true")
+	}
+}
+
 func equalStrings(got, want []string) bool {
 	if len(got) != len(want) {
 		return false

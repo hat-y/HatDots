@@ -19,6 +19,12 @@
 # `dst_linux`/`dst_mac`/`dst_windows` override `dst` for one OS when the
 # destination path itself differs (e.g. tmux's `~/.tmux.conf` on mac vs
 # `~/.config/tmux/tmux.conf` elsewhere).
+#
+# `schema` below is a required marker (installer/internal/manifest.Schema):
+# it lets `hatdots`'s repo auto-detection tell "this really is a HatDots
+# repo root" apart from "there happens to be some unrelated file named
+# modules.toml here". Never remove it.
+schema = "hatdots/v1"
 
 # ─── Required on every OS ────────────────────────────────────────────────
 

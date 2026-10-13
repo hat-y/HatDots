@@ -21,6 +21,8 @@ func writeRepo(t *testing.T, manifestTOML string) string {
 }
 
 const minimalManifest = `
+schema = "hatdots/v1"
+
 [[modules]]
 id = "nvim"
 name = "Neovim"

@@ -48,6 +48,14 @@ type tomlPostInstall struct {
 	Desktop []string `toml:"desktop"`
 }
 
+// Schema is the modules.toml schema marker every real manifest must
+// declare (schema = "hatdots/v1"). Load rejects a file that doesn't
+// declare it, and HasSchemaMarker uses the same check so repo
+// auto-detection (cmd/hatdots's findRepoRoot) can tell "this is really a
+// HatDots repo root" apart from "there happens to be some unrelated file
+// named modules.toml here".
+const Schema = "hatdots/v1"
+
 // Load reads and parses the modules.toml file at path, then validates it
 // against the repository rooted at path's directory (src paths in links
 // are repo-relative).
@@ -55,6 +63,9 @@ func Load(path string) (domain.Manifest, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return domain.Manifest{}, fmt.Errorf("read manifest: %w", err)
+	}
+	if err := checkSchema(data); err != nil {
+		return domain.Manifest{}, err
 	}
 	m, err := Parse(data)
 	if err != nil {
@@ -65,6 +76,33 @@ func Load(path string) (domain.Manifest, error) {
 		return domain.Manifest{}, err
 	}
 	return m, nil
+}
+
+// checkSchema decodes just the top-level "schema" key and confirms it
+// equals Schema.
+func checkSchema(data []byte) error {
+	var raw struct {
+		Schema string `toml:"schema"`
+	}
+	if _, err := toml.Decode(string(data), &raw); err != nil {
+		return fmt.Errorf("decode manifest: %w", err)
+	}
+	if raw.Schema != Schema {
+		return fmt.Errorf("modules.toml is missing or has the wrong schema marker: want schema = %q, got %q", Schema, raw.Schema)
+	}
+	return nil
+}
+
+// HasSchemaMarker reports whether path exists and declares the expected
+// schema marker. It never returns an error: any problem (missing file,
+// bad TOML, wrong/absent schema) just means "no", which is exactly what
+// repo auto-detection needs to silently keep looking elsewhere.
+func HasSchemaMarker(path string) bool {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	return checkSchema(data) == nil
 }
 
 // Parse converts raw TOML bytes into a domain.Manifest, without touching
