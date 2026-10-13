@@ -262,6 +262,24 @@ desktop = ["omarchy"]
   src = "os/omarchy/hypr/autostart.lua"
   dst = "~/.config/hypr/autostart.lua"
 
+  [[modules.links]]
+  # bindings.lua above binds SUPER+RETURN to this; NOT superseded by
+  # common/bin/ghostty-multiplexer-new (that wraps the multiplexer choice
+  # inside a terminal session, this launches the terminal itself).
+  src = "os/omarchy/bin/hatdots-launch-terminal"
+  dst = "~/.local/bin/hatdots-launch-terminal"
+
+  [[modules.links]]
+  # bindings.lua above binds SUPER+ALT+RETURN to this.
+  src = "os/omarchy/bin/hatdots-launch-terminal-tmux"
+  dst = "~/.local/bin/hatdots-launch-terminal-tmux"
+
+  [[modules.links]]
+  # Optional fallback consulted by common/bin/ghostty-multiplexer-new
+  # (via `command -v tmux-session-layout`) when herdr isn't on PATH.
+  src = "os/omarchy/bin/tmux-session-layout"
+  dst = "~/.local/bin/tmux-session-layout"
+
 # ─── Linux (generic / non-Omarchy desktop) ─────────────────────────────────
 
 [[modules]]

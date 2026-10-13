@@ -1,0 +1,15 @@
+#!/bin/bash
+# Launch or attach to a tmux session named after the current Hyprland workspace.
+# Uses Ghostty as the terminal. Falls back to "Work" if Hyprland is not running.
+# Layout: nvim (top) | shell (bot-left) | shell (bot-right)
+
+ws="Work"
+if command -v hyprctl &>/dev/null; then
+  ws_name=$(hyprctl activeworkspace -j 2>/dev/null | grep -oP '"name"\s*:\s*"\K[^"]+')
+  if [[ -n "$ws_name" ]]; then
+    ws="ws-${ws_name}"
+  fi
+fi
+
+cwd="$(omarchy-cmd-terminal-cwd 2>/dev/null || pwd)"
+exec setsid uwsm-app -- ghostty -e bash -c "cd '$cwd' && exec ghostty-multiplexer-new '$ws'"

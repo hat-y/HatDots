@@ -1,0 +1,5 @@
+#!/bin/bash
+# Launch Ghostty in the current terminal's working directory
+cwd="$(omarchy-cmd-terminal-cwd 2>/dev/null || pwd)"
+# Ghostty doesn't support --cwd, use cd via shell
+exec setsid uwsm-app -- ghostty -e bash -c "cd '$cwd' && exec zsh"

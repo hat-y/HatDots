@@ -1,0 +1,32 @@
+#!/bin/bash
+# tmux-session-layout — Create a tmux session with 3 windows:
+#   Window 1: nvim
+#   Window 2: shell
+#   Window 3: shell
+#
+# Usage: tmux-session-layout [session-name]
+
+set -euo pipefail
+
+SESSION="${1:-main}"
+CWD="${2:-$(pwd)}"
+
+# If session already exists, just attach
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  exec tmux attach -t "$SESSION"
+fi
+
+# Window 1: nvim
+tmux new-session -d -s "$SESSION" -c "$CWD" nvim
+
+# Window 2: shell
+tmux new-window -t "$SESSION" -c "$CWD"
+
+# Window 3: shell
+tmux new-window -t "$SESSION" -c "$CWD"
+
+# Select window 1 (nvim)
+tmux select-window -t "$SESSION:1"
+
+# Attach
+exec tmux attach -t "$SESSION"

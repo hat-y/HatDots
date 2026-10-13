@@ -60,10 +60,17 @@ var linuxPairs = []linkPair{
 }
 
 // linuxOmarchyOnlyPairs are additionally created only when
-// ~/.local/share/omarchy exists (link-linux.sh:132-135).
+// ~/.local/share/omarchy exists (link-linux.sh:132-135, plus the three
+// launcher scripts below: link-linux.sh heredoc'd them generically, but
+// the live machine's ~/.config/hypr/bindings.lua only ever calls them on
+// Omarchy, so they're tracked as an Omarchy-only hypr-module concern, not
+// a generic-Linux one).
 var linuxOmarchyOnlyPairs = []linkPair{
-	{"os/omarchy/tmux/omarchy.tmux.conf", "~/.config/hatdots/omarchy.tmux.conf"}, // link-linux.sh:133
-	{"os/omarchy/ghostty/omarchy.ghostty", "~/.config/hatdots/omarchy.ghostty"},  // link-linux.sh:134
+	{"os/omarchy/tmux/omarchy.tmux.conf", "~/.config/hatdots/omarchy.tmux.conf"},                 // link-linux.sh:133
+	{"os/omarchy/ghostty/omarchy.ghostty", "~/.config/hatdots/omarchy.ghostty"},                  // link-linux.sh:134
+	{"os/omarchy/bin/hatdots-launch-terminal", "~/.local/bin/hatdots-launch-terminal"},           // link-linux.sh:208-216; live ~/.config/hypr/bindings.lua still binds SUPER+RETURN to it
+	{"os/omarchy/bin/hatdots-launch-terminal-tmux", "~/.local/bin/hatdots-launch-terminal-tmux"}, // link-linux.sh:218-231; live bindings.lua still binds SUPER+ALT+RETURN to it
+	{"os/omarchy/bin/tmux-session-layout", "~/.local/bin/tmux-session-layout"},                   // link-linux.sh:233-251; still referenced by common/bin/ghostty-multiplexer-new as an optional fallback
 }
 
 var linuxDropped = []droppedPair{
@@ -74,18 +81,6 @@ var linuxDropped = []droppedPair{
 	{
 		linkPair{"<heredoc>", "~/.config/ghostty/config"}, // link-linux.sh:146-195, only if the file didn't already exist
 		"generated_config_superseded_by_tracked_file: common/ghostty/config is the tracked source of truth and is linked directly by the whole-dir link above; the one-off heredoc'd config (a different, drifted file) is dropped.",
-	},
-	{
-		linkPair{"<heredoc>", "~/.local/bin/hatdots-launch-terminal"}, // link-linux.sh:208-216
-		"superseded_by_ghostty_multiplexer_new: common/ghostty/config's own `command =` line now runs the tracked common/bin/ghostty-multiplexer-new (linked by the ghostty module) instead of a generated per-machine launcher script.",
-	},
-	{
-		linkPair{"<heredoc>", "~/.local/bin/hatdots-launch-terminal-tmux"}, // link-linux.sh:218-231
-		"superseded_by_ghostty_multiplexer_new: same as hatdots-launch-terminal above.",
-	},
-	{
-		linkPair{"<heredoc>", "~/.local/bin/tmux-session-layout"}, // link-linux.sh:233-251
-		"superseded_by_herdr: common/bin/ghostty-multiplexer-new only calls tmux-session-layout as an optional fallback if it happens to be on PATH, and otherwise falls back to a plain `tmux new-session`; the hardcoded 3-window layout was never promoted to a tracked file. Herdr (see openspec/changes/add-herdr-multiplexor) is now the primary multiplexer; a tmux-only 3-window layout script is no longer the intended UX.",
 	},
 }
 
