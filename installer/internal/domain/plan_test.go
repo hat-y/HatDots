@@ -232,3 +232,65 @@ func TestBuildPlan_RequiredModuleSkippedWhenPlatformUnsupported(t *testing.T) {
 		t.Fatalf("required-but-platform-incompatible module produced actions: %+v", plan.Actions)
 	}
 }
+
+func TestBuildPlan_RejectsEmptyHOME(t *testing.T) {
+	manifest := Manifest{Modules: []Module{
+		{ID: "nvim", Required: true, Links: []Link{{Src: "common/nvim", Dst: "~/.config/nvim"}}},
+	}}
+	platform := Platform{OS: Linux, Env: map[string]string{"HOME": ""}}
+
+	if _, err := BuildPlan(manifest, platform, nil, fakeFS{}); err == nil {
+		t.Fatal("expected an error with an empty HOME, got nil (this is the exact bug that used to turn ~/x into /x)")
+	}
+}
+
+func TestBuildPlan_RejectsDstOutsideHome(t *testing.T) {
+	manifest := Manifest{Modules: []Module{
+		{ID: "evil", Required: true, Links: []Link{{Src: "common/evil", Dst: "/etc/evil"}}},
+	}}
+	platform := Platform{OS: Linux, Env: testEnv()}
+
+	if _, err := BuildPlan(manifest, platform, nil, fakeFS{}); err == nil {
+		t.Fatal("expected an error for a destination outside the user's home directory, got nil")
+	}
+}
+
+func TestBuildPlan_RejectsRelativeDst(t *testing.T) {
+	manifest := Manifest{Modules: []Module{
+		{ID: "evil", Required: true, Links: []Link{{Src: "common/evil", Dst: "relative/path"}}},
+	}}
+	platform := Platform{OS: Linux, Env: testEnv()}
+
+	if _, err := BuildPlan(manifest, platform, nil, fakeFS{}); err == nil {
+		t.Fatal("expected an error for a relative destination, got nil")
+	}
+}
+
+func TestBuildPlan_RejectsRootDst(t *testing.T) {
+	manifest := Manifest{Modules: []Module{
+		{ID: "evil", Required: true, Links: []Link{{Src: "common/evil", Dst: "/"}}},
+	}}
+	platform := Platform{OS: Linux, Env: testEnv()}
+
+	if _, err := BuildPlan(manifest, platform, nil, fakeFS{}); err == nil {
+		t.Fatal("expected an error for a root destination, got nil")
+	}
+}
+
+func TestBuildPlan_AllowsDstUnderLocalAppData(t *testing.T) {
+	manifest := Manifest{Modules: []Module{
+		{ID: "nvim", Required: true, Links: []Link{{Src: "common/nvim", Dst: "%LOCALAPPDATA%/nvim"}}},
+	}}
+	platform := Platform{OS: Windows, Env: map[string]string{
+		"HOME":         "/home/u",
+		"LOCALAPPDATA": `C:\Users\u\AppData\Local`,
+	}}
+
+	plan, err := BuildPlan(manifest, platform, nil, fakeFS{})
+	if err != nil {
+		t.Fatalf("a destination under the documented LOCALAPPDATA exception must be allowed: %v", err)
+	}
+	if len(plan.Actions) != 1 {
+		t.Fatalf("got %+v, want 1 action", plan.Actions)
+	}
+}

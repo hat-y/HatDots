@@ -1,21 +1,29 @@
 package domain
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // ExpandPath expands "~", "$VAR", "${VAR}" and "%VAR%" references in path
-// using env. A reference to a variable absent from env is left untouched
-// (including "~" when env has no "HOME") so callers can detect and report
-// the problem instead of silently producing a wrong path.
+// using env. It errors instead of guessing whenever a reference cannot be
+// resolved to a genuinely non-empty value: a "~" with no HOME set (or HOME
+// set to ""), and any $VAR/${VAR}/%VAR% whose variable is absent or empty.
+// Guessing here is exactly how an empty-but-present HOME used to silently
+// turn "~/x" into "/x" — a real path, just the wrong one — instead of
+// failing loudly. A path with no placeholder at all never errors.
 //
 // This is a pure function: it never reads the real environment or touches
 // the filesystem. The caller (the app/platform layer) is responsible for
 // building env from the real OS when that's what's wanted, and tests build
 // a fake one.
-func ExpandPath(path string, env map[string]string) string {
+func ExpandPath(path string, env map[string]string) (string, error) {
 	if strings.HasPrefix(path, "~") {
-		if home, ok := env["HOME"]; ok {
-			path = home + path[1:]
+		home, ok := env["HOME"]
+		if !ok || home == "" {
+			return "", fmt.Errorf("expand %q: HOME is not set (or is empty); refusing to guess a path", path)
 		}
+		path = home + path[1:]
 	}
 
 	var b strings.Builder
@@ -28,27 +36,30 @@ func ExpandPath(path string, env map[string]string) string {
 				b.WriteByte(c)
 				continue
 			}
-			if val, ok := env[name]; ok {
-				b.WriteString(val)
-				i += length
+			val, ok := env[name]
+			if !ok || val == "" {
+				return "", fmt.Errorf("expand %q: $%s is not set (or is empty); refusing to guess a path", path, name)
+			}
+			b.WriteString(val)
+			i += length
+		case '%':
+			end := strings.IndexByte(path[i+1:], '%')
+			if end <= 0 {
+				b.WriteByte(c)
 				continue
 			}
-			b.WriteByte(c)
-		case '%':
-			if end := strings.IndexByte(path[i+1:], '%'); end > 0 {
-				name := path[i+1 : i+1+end]
-				if val, ok := env[name]; ok {
-					b.WriteString(val)
-					i += end + 1
-					continue
-				}
+			name := path[i+1 : i+1+end]
+			val, ok := env[name]
+			if !ok || val == "" {
+				return "", fmt.Errorf("expand %q: %%%s%% is not set (or is empty); refusing to guess a path", path, name)
 			}
-			b.WriteByte(c)
+			b.WriteString(val)
+			i += end + 1
 		default:
 			b.WriteByte(c)
 		}
 	}
-	return b.String()
+	return b.String(), nil
 }
 
 // readDollarVar parses a "$VAR" or "${VAR}" reference starting right after

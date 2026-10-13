@@ -229,6 +229,38 @@ func TestPrintPlan_NoWarningWhenNothingWillBeReplaced(t *testing.T) {
 	}
 }
 
+func TestRun_EmptyHOMEFailsCleanlyInsteadOfWritingToRoot(t *testing.T) {
+	repo := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(repo, "common", "nvim"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifestTOML := `
+[[modules]]
+id = "nvim"
+required = true
+
+  [[modules.links]]
+  src = "common/nvim"
+  dst = "~/.config/nvim"
+`
+	if err := os.WriteFile(filepath.Join(repo, "modules.toml"), []byte(manifestTOML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", "")
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"--repo", repo, "--dry-run", "--all", "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false)
+	if code == 0 {
+		t.Fatalf("expected a non-zero exit code with an empty HOME, got 0; stdout=%s", stdout.String())
+	}
+	if stderr.Len() == 0 {
+		t.Error("expected a clear error on stderr explaining why it refused, got none")
+	}
+	if strings.Contains(stdout.String(), "/.config/nvim") {
+		t.Errorf("stdout = %q, must never compute a root-relative destination like /.config/nvim from an empty HOME", stdout.String())
+	}
+}
+
 func TestRun_NoFlagsSelectsDefaultModulesNotEveryOptionalOne(t *testing.T) {
 	repo := t.TempDir()
 	for _, dir := range []string{"common/nvim", "common/tmux", "common/starship"} {

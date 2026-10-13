@@ -25,7 +25,10 @@ func TestExpandPath(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := ExpandPath(tc.path, env)
+			got, err := ExpandPath(tc.path, env)
+			if err != nil {
+				t.Fatalf("ExpandPath(%q) unexpected error: %v", tc.path, err)
+			}
 			if got != tc.want {
 				t.Errorf("ExpandPath(%q) = %q, want %q", tc.path, got, tc.want)
 			}
@@ -33,9 +36,43 @@ func TestExpandPath(t *testing.T) {
 	}
 }
 
-func TestExpandPathMissingVarLeavesPlaceholder(t *testing.T) {
-	got := ExpandPath("$NOPE/x", map[string]string{"HOME": "/home/hat"})
-	if got != "$NOPE/x" {
-		t.Errorf("ExpandPath with missing var = %q, want placeholder left untouched", got)
+func TestExpandPath_MissingVarErrors(t *testing.T) {
+	_, err := ExpandPath("$NOPE/x", map[string]string{"HOME": "/home/hat"})
+	if err == nil {
+		t.Fatal("ExpandPath with an unset variable reference should error, not silently leave a placeholder or substitute nothing")
+	}
+}
+
+func TestExpandPath_EmptyHOMEErrorsOnTilde(t *testing.T) {
+	// The real-world bug this guards against: an empty-but-present HOME
+	// used to turn "~/x" into "/x" (a root-relative path) instead of
+	// failing loudly.
+	_, err := ExpandPath("~/.config/nvim", map[string]string{"HOME": ""})
+	if err == nil {
+		t.Fatal("ExpandPath with an empty HOME should error, not silently produce a root path")
+	}
+}
+
+func TestExpandPath_AbsentHOMEErrorsOnTilde(t *testing.T) {
+	_, err := ExpandPath("~/.config/nvim", map[string]string{})
+	if err == nil {
+		t.Fatal("ExpandPath with no HOME at all should error on a ~ reference")
+	}
+}
+
+func TestExpandPath_EmptyVarValueErrors(t *testing.T) {
+	_, err := ExpandPath("$LOCALAPPDATA/nvim", map[string]string{"HOME": "/home/hat", "LOCALAPPDATA": ""})
+	if err == nil {
+		t.Fatal("ExpandPath with an empty-but-present variable should error, not substitute an empty string")
+	}
+}
+
+func TestExpandPath_NoPlaceholderNeverErrors(t *testing.T) {
+	got, err := ExpandPath("common/nvim", map[string]string{})
+	if err != nil {
+		t.Fatalf("a path with no placeholder at all must never error: %v", err)
+	}
+	if got != "common/nvim" {
+		t.Errorf("got %q, want unchanged", got)
 	}
 }

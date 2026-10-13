@@ -25,8 +25,13 @@ type linkPair struct {
 	dst string
 }
 
-func (p linkPair) expand(env map[string]string) linkPair {
-	return linkPair{src: p.src, dst: domain.ExpandPath(p.dst, env)}
+func (p linkPair) expand(t *testing.T, env map[string]string) linkPair {
+	t.Helper()
+	dst, err := domain.ExpandPath(p.dst, env)
+	if err != nil {
+		t.Fatalf("expanding fixture dst %q: %v", p.dst, err)
+	}
+	return linkPair{src: p.src, dst: dst}
 }
 
 // droppedPair documents one old-script pair that modules.toml does NOT
@@ -181,7 +186,7 @@ func planPairs(t *testing.T, m domain.Manifest, platform domain.Platform) map[li
 func assertAllPresent(t *testing.T, got map[linkPair]bool, want []linkPair, dropped []droppedPair, env map[string]string) {
 	t.Helper()
 	for _, w := range want {
-		expanded := w.expand(env)
+		expanded := w.expand(t, env)
 		if !got[expanded] {
 			t.Errorf("old-script pair not covered by the new manifest's plan: src=%q dst=%q (expanded dst=%q)", w.src, w.dst, expanded.dst)
 		}
@@ -217,7 +222,7 @@ func TestParity_LinuxNoDesktop(t *testing.T) {
 
 	// The omarchy-only pairs must NOT show up without the omarchy desktop.
 	for _, w := range linuxOmarchyOnlyPairs {
-		expanded := w.expand(env)
+		expanded := w.expand(t, env)
 		if got[expanded] {
 			t.Errorf("omarchy-only pair present without the omarchy desktop: %+v", expanded)
 		}

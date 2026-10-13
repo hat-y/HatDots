@@ -1,6 +1,9 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // ActionKind identifies the kind of step a Plan wants carried out.
 type ActionKind string
@@ -121,8 +124,17 @@ func BuildPlan(manifest Manifest, platform Platform, selection []string, fs FSSt
 
 func buildLinkAction(moduleID string, link Link, platform Platform, fs FSState) (Action, error) {
 	dstTemplate := link.ResolveDst(platform.OS)
-	src := ExpandPath(link.Src, platform.Env)
-	dst := ExpandPath(dstTemplate, platform.Env)
+	src, err := ExpandPath(link.Src, platform.Env)
+	if err != nil {
+		return Action{}, fmt.Errorf("module %s: %w", moduleID, err)
+	}
+	dst, err := ExpandPath(dstTemplate, platform.Env)
+	if err != nil {
+		return Action{}, fmt.Errorf("module %s: %w", moduleID, err)
+	}
+	if err := validateDst(dst, platform.Env); err != nil {
+		return Action{}, fmt.Errorf("module %s: unsafe destination: %w", moduleID, err)
+	}
 
 	state, err := fs.Inspect(dst, src)
 	if err != nil {
@@ -187,4 +199,68 @@ func resolveSelection(manifest Manifest, platform Platform, selection []string) 
 	}
 
 	return effective, nil
+}
+
+// validateDst rejects a fully-expanded destination path that is unsafe to
+// ever link onto: empty, relative, a bare filesystem root, or outside the
+// user's home directory. The only exception is an explicit, documented
+// anchor a real manifest entry needs — currently just LOCALAPPDATA, for
+// nvim's Windows destination (%LOCALAPPDATA%/nvim), which on real Windows
+// is itself nested under the user's profile anyway.
+func validateDst(dst string, env map[string]string) error {
+	if dst == "" {
+		return fmt.Errorf("destination path is empty")
+	}
+	if !isAbsPath(dst) {
+		return fmt.Errorf("destination path %q is not absolute", dst)
+	}
+	if isRootPath(dst) {
+		return fmt.Errorf("destination path %q is a filesystem root", dst)
+	}
+	if !underAllowedAnchor(dst, env) {
+		return fmt.Errorf("destination path %q is outside the user's home directory (and outside every allowed anchor)", dst)
+	}
+	return nil
+}
+
+// isAbsPath reports whether s is an absolute path, Unix-style ("/...") or
+// Windows-drive-style ("C:\..." / "C:/..."). It deliberately does not use
+// filepath.IsAbs, which only recognizes the *compiling* OS's own
+// convention — this installer plans for other OSes than the one it runs
+// on (e.g. building a Windows plan on Linux for the parity tests).
+func isAbsPath(s string) bool {
+	if strings.HasPrefix(s, "/") {
+		return true
+	}
+	return len(s) >= 3 && isASCIILetter(s[0]) && s[1] == ':' && (s[2] == '\\' || s[2] == '/')
+}
+
+// isRootPath reports whether s is exactly a filesystem root ("/", "C:\",
+// "C:/") with nothing under it.
+func isRootPath(s string) bool {
+	if s == "/" {
+		return true
+	}
+	return len(s) == 3 && isASCIILetter(s[0]) && s[1] == ':' && (s[2] == '\\' || s[2] == '/')
+}
+
+func isASCIILetter(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+}
+
+// underAllowedAnchor reports whether dst sits under one of the non-empty
+// anchors in env that are allowed destination roots: HOME always, plus
+// LOCALAPPDATA/USERPROFILE when present (Windows anchors that are
+// themselves nested under the user's profile on a real machine).
+func underAllowedAnchor(dst string, env map[string]string) bool {
+	for _, key := range []string{"HOME", "LOCALAPPDATA", "USERPROFILE"} {
+		anchor, ok := env[key]
+		if !ok || anchor == "" {
+			continue
+		}
+		if dst == anchor || strings.HasPrefix(dst, anchor+"/") || strings.HasPrefix(dst, anchor+`\`) {
+			return true
+		}
+	}
+	return false
 }

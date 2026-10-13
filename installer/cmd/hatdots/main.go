@@ -306,7 +306,15 @@ func detectPlatform(osFlag, desktopFlag string) (domain.Platform, error) {
 	}
 	mgr, aurHelper := platform.DetectPkgManagerFor(targetOS, distroID, distroIDLike, lookPath)
 
-	env := map[string]string{"HOME": home}
+	env := map[string]string{}
+	// Never set an empty HOME: a present-but-empty value used to let
+	// domain.ExpandPath turn "~/x" into "/x" (a real root-relative path,
+	// just the wrong one). Leaving the key out entirely makes
+	// ExpandPath/BuildPlan treat it exactly like HOME being unset, which
+	// they now reject outright instead of guessing.
+	if home != "" {
+		env["HOME"] = home
+	}
 	for _, k := range []string{"LOCALAPPDATA", "XDG_CONFIG_HOME"} {
 		if v := os.Getenv(k); v != "" {
 			env[k] = v
