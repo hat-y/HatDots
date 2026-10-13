@@ -7,7 +7,14 @@ import (
 
 func (m Model) viewApply() string {
 	var b strings.Builder
-	b.WriteString(titleStyle.Render("Applying"))
+	title := "Applying"
+	if m.dryRun {
+		// Truthful labeling: a dry run never really creates, replaces,
+		// backs up, or runs anything — say so instead of implying a
+		// real apply is in progress.
+		title += " (dry run)"
+	}
+	b.WriteString(titleStyle.Render(title))
 	b.WriteString("\n\n")
 
 	total := len(m.plan.Actions)

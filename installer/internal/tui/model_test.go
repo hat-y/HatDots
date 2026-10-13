@@ -280,6 +280,76 @@ func TestViewResult_PackageInstallEntryShowsManagerAndPackages(t *testing.T) {
 	}
 }
 
+// Results must be truthful about what actually happened: when dry-run
+// was on, nothing was really created/replaced/backed up — the apply and
+// result screens must say so instead of reusing the past-tense wording
+// that implies a real change.
+func TestViewApply_TitleShowsDryRun(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation())
+	m.screen = screenApply
+	m.dryRun = true
+	out := m.viewApply()
+	if !strings.Contains(out, "(dry run)") {
+		t.Errorf("viewApply() = %q, want the title to say (dry run)", out)
+	}
+}
+
+func TestViewApply_TitleOmitsDryRunWhenReal(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation())
+	m.screen = screenApply
+	m.dryRun = false
+	out := m.viewApply()
+	if strings.Contains(out, "(dry run)") {
+		t.Errorf("viewApply() = %q, want no (dry run) marker for a real apply", out)
+	}
+}
+
+func TestViewResult_DryRunTitleAndLabels(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation())
+	m.screen = screenResult
+	m.dryRun = true
+	m.results = []actionResult{
+		{action: domain.Action{Kind: domain.ActionLinkCreate, ModuleID: "nvim", Dst: "/home/u/.config/nvim"}},
+		{action: domain.Action{Kind: domain.ActionLinkReplace, ModuleID: "tmux", Dst: "/home/u/.config/tmux/tmux.conf"}},
+		{action: domain.Action{Kind: domain.ActionBackupThenLink, ModuleID: "starship", Dst: "/home/u/.config/starship.toml"}},
+	}
+	out := m.viewResult()
+	if !strings.Contains(out, "(dry run)") {
+		t.Errorf("viewResult() = %q, want the title to say (dry run)", out)
+	}
+	if !strings.Contains(out, "Would create") {
+		t.Errorf("viewResult() = %q, want \"Would create\" instead of \"Created\" during a dry run", out)
+	}
+	if !strings.Contains(out, "Would replace") {
+		t.Errorf("viewResult() = %q, want \"Would replace\" instead of \"Replaced\" during a dry run", out)
+	}
+	if !strings.Contains(out, "Would back up") {
+		t.Errorf("viewResult() = %q, want \"Would back up\" instead of \"Backed up\" during a dry run", out)
+	}
+	if strings.Contains(out, "Created (") || strings.Contains(out, "Replaced (") {
+		t.Errorf("viewResult() = %q, still uses the real-apply past-tense labels during a dry run", out)
+	}
+}
+
+func TestViewResult_RealApplyKeepsPastTenseLabels(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation())
+	m.screen = screenResult
+	m.dryRun = false
+	m.results = []actionResult{
+		{action: domain.Action{Kind: domain.ActionLinkCreate, ModuleID: "nvim", Dst: "/home/u/.config/nvim"}},
+	}
+	out := m.viewResult()
+	if strings.Contains(out, "(dry run)") {
+		t.Errorf("viewResult() = %q, want no (dry run) marker for a real apply", out)
+	}
+	if !strings.Contains(out, "Created (") {
+		t.Errorf("viewResult() = %q, want the real-apply \"Created\" label", out)
+	}
+	if strings.Contains(out, "Would create") {
+		t.Errorf("viewResult() = %q, must not say \"Would create\" for a real apply", out)
+	}
+}
+
 func TestSummarize_BucketsByKindAndFailure(t *testing.T) {
 	results := []actionResult{
 		{action: domain.Action{Kind: domain.ActionLinkCreate, ModuleID: "nvim"}},

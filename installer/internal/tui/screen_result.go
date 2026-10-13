@@ -54,16 +54,24 @@ func summarize(results []actionResult) resultSummary {
 
 func (m Model) viewResult() string {
 	var b strings.Builder
-	b.WriteString(titleStyle.Render("Result"))
+	title := "Result"
+	if m.dryRun {
+		// Truthful labeling: a dry run never really creates, replaces,
+		// backs up, or runs anything — the title and every bucket label
+		// below say "Would ..." instead of the real-apply past tense.
+		title += " (dry run)"
+	}
+	b.WriteString(titleStyle.Render(title))
 	b.WriteString("\n\n")
 
 	s := summarize(m.results)
+	labels := resultLabels(m.dryRun)
 
-	writeGroup(&b, "Created", s.created, linkPath)
-	writeGroup(&b, "Replaced", s.replaced, linkPath)
-	writeGroup(&b, "Backed up (backup kept)", s.backedUp, linkPath)
+	writeGroup(&b, labels.created, s.created, linkPath)
+	writeGroup(&b, labels.replaced, s.replaced, linkPath)
+	writeGroup(&b, labels.backedUp, s.backedUp, linkPath)
 	writeGroup(&b, "Skipped (already linked)", s.skipped, linkPath)
-	writeGroup(&b, "Packages / post-install", s.other, describeAction)
+	writeGroup(&b, labels.other, s.other, describeAction)
 
 	if len(s.failed) > 0 {
 		b.WriteString(errStyle.Render("Failed:"))
@@ -77,6 +85,33 @@ func (m Model) viewResult() string {
 
 	b.WriteString(hintStyle.Render("any key: quit"))
 	return b.String()
+}
+
+// resultLabelSet holds the bucket labels viewResult shows, switched
+// between the real-apply past tense and the dry-run "Would ..." phrasing
+// so the result screen never implies a change happened when it didn't.
+// "Skipped (already linked)" needs no dry-run variant: a destination
+// already being the right symlink is equally true whether or not
+// anything was actually applied.
+type resultLabelSet struct {
+	created, replaced, backedUp, other string
+}
+
+func resultLabels(dryRun bool) resultLabelSet {
+	if dryRun {
+		return resultLabelSet{
+			created:  "Would create",
+			replaced: "Would replace",
+			backedUp: "Would back up (backup kept)",
+			other:    "Would run (packages / post-install)",
+		}
+	}
+	return resultLabelSet{
+		created:  "Created",
+		replaced: "Replaced",
+		backedUp: "Backed up (backup kept)",
+		other:    "Packages / post-install",
+	}
 }
 
 // linkPath describes a link-kind action by its destination. It is only
