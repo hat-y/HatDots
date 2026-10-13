@@ -93,6 +93,31 @@ func (l Linker) Apply(action domain.Action) error {
 	}
 }
 
+// BackupRestoreError reports that a link failed AFTER its destination's
+// original content had already been moved aside to BackupPath. Restored
+// says whether Apply managed to move it back automatically; when it
+// didn't (RestoreErr != nil), the user must recover it by hand — Error()
+// spells out the exact `mv` command for that.
+type BackupRestoreError struct {
+	Dst        string
+	BackupPath string
+	LinkErr    error
+	Restored   bool
+	RestoreErr error
+}
+
+func (e *BackupRestoreError) Error() string {
+	if e.Restored {
+		return fmt.Sprintf("link %s failed (%v); the original was restored automatically from %s", e.Dst, e.LinkErr, e.BackupPath)
+	}
+	return fmt.Sprintf(
+		"link %s failed (%v); the original is still backed up at %s and could NOT be restored automatically (%v) — recover it yourself: mv %s %s",
+		e.Dst, e.LinkErr, e.BackupPath, e.RestoreErr, e.BackupPath, e.Dst,
+	)
+}
+
+func (e *BackupRestoreError) Unwrap() error { return e.LinkErr }
+
 func (l Linker) applyLink(action domain.Action) error {
 	if l.DryRun {
 		return nil
@@ -102,6 +127,7 @@ func (l Linker) applyLink(action domain.Action) error {
 		return fmt.Errorf("create parent dir for %s: %w", action.Dst, err)
 	}
 
+	var backupPath string
 	switch action.Kind {
 	case domain.ActionLinkReplace:
 		if err := os.Remove(action.Dst); err != nil && !os.IsNotExist(err) {
@@ -115,16 +141,42 @@ func (l Linker) applyLink(action domain.Action) error {
 		if err := os.Rename(action.Dst, backup); err != nil {
 			return fmt.Errorf("back up %s to %s: %w", action.Dst, backup, err)
 		}
+		backupPath = backup
 	}
 
-	isDir, err := isDirSrc(action.Src)
+	linkErr := l.createLink(action.Src, action.Dst)
+	if linkErr == nil {
+		return nil
+	}
+	if backupPath == "" {
+		// Nothing was moved aside for this action kind; nothing to
+		// restore, just surface the failure.
+		return linkErr
+	}
+
+	// The original sat at action.Dst until we moved it to backupPath
+	// above, and the link we meant to put in its place failed. Try to
+	// put it straight back rather than leaving the user with neither
+	// the original file nor a working link.
+	restoreErr := os.Rename(backupPath, action.Dst)
+	return &BackupRestoreError{
+		Dst:        action.Dst,
+		BackupPath: backupPath,
+		LinkErr:    linkErr,
+		Restored:   restoreErr == nil,
+		RestoreErr: restoreErr,
+	}
+}
+
+func (l Linker) createLink(src, dst string) error {
+	isDir, err := isDirSrc(src)
 	if err != nil {
-		return fmt.Errorf("stat src %s: %w", action.Src, err)
+		return fmt.Errorf("stat src %s: %w", src, err)
 	}
 	if isDir {
-		return l.strategy().link(action.Src, action.Dst)
+		return l.strategy().link(src, dst)
 	}
-	return os.Symlink(action.Src, action.Dst)
+	return os.Symlink(src, dst)
 }
 
 // freeBackupPath returns a backup path for dst at clock time now that

@@ -1,8 +1,10 @@
 package linker
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -288,5 +290,80 @@ func TestLinker_Apply_DirLinkUsesDirStrategy(t *testing.T) {
 	}
 	if !called {
 		t.Error("dirStrategy.link was never invoked for a directory source")
+	}
+}
+
+func TestLinker_Apply_BackupThenLink_RestoresOriginalWhenLinkFails(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "srcdir")
+	if err := os.MkdirAll(src, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	dst := filepath.Join(dir, "dst")
+	if err := os.WriteFile(dst, []byte("original content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	injected := errors.New("injected link failure")
+	l := Linker{
+		Now:         fixedClock("2026-10-12T15:04:05Z"),
+		dirStrategy: symlinkStrategy{symlink: func(s, d string) error { return injected }},
+	}
+	action := domain.Action{Kind: domain.ActionBackupThenLink, Src: src, Dst: dst}
+	err := l.Apply(action)
+	if err == nil {
+		t.Fatal("expected an error when the link step fails after the backup rename")
+	}
+
+	var brErr *BackupRestoreError
+	if !errors.As(err, &brErr) {
+		t.Fatalf("error = %v (%T), want a *BackupRestoreError", err, err)
+	}
+	if !errors.Is(err, injected) {
+		t.Errorf("error chain does not wrap the original link failure: %v", err)
+	}
+	if !brErr.Restored {
+		t.Errorf("Restored = false, want true: the original should have been moved back automatically")
+	}
+
+	data, readErr := os.ReadFile(dst)
+	if readErr != nil {
+		t.Fatalf("dst was not restored to a real file: %v", readErr)
+	}
+	if string(data) != "original content" {
+		t.Errorf("restored content = %q, want %q", data, "original content")
+	}
+	if _, statErr := os.Lstat(brErr.BackupPath); !os.IsNotExist(statErr) {
+		t.Errorf("backup path %q still exists after a successful restore", brErr.BackupPath)
+	}
+}
+
+func TestBackupRestoreError_MessageNamesBackupAndRecoveryHintWhenNotRestored(t *testing.T) {
+	err := &BackupRestoreError{
+		Dst:        "/home/u/.config/nvim",
+		BackupPath: "/home/u/.config/nvim.hatdots-bak.20261012T150405Z",
+		LinkErr:    errors.New("boom"),
+		Restored:   false,
+		RestoreErr: errors.New("also boom"),
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, err.BackupPath) {
+		t.Errorf("message %q does not name the backup path", msg)
+	}
+	if !strings.Contains(msg, "mv "+err.BackupPath+" "+err.Dst) {
+		t.Errorf("message %q does not contain the recovery hint `mv <backup> <dst>`", msg)
+	}
+}
+
+func TestBackupRestoreError_MessageReportsSuccessfulRestore(t *testing.T) {
+	err := &BackupRestoreError{
+		Dst:        "/home/u/.config/nvim",
+		BackupPath: "/home/u/.config/nvim.hatdots-bak.20261012T150405Z",
+		LinkErr:    errors.New("boom"),
+		Restored:   true,
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "restored") {
+		t.Errorf("message %q does not report that the original was restored", msg)
 	}
 }
