@@ -178,8 +178,18 @@ stop it.
         `cmd/hatdots`). Commit `d7891f5`.
   - [x] Real repo manifest (`modules.toml`) + parity tests against the
         three old scripts. Commit `63f3d10`.
-- [ ] P4-3 Bubbletea TUI (teatest). Not started — phase 4b.
-- [ ] P4-4 Release workflow and bootstrap scripts. Not started — phase 4b.
+- [x] P4-3 Bubbletea TUI (teatest). Commits `e28e4b0` (TUI: detect/select/
+      preview/apply/result screens + unit/golden tests), `8de4898`
+      (launch on interactive terminals).
+- [x] P4-4 Release workflow and bootstrap scripts. Commits `26fdd87`
+      (workflows + goreleaser config), `cf21f16` (bootstrap scripts +
+      asset-pair test).
+- [x] P4-5 Remove old installers (new task, added when the parity test
+      passed on the final manifest). Scripts deleted as part of commit
+      `e28e4b0` (bundled with the TUI commit by a staging-order slip —
+      `git rm` had already staged the deletion before the TUI files were
+      added; not rewritten after the fact per the no-history-rewrite
+      rule). Docs commit `94efc94`.
 
 ### Phase 5 — Close
 
@@ -598,6 +608,102 @@ stop it.
   md5sum`: identical (`df02ea2209939fa6d07746a55d3eeec8`) — confirmed
   nothing was ever touched. `git status --short` clean after every
   commit.
+- 2026-10-12: Phase 4b done (P4-3 TUI, P4-4 release/bootstrap, P4-5
+  remove old installers), HEAD `94efc94`, 5 commits (`e28e4b0` TUI +
+  app.ApplyAction/PostInstallCommand export + old scripts deleted —
+  see the staging-order note under task P4-5 above, `8de4898` launch
+  on interactive terminals, `26fdd87` CI/release workflows + goreleaser
+  config, `cf21f16` bootstrap scripts + asset-pair test, `94efc94`
+  docs). New package `installer/internal/tui`: a Bubbletea presentation
+  adapter over `internal/app` via a `Port` interface (`port.go`);
+  screens `detect`/`select`/`preview`/`apply`/`result`
+  (`model.go`/`screen_*.go`); terminal-suspending `tea.ExecProcess` for
+  package-install/post-install actions (`exec.go`).
+  RED/GREEN evidence (one line per task; full detail in each commit
+  message):
+  - `app.ApplyAction`/`app.PostInstallCommand`: `go test
+    ./internal/app/...` failed to build (`undefined: a.ApplyAction,
+    PostInstallCommand`) before they existed; GREEN after (11 cases,
+    4 new).
+  - TUI required-module lock: `TestUpdateSelect_SpaceCannotToggleRequiredModule`
+    confirmed RED by temporarily removing the `!mod.Required` guard in
+    `updateSelect`'s space case (space then toggled nvim) — restored,
+    GREEN.
+  - TUI result-screen bucketing: `TestSummarize_BucketsByKindAndFailure`
+    confirmed RED by temporarily mapping `ActionBackupThenLink` into the
+    `created` bucket instead of `backedUp` — restored, GREEN.
+  - TUI apply-loop termination: `TestApply_DryRunCompletesWithoutTerminalCommandsAndReachesResult`
+    confirmed RED by changing `runAction`'s base case to `idx >
+    len(...)` (off-by-one) — panicked with an index-out-of-range
+    reading `plan.Actions[idx]` one past the end — restored, GREEN.
+  - Golden tests (`TestGolden_*`): failed with "no such file" before
+    `-update` was ever run (no `testdata/*.golden` existed yet); GREEN
+    after generating them and rerunning (5x in a row, byte-identical
+    every time) without `-update`.
+  - Result-screen bug found during the live tmux smoke run below (not
+    from a pre-written test): package-install/post-install entries
+    rendered as a blank line (`writeGroup` always read `a.Dst`, which
+    only link-kind actions set). `TestViewResult_PackageInstallEntryShowsManagerAndPackages`
+    written to reproduce it — failed (`viewResult()` contained `"  \n"`
+    with no manager/package text) before the fix; GREEN after
+    `writeGroup` took a `describe func(domain.Action) string` parameter
+    (`linkPath` for the four link buckets, `describeAction` — already
+    used by the preview screen — for packages/post-install).
+  - `shouldLaunchTUI`/`runTUIFunc` (cmd/hatdots): `go test
+    ./cmd/hatdots/...` failed to build (`undefined: shouldLaunchTUI`,
+    `run` arg-count mismatch) before the 6th `run()` parameter
+    (`isStdoutTTY`) and the new functions existed; GREEN after (9 new
+    cases, including that `--dry-run` alone does NOT skip the TUI and
+    `--yes` always does, even on a full TTY).
+  - `bootstrap.sh`'s `hatdots_asset_pair`: `sh
+    installer/scripts/test/test_asset_pair.sh` confirmed RED by mapping
+    `aarch64`/`arm64` to `amd64` instead of `arm64` — 3 of 9 assertions
+    failed with the wrong pair; restored, GREEN (all 9 pass).
+  Full verification (all observed): `go vet ./...` clean; `gofmt -l .`
+  empty; `go test ./... -race -count=1` passes across all 9 packages
+  (new: `internal/tui`); `go test ./internal/tui/... -run TestGolden
+  -count=5` byte-identical every run. Cross-builds: `GOOS=darwin
+  GOARCH=amd64`, `GOOS=darwin GOARCH=arm64`, `GOOS=windows
+  GOARCH=amd64`, `GOOS=linux GOARCH=arm64` all `go build ./cmd/hatdots`
+  cleanly. `~/.local/bin/actionlint` (repo root, both new workflows,
+  including its embedded shellcheck pass): clean, no output. `sh -n
+  bootstrap.sh` and `bash -n bootstrap.sh`: clean. `sh
+  installer/scripts/test/test_asset_pair.sh`: all 9 assertions pass.
+  TUI smoke (real binary, real pty via `tmux`, `HOME` pointed at a temp
+  dir with a fake `~/.config`, `--repo <this repo> --dry-run --os linux
+  --desktop none`, driven with `tmux send-keys`/`capture-pane`):
+  detect screen showed `OS: linux`, `Desktop: none`, `Package manager:
+  pacman`, the real repo path; select screen showed `nvim`/`fish`
+  locked+checked and the platform's default-selected optional modules
+  (including `kde`, since `--desktop none` disables the
+  Omarchy-only-exclusion); preview screen showed the plan grouped by
+  module plus the backup-warning section with `Dry run: on` (seeded by
+  `--dry-run`); result screen (pasted below) showed 15 created links and
+  7 packages/post-install steps, each with its manager+packages or
+  command text, zero failures. Real dry-run on this machine (not a fake
+  HOME), `go run ./cmd/hatdots --repo .. --dry-run --all --yes`: same
+  shape as phase 4a's. Before/after `ls -la ~/.config | md5sum`:
+  identical across both the real-HOME dry run and (separately,
+  confirmed via the fake-HOME tmux smoke never touching the real
+  filesystem since `--dry-run` makes `TerminalCommands` unreachable and
+  `ApplyAction` use the no-op executor) the TUI smoke — confirmed
+  nothing was ever touched. `git status --short` clean after every
+  commit.
+  Unverified, and why: `.goreleaser.yaml` — `goreleaser` is not
+  installed in this environment; checked against goreleaser's own docs
+  (context7 MCP) and plain YAML parsing only, never a real
+  `goreleaser check`/`--snapshot` build. `bootstrap.ps1` — `pwsh` is not
+  installed in this environment; reviewed by hand against PowerShell
+  5.1/7 syntax (comment-help placement, the reserved `$Args`/`$args`
+  automatic-variable name avoided by renaming to `$ExtraArgs`, the
+  `"$var:"` colon-after-variable parsing gotcha escaped as `` `: ``)
+  instead of run. Neither `bootstrap.sh`'s nor `bootstrap.ps1`'s
+  release-download/checksum-verification path has been exercised
+  end-to-end against a real GitHub release, since `hat-y/HatDots` has
+  no tags/releases published yet — only `hatdots_asset_pair`'s pure
+  mapping function is test-covered; `ensure_repo`'s clone/update/refuse
+  branches and the sha256-verify-then-extract-then-run path are
+  reviewed but not run.
 
 ## Phase 1 merge decisions
 
@@ -914,12 +1020,19 @@ have `os.*`/`omarchy.*`/`local.*` hooks ready for when one is (zsh/fish
 
 ## Next step
 
-Phase 4a is complete (module manifest schema+parser, platform
+Phase 4 is complete: 4a (module manifest schema+parser, platform
 detection, plan builder, linker, package adapters, non-interactive CLI,
-real `modules.toml`, parity tests against the three old scripts — see
-`installer/README.md` and the Phase 4a progress entry above for full
-detail, open questions, and known deviations). Phase 4b: Bubbletea TUI
-(teatest), release workflow, bootstrap scripts (`bootstrap.sh`/
-`bootstrap.ps1`), and removing `link-linux.sh`/`link-mac.sh`/
-`link-windows.ps1` once the TUI/bootstrap path is proven. Phase 5 after
-that: user verifies macOS and Windows, then merge to `main`.
+real `modules.toml`, parity tests against the three old scripts) and 4b
+(Bubbletea TUI, release workflow + goreleaser config, bootstrap
+scripts, old `link-*.sh`/`.ps1` removed) — see `installer/README.md`
+and both progress entries above for full detail, open questions, and
+known deviations/unverified items (`.goreleaser.yaml` and
+`bootstrap.ps1` are reviewed but not run, since neither `goreleaser`
+nor `pwsh` is installed in this environment, and the bootstrap
+scripts' release-download path has never run against a real GitHub
+release since none is published yet).
+
+**Phase 5 — Close**: user verifies macOS and Windows (this environment
+is Linux/Omarchy only), then decides whether/when to merge `unify` into
+`main` and delete the obsolete branches. Nothing else is blocking that
+decision from this side.
