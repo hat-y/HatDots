@@ -506,6 +506,98 @@ stop it.
   per above); the user has not yet answered whether `{nvim, fish}` is
   the final required set, or whether to re-add the dropped
   newsboat-launcher hypr keybind.
+- 2026-10-13: Phase 4a safety fixes, HEAD `7edf81b`, 6 commits
+  (`5e708af`, `27a55c7`, `35118a5`, `deb43dd`, `4773491`, `7edf81b`).
+  An independent adversarial review reported data-safety defects and
+  reproduced 3 of them with probe tests; fixed in the order given,
+  one commit each:
+  1. **Backup collision** (`5e708af`): `linker.applyLink`'s backup name
+     was second-resolution (`<dst>.hatdots-bak.<timestamp>`) and
+     `os.Rename`d straight onto it — two backups of the same dst within
+     the same clock second silently clobbered each other via
+     rename-over-existing-file. Added `freeBackupPath`, which
+     `os.Lstat`s the candidate and appends `-1`, `-2`, ... until free;
+     Apply never renames onto an existing path. RED:
+     `TestLinker_Apply_BackupThenLink_CollisionProofNaming` found only
+     1 backup file (holding only the second original's content)
+     instead of 2 before the fix. GREEN after.
+  2. **Empty HOME → root paths** (`27a55c7`): `domain.ExpandPath` only
+     checked `ok`, not whether the HOME value was non-empty, so a
+     present-but-empty HOME turned `"~/x"` into `"/x"`; `main.go`'s
+     `detectPlatform` always set `env["HOME"] = home` even when `home`
+     itself was `""`. `ExpandPath` now returns `(string, error)` and
+     errors on any unresolved-or-empty reference; `detectPlatform`
+     never puts an empty HOME in `env` at all; `domain.BuildPlan` added
+     `validateDst`, rejecting empty/relative/root/outside-home
+     destinations (LOCALAPPDATA is the one documented exception, for
+     nvim's Windows destination). RED: the domain package failed to
+     build after `expand_test.go` was rewritten for the new signature;
+     3 new `TestBuildPlan_Rejects*` cases were confirmed to fail by
+     temporarily removing the `validateDst` call and rerunning them
+     (3 failures), then restoring it. GREEN after.
+  3. **Src containment** (`35118a5`): `manifest.validateSrcExists` only
+     checked that `filepath.Join(repoRoot, src)` existed on disk, never
+     that `src` itself stayed inside the repo — `src = "/etc/passwd"`
+     or `src = "../../etc"` passed as long as something existed at the
+     resolved path. Added `validateSrcContained`: after
+     `filepath.Clean`, reject absolute or `../`-escaping src. RED: both
+     new tests create the exact file the offending src would resolve
+     to (so the only possible failure is the containment check, not a
+     coincidental "missing src") and failed with "got nil" before the
+     check existed. GREEN after.
+  4. **Partial failure after backup** (`deb43dd`): if the link step
+     failed right after a backup-then-link rename, the old code
+     returned the bare link error — nothing named the backup, and nmo
+     attempt was made to put the original back. Added
+     `*BackupRestoreError` (names the backup path; tries
+     `os.Rename(backup, dst)` automatically and reports whether that
+     succeeded; when it didn't, its `Error()` spells out
+     `mv <backup> <dst>`), wired through `applyLink` via an injected
+     failing `dirStrategy` so the scenario is reproducible without a
+     real broken filesystem. RED:
+     `TestLinker_Apply_BackupThenLink_RestoresOriginalWhenLinkFails`
+     failed to build (undefined: `BackupRestoreError`) before the type
+     existed. GREEN after; the error message tests (restored vs
+     not-restored wording) also pass.
+  5. **Unverified `--repo` autodetection** (`4773491`): `findRepoRoot`
+     accepted any directory with a file literally named `modules.toml`
+     — no check it was actually a HatDots manifest. Added a required
+     top-level `schema = "hatdots/v1"` marker
+     (`manifest.Schema`/`HasSchemaMarker`); `findRepoRoot` now checks
+     it at both the walk-up and executable-fallback steps and reports
+     which one found the repo (`repoSource`). `runInstall` additionally
+     requires confirmation specifically for the executable-fallback
+     case: prints which repo was chosen, refuses under `--yes` (no one
+     to confirm with), refuses without a TTY, otherwise asks y/N.
+     `--repo` explicit and the ordinary walk-up case are unaffected;
+     `list` stays confirmation-free (read-only). Added the schema line
+     to the real `modules.toml` and every test fixture loaded through
+     `manifest.Load`. RED: new manifest tests failed to build
+     (undefined: `HasSchemaMarker`); the four new
+     `TestRun_ExecutableFallback_*` CLI tests were confirmed to fail by
+     temporarily stubbing out the confirmation block in `runInstall`
+     and rerunning them (wrong exit code / no prompt in stdout), then
+     restoring it. GREEN after.
+  6. **Windows junction injection** (`7edf81b`): `mklinkJunction` execs
+     `cmd /c mklink /J <dst> <src>`; cmd.exe re-parses `&`, `|`, `%`,
+     `^` even inside a seemingly-quoted argument. Added
+     `checkMklinkSafe` to the build-tag-free `strategy.go`, called by
+     `windowsDirStrategy.link` after a failed symlink attempt and
+     before invoking `mklinkJunction` — exercised by a plain Linux test
+     via the already-injectable `mklinkJunction`. RED: 4 subtests
+     (ampersand/pipe/percent/caret in src or dst) got no error and the
+     junction fallback still ran, before the check existed. GREEN
+     after; an ordinary path still reaches `mklinkJunction`.
+  Full verification (all observed): `go vet ./...` clean; `gofmt -l .`
+  empty; `go test ./... -race -count=1` passes across all 8 packages;
+  `GOOS=darwin`, `GOOS=windows`, `GOARCH=arm64 GOOS=darwin` builds all
+  succeed. Real dry-run on this machine,
+  `go run ./cmd/hatdots --repo .. --dry-run --all --yes`: 32 actions,
+  same shape as before these fixes (the backup-warning list still
+  shows the same 8 real files). Before/after `ls -la ~/.config |
+  md5sum`: identical (`df02ea2209939fa6d07746a55d3eeec8`) — confirmed
+  nothing was ever touched. `git status --short` clean after every
+  commit.
 
 ## Phase 1 merge decisions
 
