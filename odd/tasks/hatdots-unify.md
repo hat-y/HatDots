@@ -521,6 +521,10 @@ stop it.
   per above); the user has not yet answered whether `{nvim, fish}` is
   the final required set, or whether to re-add the dropped
   newsboat-launcher hypr keybind.
+  RESOLVED 2026-10-13: the user confirmed `{nvim, fish (linux)}` as the
+  final required set; everything else stays optional. Still open: the
+  newsboat SUPER+SHIFT+R keybind, and whether `hatdots-launch-terminal`
+  should exec fish instead of zsh.
 - 2026-10-13: Phase 4a safety fixes, HEAD `7edf81b`, 6 commits
   (`5e708af`, `27a55c7`, `35118a5`, `deb43dd`, `4773491`, `7edf81b`).
   An independent adversarial review reported data-safety defects and
