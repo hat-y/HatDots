@@ -51,37 +51,11 @@ type Event struct {
 // still called so a caller can show what *would* happen. progress may be
 // nil.
 func (a App) Apply(plan domain.Plan, dryRun bool, progress func(Event)) error {
-	l := linker.Linker{DryRun: dryRun}
-	var exec pkg.Executor = pkg.RealExecutor{}
-	if dryRun {
-		exec = noopExecutor{}
-	}
-
-	report := func(action domain.Action, err error) {
+	for _, action := range plan.Actions {
+		err := a.ApplyAction(action, dryRun)
 		if progress != nil {
 			progress(Event{Action: action, Err: err})
 		}
-	}
-
-	for _, action := range plan.Actions {
-		var err error
-		switch action.Kind {
-		case domain.ActionLinkCreate, domain.ActionLinkReplace, domain.ActionLinkSkipIdentical, domain.ActionBackupThenLink:
-			err = l.Apply(action)
-		case domain.ActionPackageInstall:
-			// aurHelper is always "" here: no module in the real manifest
-			// needs an AUR-only package yet, and Action does not carry a
-			// resolved AUR helper (see installer/README.md's "known
-			// limitations"). BuildCommands only consults it for
-			// domain.AUR actions, so this is a no-op for every manager we
-			// actually ship.
-			err = pkg.Install(exec, action.Manager, action.Packages, action.Cask, "")
-		case domain.ActionPostInstall:
-			err = runPostInstall(exec, action.Command)
-		default:
-			err = fmt.Errorf("app: unknown action kind: %s", action.Kind)
-		}
-		report(action, err)
 		if err != nil {
 			return fmt.Errorf("apply %s (%s): %w", action.Kind, action.ModuleID, err)
 		}
@@ -89,14 +63,62 @@ func (a App) Apply(plan domain.Plan, dryRun bool, progress func(Event)) error {
 	return nil
 }
 
-func runPostInstall(exec pkg.Executor, command string) error {
+// ApplyAction carries out exactly one action: the same per-action logic
+// Apply loops over, exposed separately so a presentation adapter (the
+// TUI) can drive a plan one action at a time and substitute its own
+// execution strategy for actions that need an interactive terminal
+// (package installs, post-install scripts — see internal/tui's
+// Port.TerminalCommands) while every other action still goes through
+// this one path. dryRun has the same meaning as in Apply.
+func (a App) ApplyAction(action domain.Action, dryRun bool) error {
+	l := linker.Linker{DryRun: dryRun}
+	var exec pkg.Executor = pkg.RealExecutor{}
+	if dryRun {
+		exec = noopExecutor{}
+	}
+
+	switch action.Kind {
+	case domain.ActionLinkCreate, domain.ActionLinkReplace, domain.ActionLinkSkipIdentical, domain.ActionBackupThenLink:
+		return l.Apply(action)
+	case domain.ActionPackageInstall:
+		// aurHelper is always "" here: no module in the real manifest
+		// needs an AUR-only package yet, and Action does not carry a
+		// resolved AUR helper (see installer/README.md's "known
+		// limitations"). BuildCommands only consults it for
+		// domain.AUR actions, so this is a no-op for every manager we
+		// actually ship.
+		return pkg.Install(exec, action.Manager, action.Packages, action.Cask, "")
+	case domain.ActionPostInstall:
+		return runPostInstall(exec, action.Command)
+	default:
+		return fmt.Errorf("app: unknown action kind: %s", action.Kind)
+	}
+}
+
+// PostInstallCommand resolves a post-install action's declarative Command
+// string into the concrete pkg.Command that would run it: the bare
+// executable when command is an absolute path (already resolved by
+// resolvePostInstall at Load time), or a literal shell command wrapped in
+// "sh -c" otherwise. An empty command returns the zero Command. Exposed so
+// the TUI can build the same command tea.ExecProcess needs to run a
+// post-install step in a real terminal, without re-deciding the
+// path-vs-literal distinction itself.
+func PostInstallCommand(command string) pkg.Command {
 	if command == "" {
-		return nil
+		return pkg.Command{}
 	}
 	if filepath.IsAbs(command) {
-		return exec.Run(pkg.Command{Name: command})
+		return pkg.Command{Name: command}
 	}
-	return exec.Run(pkg.Command{Name: "sh", Args: []string{"-c", command}})
+	return pkg.Command{Name: "sh", Args: []string{"-c", command}}
+}
+
+func runPostInstall(exec pkg.Executor, command string) error {
+	cmd := PostInstallCommand(command)
+	if cmd.Name == "" {
+		return nil
+	}
+	return exec.Run(cmd)
 }
 
 // noopExecutor backs dry-run Apply calls: it never runs anything.

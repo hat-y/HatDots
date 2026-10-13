@@ -152,3 +152,58 @@ func TestResolvePostInstall_LeavesLiteralShellCommandAlone(t *testing.T) {
 		t.Errorf("Command = %q, want unchanged %q", got.Command, p.Command)
 	}
 }
+
+// ApplyAction is the per-action step Apply loops over; a presentation
+// adapter (the TUI) drives it one action at a time so it can substitute
+// its own execution strategy (e.g. suspending for an interactive sudo
+// prompt) for actions Apply would otherwise run directly.
+func TestApplyAction_CreatesSingleLink(t *testing.T) {
+	repo := writeRepo(t, minimalManifest)
+	a, err := Load(repo)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	home := t.TempDir()
+	platform := domain.Platform{OS: domain.Linux, Env: map[string]string{"HOME": home}}
+	plan, err := a.Plan(platform, nil)
+	if err != nil {
+		t.Fatalf("Plan error: %v", err)
+	}
+
+	if err := a.ApplyAction(plan.Actions[0], false); err != nil {
+		t.Fatalf("ApplyAction error: %v", err)
+	}
+	dst := filepath.Join(home, ".config", "nvim")
+	if _, err := os.Lstat(dst); err != nil {
+		t.Fatalf("link not created: %v", err)
+	}
+}
+
+func TestApplyAction_UnknownKindErrors(t *testing.T) {
+	a := App{}
+	err := a.ApplyAction(domain.Action{Kind: "bogus"}, false)
+	if err == nil {
+		t.Fatal("want error for unknown action kind")
+	}
+}
+
+func TestPostInstallCommand_AbsolutePathRunsDirectly(t *testing.T) {
+	got := PostInstallCommand("/repo/os/mac/herdr/install.sh")
+	if got.Name != "/repo/os/mac/herdr/install.sh" || len(got.Args) != 0 {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestPostInstallCommand_LiteralShellCommandWrappedInSh(t *testing.T) {
+	got := PostInstallCommand("echo hi")
+	if got.Name != "sh" || len(got.Args) != 2 || got.Args[0] != "-c" || got.Args[1] != "echo hi" {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestPostInstallCommand_EmptyCommandReturnsZeroValue(t *testing.T) {
+	got := PostInstallCommand("")
+	if got.Name != "" {
+		t.Errorf("got %+v, want zero value", got)
+	}
+}

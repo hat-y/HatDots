@@ -1,0 +1,10 @@
+[?25l[?2004hPreview[K
+[K
+  nvim[K
+    link-create            ~/.config/nvim -> common/nvim[K
+  tmux[K
+    link-create            ~/.config/tmux/tmux.conf -> common/tmux/tmux.conf[K
+[K
+Dry run: off[K
+[K
+d: toggle dry-run   enter: apply   esc: back   q: quit[K[9A [K[J[2K[?2004l[?25h[?1002l[?1003l[?1006l
