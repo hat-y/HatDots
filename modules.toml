@@ -61,8 +61,15 @@ zypper = ["fish"]
 [[modules]]
 id = "starship"
 name = "Starship"
-description = "Cross-shell prompt"
-required = true
+# Optional, default off: the live ~/.config/starship.toml on this machine
+# is byte-identical to Omarchy's own default
+# (~/.local/share/omarchy/config/starship.toml). common/starship/starship.toml
+# is a Kanagawa-themed variant that was never actually active anywhere —
+# windows is the only old script that ever linked it, and only because
+# nothing else provided a prompt there. Selecting this module opts into
+# that variant; it must not change the user's prompt by default.
+description = "Cross-shell prompt (Kanagawa variant; available, not active by default — see the comment above)"
+default = false
 
   [[modules.links]]
   src = "common/starship/starship.toml"

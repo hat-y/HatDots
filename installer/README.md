@@ -77,14 +77,20 @@ for exactly which files implement which layer.
 
 ### Required/optional, provisional
 
-`nvim`, `fish`, and `starship` are `required = true` per the user's own
-provisional instruction for this phase — **open question for the user**:
-confirm this set, especially `starship`, since macOS's own
-`os/mac/Brewfile` deliberately comments starship out in favor of
-`powerlevel10k` (now both get linked/installed on mac under this
-manifest; nothing stops both running, but only one can own the prompt in
-`.zshrc`, so this may be worth resolving explicitly rather than leaving
-both active). Every other module is optional; `default = true` marks the
+`nvim` (all OS) and `fish` (Linux) are `required = true` per the user's
+own provisional instruction for this phase — **still open for the user
+to confirm**. `starship` was also provisionally required in the first
+draft, but a live-machine check found this Linux box's real
+`~/.config/starship.toml` is byte-identical to Omarchy's own default
+(`~/.local/share/omarchy/config/starship.toml`), while
+`common/starship/starship.toml` is a Kanagawa variant that was never
+actually active anywhere (Windows was the only old script that ever
+linked it, only because nothing else provided a prompt there); macOS's
+own `os/mac/Brewfile` also deliberately comments starship out in favor
+of `powerlevel10k`. Making it required would have silently replaced a
+live, working prompt with an unrequested theme on first install, so
+`starship` is now optional with `default = false` — selecting it is an
+explicit opt-in. Every other module is optional; `default = true` marks the
 modules at least one of the three old scripts installed unconditionally
 on an OS it supports.
 
