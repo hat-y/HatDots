@@ -195,6 +195,52 @@ func TestValidate_MissingSrcRejected(t *testing.T) {
 	}
 }
 
+func TestValidate_SrcEscapingRepoRootRejected(t *testing.T) {
+	repo := t.TempDir()
+	// Create the exact target the escaping src would resolve to, so the
+	// only possible reason Validate can fail is the escape check itself
+	// — not a coincidental "missing src" (if it existed, a naive
+	// exists-check-only validator would wrongly accept it).
+	target := filepath.Clean(filepath.Join(repo, "../../etc"))
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(target) })
+
+	m := domain.Manifest{Modules: []domain.Module{
+		{ID: "evil", Links: []domain.Link{{Src: "../../etc", Dst: "~/.config/evil"}}},
+	}}
+	err := Validate(m, repo)
+	if err == nil {
+		t.Fatal("expected an error for a src that escapes the repo root, got nil")
+	}
+	if !strings.Contains(err.Error(), "../../etc") && !strings.Contains(err.Error(), "escapes") {
+		t.Errorf("err = %v, want it to name the offending src or say it escapes the repo", err)
+	}
+}
+
+func TestValidate_AbsoluteSrcRejected(t *testing.T) {
+	repo := t.TempDir()
+	// filepath.Join(repo, "/etc/passwd") treats the leading "/" as just
+	// another path segment, landing under repo — so create that exact
+	// spot for real, forcing the absolute-src check itself to be what
+	// rejects this, not a coincidental "missing src".
+	target := filepath.Join(repo, "etc", "passwd")
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(target, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	m := domain.Manifest{Modules: []domain.Module{
+		{ID: "evil", Links: []domain.Link{{Src: "/etc/passwd", Dst: "~/.config/evil"}}},
+	}}
+	if err := Validate(m, repo); err == nil {
+		t.Fatal("expected an error for an absolute src, got nil")
+	}
+}
+
 func TestValidate_ExistingSrcAccepted(t *testing.T) {
 	repo := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(repo, "common", "nvim"), 0o755); err != nil {

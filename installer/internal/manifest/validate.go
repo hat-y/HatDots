@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/hat-y/HatDots/installer/internal/domain"
 )
@@ -90,11 +91,29 @@ func validateSrcExists(m domain.Manifest, repoRoot string) error {
 			if l.Src == "" {
 				return fmt.Errorf("module %s: link has an empty src", mod.ID)
 			}
+			if err := validateSrcContained(l.Src); err != nil {
+				return fmt.Errorf("module %s: %w", mod.ID, err)
+			}
 			full := filepath.Join(repoRoot, l.Src)
 			if _, err := os.Stat(full); err != nil {
 				return fmt.Errorf("module %s: link src does not exist in the repo: %s", mod.ID, l.Src)
 			}
 		}
+	}
+	return nil
+}
+
+// validateSrcContained rejects a link src that, after filepath.Clean, is
+// absolute or escapes the repo root (e.g. "/etc/passwd" or
+// "../../etc") — src is meant to be a repo-relative path only, never a
+// way to reach an arbitrary file on disk.
+func validateSrcContained(src string) error {
+	cleaned := filepath.Clean(src)
+	if filepath.IsAbs(cleaned) {
+		return fmt.Errorf("link src must be repo-relative, not absolute: %q", src)
+	}
+	if cleaned == ".." || strings.HasPrefix(cleaned, "../") || strings.HasPrefix(cleaned, `..\`) {
+		return fmt.Errorf("link src escapes the repo root: %q", src)
 	}
 	return nil
 }
