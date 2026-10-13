@@ -163,6 +163,37 @@ func TestUpdatePreview_DTogglesDryRun(t *testing.T) {
 	}
 }
 
+// When --dry-run was given on the command line (tui.WithInitialDryRun(true)),
+// dry-run is authoritative: the preview screen's "d" key must not be able
+// to turn it back off.
+func TestUpdatePreview_DCannotUnlockDryRunGivenOnCommandLine(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation(), WithInitialDryRun(true))
+	m = update(t, m, key("enter"))
+	m = update(t, m, key("enter")) // -> preview, dryRun already true (locked)
+	if !m.dryRun {
+		t.Fatal("precondition: dryRun starts on when given on the command line")
+	}
+	m = update(t, m, key("d"))
+	if !m.dryRun {
+		t.Error("d must not unlock/turn off dry-run when it was set via --dry-run")
+	}
+}
+
+// Without --dry-run on the command line, "d" must still freely toggle.
+func TestUpdatePreview_DStillTogglesWhenNotLockedByCommandLine(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation(), WithInitialDryRun(false))
+	m = update(t, m, key("enter"))
+	m = update(t, m, key("enter")) // -> preview
+	m = update(t, m, key("d"))
+	if !m.dryRun {
+		t.Error("d should still be able to turn dryRun on when not locked")
+	}
+	m = update(t, m, key("d"))
+	if m.dryRun {
+		t.Error("d should still be able to turn dryRun back off when not locked")
+	}
+}
+
 func TestApply_DryRunCompletesWithoutTerminalCommandsAndReachesResult(t *testing.T) {
 	port := newFixturePort()
 	m := New(port, WithoutAnimation())

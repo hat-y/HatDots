@@ -46,9 +46,10 @@ type Model struct {
 	cursor   int
 
 	// preview/apply
-	dryRun  bool
-	plan    domain.Plan
-	planErr error
+	dryRun       bool
+	dryRunLocked bool // true when --dry-run was given on the command line
+	plan         domain.Plan
+	planErr      error
 
 	// apply screen
 	applying bool
@@ -73,10 +74,18 @@ func WithoutAnimation() Option {
 
 // WithInitialDryRun seeds the preview screen's dry-run toggle. The CLI
 // uses this to carry an explicit --dry-run flag into the TUI instead of
-// silently dropping it once an interactive session takes over; the user
-// can still flip it back off with "d" on the preview screen.
+// silently dropping it once an interactive session takes over. --dry-run
+// is authoritative when given: v also locks the toggle, so "d" on the
+// preview screen can no longer turn dry-run back off (see
+// updatePreview) — a command-line safety flag must not be silently
+// undoable by one stray keypress. Called with false (the common case,
+// --dry-run not given), the toggle starts off and stays freely
+// togglable.
 func WithInitialDryRun(v bool) Option {
-	return func(m *Model) { m.dryRun = v }
+	return func(m *Model) {
+		m.dryRun = v
+		m.dryRunLocked = v
+	}
 }
 
 // New builds the initial Model, on the detect screen, for port.

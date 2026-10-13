@@ -20,7 +20,9 @@ func (m Model) updatePreview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "d":
-		m.dryRun = !m.dryRun
+		if !m.dryRunLocked {
+			m.dryRun = !m.dryRun
+		}
 		return m, nil
 
 	case "enter":
@@ -76,13 +78,16 @@ func (m Model) viewPreview() string {
 	}
 
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("Dry run: %s\n", dryRunLabel(m.dryRun)))
+	b.WriteString(fmt.Sprintf("Dry run: %s\n", dryRunLabel(m.dryRun, m.dryRunLocked)))
 	b.WriteString("\n")
 	b.WriteString(hintStyle.Render("d: toggle dry-run   enter: apply   esc: back   q: quit"))
 	return b.String()
 }
 
-func dryRunLabel(on bool) string {
+func dryRunLabel(on, locked bool) string {
+	if locked {
+		return "on (locked by --dry-run)"
+	}
 	if on {
 		return "on (nothing will be changed)"
 	}

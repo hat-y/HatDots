@@ -91,7 +91,7 @@ func runTUIMode(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("hatdots", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	repoFlag := fs.String("repo", "", "path to the HatDots repo root (default: auto-detect)")
-	dryRunFlag := fs.Bool("dry-run", false, "start the TUI with its preview dry-run toggle already on")
+	dryRunFlag := fs.Bool("dry-run", false, "start the TUI with dry-run on and locked: the preview screen's \"d\" key cannot turn it back off")
 	osFlag := fs.String("os", "", "override the detected OS: linux, mac, or windows")
 	desktopFlag := fs.String("desktop", "", "override the detected desktop: omarchy or none")
 	_ = fs.Bool("all", false, "ignored in the TUI: select modules in the TUI's select screen instead")
