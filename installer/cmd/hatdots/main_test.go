@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/hat-y/HatDots/installer/internal/domain"
+	"github.com/hat-y/HatDots/installer/internal/tui"
 )
 
 const validMarkerTOML = "schema = \"hatdots/v1\"\n"
@@ -150,7 +151,7 @@ required = true
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"list", "--repo", repo}, &bytes.Buffer{}, &stdout, &stderr, false)
+	code := run([]string{"list", "--repo", repo}, &bytes.Buffer{}, &stdout, &stderr, false, false)
 	if code != 0 {
 		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
 	}
@@ -185,7 +186,7 @@ required = true
 	t.Setenv("HOME", home)
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"--repo", repo, "--dry-run", "--all", "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false)
+	code := run([]string{"--repo", repo, "--dry-run", "--all", "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false, false)
 	if code != 0 {
 		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
 	}
@@ -223,7 +224,7 @@ required = true
 	t.Setenv("HOME", home)
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"--repo", repo, "--all", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false)
+	code := run([]string{"--repo", repo, "--all", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false, false)
 	if code != 0 {
 		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
 	}
@@ -283,7 +284,7 @@ required = true
 	t.Setenv("HOME", "")
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"--repo", repo, "--dry-run", "--all", "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false)
+	code := run([]string{"--repo", repo, "--dry-run", "--all", "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false, false)
 	if code == 0 {
 		t.Fatalf("expected a non-zero exit code with an empty HOME, got 0; stdout=%s", stdout.String())
 	}
@@ -336,7 +337,7 @@ default = false
 	t.Setenv("HOME", home)
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"--repo", repo, "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false)
+	code := run([]string{"--repo", repo, "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false, false)
 	if code != 0 {
 		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
 	}
@@ -393,7 +394,7 @@ func TestRun_ExecutableFallback_RefusesUnderYes(t *testing.T) {
 	t.Chdir(cwd)
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"--dry-run", "--all", "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false)
+	code := run([]string{"--dry-run", "--all", "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false, false)
 	if code == 0 {
 		t.Fatalf("expected a non-zero exit code refusing an auto-detected repo under --yes, got 0")
 	}
@@ -407,7 +408,7 @@ func TestRun_ExecutableFallback_RefusesWithoutTTY(t *testing.T) {
 	t.Chdir(cwd)
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"--dry-run", "--all", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false)
+	code := run([]string{"--dry-run", "--all", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false, false)
 	if code == 0 {
 		t.Fatalf("expected a non-zero exit code without a TTY to confirm, got 0")
 	}
@@ -419,7 +420,7 @@ func TestRun_ExecutableFallback_ProceedsOnConfirm(t *testing.T) {
 
 	stdin := strings.NewReader("y\n")
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"--dry-run", "--all", "--os", "linux", "--desktop", "none"}, stdin, &stdout, &stderr, true)
+	code := run([]string{"--dry-run", "--all", "--os", "linux", "--desktop", "none"}, stdin, &stdout, &stderr, true, false)
 	if code != 0 {
 		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
 	}
@@ -437,11 +438,156 @@ func TestRun_ExecutableFallback_AbortsOnDecline(t *testing.T) {
 
 	stdin := strings.NewReader("n\n")
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"--dry-run", "--all", "--os", "linux", "--desktop", "none"}, stdin, &stdout, &stderr, true)
+	code := run([]string{"--dry-run", "--all", "--os", "linux", "--desktop", "none"}, stdin, &stdout, &stderr, true, false)
 	if code != 0 {
 		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "Aborted") {
 		t.Errorf("stdout = %q, want an abort message", stdout.String())
+	}
+}
+
+// shouldLaunchTUI decides between the interactive TUI and the plain CLI
+// path; it never touches the filesystem or a real terminal, so it is
+// tested directly with plain argument slices.
+func TestShouldLaunchTUI_RequiresBothStdinAndStdoutTTY(t *testing.T) {
+	cases := []struct {
+		name        string
+		args        []string
+		isTTY       bool
+		isStdoutTTY bool
+		want        bool
+	}{
+		{"both tty, no flags", nil, true, true, true},
+		{"stdin not tty", nil, false, true, false},
+		{"stdout not tty", nil, true, false, false},
+		{"neither tty", nil, false, false, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := shouldLaunchTUI(tc.args, tc.isTTY, tc.isStdoutTTY)
+			if got != tc.want {
+				t.Errorf("shouldLaunchTUI(%v, %v, %v) = %v, want %v", tc.args, tc.isTTY, tc.isStdoutTTY, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestShouldLaunchTUI_YesFlagForcesNonInteractive(t *testing.T) {
+	if shouldLaunchTUI([]string{"--yes"}, true, true) {
+		t.Error("want --yes to skip the TUI even on a full TTY")
+	}
+	if shouldLaunchTUI([]string{"--repo", ".", "--yes", "--all"}, true, true) {
+		t.Error("want --yes to skip the TUI regardless of flag order/other flags")
+	}
+}
+
+func TestShouldLaunchTUI_DryRunAloneDoesNotSkipTUI(t *testing.T) {
+	// --dry-run is one of the TUI's own preview-screen features (toggle
+	// with "d"), not a non-interactive signal on its own: only --yes (or
+	// a missing TTY) should bypass the TUI.
+	if !shouldLaunchTUI([]string{"--dry-run"}, true, true) {
+		t.Error("want --dry-run alone to still launch the TUI on a full TTY")
+	}
+}
+
+func TestShouldLaunchTUI_ListNeverLaunchesTUI(t *testing.T) {
+	// run() special-cases "list" before shouldLaunchTUI is even
+	// consulted; this just locks in that shouldLaunchTUI itself doesn't
+	// need to know about it (run's own dispatch test below covers the
+	// actual end-to-end behavior).
+	if !shouldLaunchTUI([]string{"list"}, true, true) {
+		t.Error("shouldLaunchTUI ignores subcommand text; run() must special-case list before calling it")
+	}
+}
+
+func TestRun_LaunchesTUIOnFullTTYWithoutYes(t *testing.T) {
+	repo := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(repo, "common", "nvim"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifestTOML := `
+schema = "hatdots/v1"
+
+[[modules]]
+id = "nvim"
+required = true
+
+  [[modules.links]]
+  src = "common/nvim"
+  dst = "~/.config/nvim"
+`
+	if err := os.WriteFile(filepath.Join(repo, "modules.toml"), []byte(manifestTOML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	var gotPort tui.Port
+	restore := runTUIFunc
+	runTUIFunc = func(port tui.Port, opts ...tui.Option) error {
+		gotPort = port
+		return nil
+	}
+	defer func() { runTUIFunc = restore }()
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"--repo", repo, "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, true, true)
+	if code != 0 {
+		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
+	}
+	if gotPort == nil {
+		t.Fatal("run() did not launch the TUI (runTUIFunc never called)")
+	}
+	if _, ok := gotPort.Manifest().ModuleByID("nvim"); !ok {
+		t.Error("TUI port's manifest does not have the nvim module loaded")
+	}
+	// Still a dry run in spirit: the fake runTUIFunc never applies
+	// anything, so nothing should exist on disk either way.
+	if _, err := os.Lstat(filepath.Join(home, ".config", "nvim")); !os.IsNotExist(err) {
+		t.Errorf("launching the TUI must not touch disk itself: %v", err)
+	}
+}
+
+func TestRun_YesFlagStaysOnNonInteractivePathEvenOnFullTTY(t *testing.T) {
+	repo := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(repo, "common", "nvim"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifestTOML := `
+schema = "hatdots/v1"
+
+[[modules]]
+id = "nvim"
+required = true
+
+  [[modules.links]]
+  src = "common/nvim"
+  dst = "~/.config/nvim"
+`
+	if err := os.WriteFile(filepath.Join(repo, "modules.toml"), []byte(manifestTOML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	called := false
+	restore := runTUIFunc
+	runTUIFunc = func(port tui.Port, opts ...tui.Option) error {
+		called = true
+		return nil
+	}
+	defer func() { runTUIFunc = restore }()
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"--repo", repo, "--yes", "--all", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, true, true)
+	if code != 0 {
+		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
+	}
+	if called {
+		t.Error("--yes must stay on the non-interactive path, even on a full TTY")
+	}
+	if _, err := os.Lstat(filepath.Join(home, ".config", "nvim")); err != nil {
+		t.Errorf("--yes should have applied the plan: %v", err)
 	}
 }

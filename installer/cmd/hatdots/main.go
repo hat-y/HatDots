@@ -15,6 +15,7 @@ import (
 	"github.com/hat-y/HatDots/installer/internal/domain"
 	"github.com/hat-y/HatDots/installer/internal/manifest"
 	"github.com/hat-y/HatDots/installer/internal/platform"
+	"github.com/hat-y/HatDots/installer/internal/tui"
 )
 
 // executableFunc resolves the running binary's own path; a package-level
@@ -22,21 +23,128 @@ import (
 // it without widening run()'s already-stable public signature.
 var executableFunc = os.Executable
 
+// runTUIFunc launches the interactive TUI; a package-level var so tests
+// can substitute a fake that never actually starts a Bubbletea program
+// (which would block waiting for real terminal input) while still
+// observing what port/options run() built for it.
+var runTUIFunc = tui.Run
+
 func main() {
 	isTTY := false
 	if info, err := os.Stdin.Stat(); err == nil {
 		isTTY = info.Mode()&os.ModeCharDevice != 0
 	}
-	os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr, isTTY))
+	isStdoutTTY := false
+	if info, err := os.Stdout.Stat(); err == nil {
+		isStdoutTTY = info.Mode()&os.ModeCharDevice != 0
+	}
+	os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr, isTTY, isStdoutTTY))
 }
 
 // run is the whole CLI, factored out of main so tests can drive it without
 // a real process, a real TTY, or the real filesystem outside t.TempDir().
-func run(args []string, stdin io.Reader, stdout, stderr io.Writer, isTTY bool) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, isTTY, isStdoutTTY bool) int {
 	if len(args) > 0 && args[0] == "list" {
 		return runList(args[1:], stdout, stderr)
 	}
+	if shouldLaunchTUI(args, isTTY, isStdoutTTY) {
+		return runTUIMode(args, stdout, stderr)
+	}
 	return runInstall(args, stdin, stdout, stderr, isTTY)
+}
+
+// shouldLaunchTUI decides between the interactive TUI and the plain,
+// scriptable CLI path. Both stdin and stdout must be real terminals (the
+// TUI reads key events from one and paints to the other); --yes is an
+// explicit request to run non-interactively and always wins. --dry-run
+// is deliberately NOT a bypass: it is one of the TUI's own preview-screen
+// features (toggled with "d"), carried into the TUI's initial state
+// instead (see runTUIMode), so asking for a dry run on a real terminal
+// still gets the interactive experience.
+func shouldLaunchTUI(args []string, isTTY, isStdoutTTY bool) bool {
+	if !isTTY || !isStdoutTTY {
+		return false
+	}
+	return !hasBoolFlag(args, "yes")
+}
+
+// hasBoolFlag reports whether args contains a Go flag.Bool-style flag
+// named name, spelled "--name"/"-name" or with an explicit "=true" (the
+// only forms any caller here ever uses).
+func hasBoolFlag(args []string, name string) bool {
+	for _, a := range args {
+		switch a {
+		case "-" + name, "--" + name, "-" + name + "=true", "--" + name + "=true":
+			return true
+		}
+	}
+	return false
+}
+
+// runTUIMode resolves the repo and platform exactly like runInstall, then
+// hands off to the interactive TUI instead of printing a plan and
+// applying it directly. --all/--only are intentionally not parsed into a
+// selection here: module selection is the TUI's own select screen, not a
+// flag; they (and --yes) are still accepted so a user's muscle-memory
+// flags from the non-interactive CLI don't trip flag.ContinueOnError.
+func runTUIMode(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("hatdots", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	repoFlag := fs.String("repo", "", "path to the HatDots repo root (default: auto-detect)")
+	dryRunFlag := fs.Bool("dry-run", false, "start the TUI with its preview dry-run toggle already on")
+	osFlag := fs.String("os", "", "override the detected OS: linux, mac, or windows")
+	desktopFlag := fs.String("desktop", "", "override the detected desktop: omarchy or none")
+	_ = fs.Bool("all", false, "ignored in the TUI: select modules in the TUI's select screen instead")
+	_ = fs.String("only", "", "ignored in the TUI: select modules in the TUI's select screen instead")
+	_ = fs.Bool("yes", false, "ignored: shouldLaunchTUI already keeps --yes on the non-interactive path")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+
+	repoRoot, err := resolveRepoRootForInteractiveUse(*repoFlag, stdout, stderr)
+	if err != nil {
+		fmt.Fprintln(stderr, "hatdots:", err)
+		return 1
+	}
+
+	a, err := app.Load(repoRoot)
+	if err != nil {
+		fmt.Fprintln(stderr, "hatdots:", err)
+		return 1
+	}
+
+	plat, err := detectPlatform(*osFlag, *desktopFlag)
+	if err != nil {
+		fmt.Fprintln(stderr, "hatdots:", err)
+		return 1
+	}
+
+	port := tui.NewAppPort(a, plat)
+	if err := runTUIFunc(port, tui.WithInitialDryRun(*dryRunFlag)); err != nil {
+		fmt.Fprintln(stderr, "hatdots:", err)
+		return 1
+	}
+	return 0
+}
+
+// resolveRepoRootForInteractiveUse resolves --repo exactly like
+// runInstall's own repo resolution, confirming on stdin/stdout when the
+// repo was only found via the executable-fallback path (see
+// findRepoRoot). It is only ever reached when a real TTY is already
+// confirmed (shouldLaunchTUI's own check), so os.Stdin is always a real
+// terminal to confirm on here.
+func resolveRepoRootForInteractiveUse(explicit string, stdout, stderr io.Writer) (string, error) {
+	repoRoot, repoSrc, err := resolveRepoRoot(explicit)
+	if err != nil {
+		return "", err
+	}
+	if repoSrc == repoSourceExecutableFallback {
+		fmt.Fprintf(stderr, "hatdots: no --repo given and no modules.toml found above the current directory; using %s (found next to the installer binary).\n", repoRoot)
+		if !confirmPrompt(os.Stdin, stdout, "Use this repo? [y/N] ") {
+			return "", fmt.Errorf("aborted: repo not confirmed")
+		}
+	}
+	return repoRoot, nil
 }
 
 func runList(args []string, stdout, stderr io.Writer) int {
