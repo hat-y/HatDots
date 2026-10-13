@@ -18,17 +18,18 @@ type tomlFile struct {
 }
 
 type tomlModule struct {
-	ID          string              `toml:"id"`
-	Name        string              `toml:"name"`
-	Description string              `toml:"description"`
-	Required    bool                `toml:"required"`
-	Default     bool                `toml:"default"`
-	OS          []string            `toml:"os"`
-	Desktop     []string            `toml:"desktop"`
-	Packages    map[string][]string `toml:"packages"`
-	Casks       map[string][]string `toml:"casks"`
-	Links       []tomlLink          `toml:"links"`
-	PostInstall []tomlPostInstall   `toml:"post_install"`
+	ID                string              `toml:"id"`
+	Name              string              `toml:"name"`
+	Description       string              `toml:"description"`
+	Required          bool                `toml:"required"`
+	Default           bool                `toml:"default"`
+	NotDefaultDesktop []string            `toml:"not_default_desktop"`
+	OS                []string            `toml:"os"`
+	Desktop           []string            `toml:"desktop"`
+	Packages          map[string][]string `toml:"packages"`
+	Casks             map[string][]string `toml:"casks"`
+	Links             []tomlLink          `toml:"links"`
+	PostInstall       []tomlPostInstall   `toml:"post_install"`
 }
 
 type tomlLink struct {
@@ -96,6 +97,12 @@ func Parse(data []byte) (domain.Manifest, error) {
 			return domain.Manifest{}, fmt.Errorf("module %s: %w", tm.ID, err)
 		}
 		mod.Desktop = desktops
+
+		notDefaultDesktops, err := parseDesktopList(tm.NotDefaultDesktop)
+		if err != nil {
+			return domain.Manifest{}, fmt.Errorf("module %s: %w", tm.ID, err)
+		}
+		mod.NotDefaultDesktop = notDefaultDesktops
 
 		for _, tl := range tm.Links {
 			link, err := parseLink(tl)

@@ -41,7 +41,8 @@ One `[[modules]]` table per module:
 | `id` | string | Unique, used by `--only` and `list`. |
 | `name`, `description` | string | Shown by `list` and in the plan. |
 | `required` | bool | Always installed on every OS/desktop it supports (never has to be selected). |
-| `default` | bool | Whether the module the three old scripts installed by default on at least one OS it covers; informational for now, meant for the phase-4b TUI's pre-selection. Has no effect on `BuildPlan`/`--all`/`--only`. |
+| `default` | bool | Whether the module is pre-selected (in addition to required modules) when neither `--all` nor `--only` is given, and by the future phase-4b TUI. See `Module.IsDefaultFor`/`domain.DefaultSelection`. |
+| `not_default_desktop` | list of `"omarchy"` | Desktops where this module should NOT be default even though `default = true` (e.g. `kde` must not auto-apply on Omarchy, which owns its own desktop config via the `hypr` module). |
 | `os` | list of `"linux"`/`"mac"`/`"windows"` | Which OSes the module applies to at all. Empty = every OS. |
 | `desktop` | list of `"omarchy"` | Which desktop environments the module needs. Empty = any (including none). |
 | `[[modules.links]]` | array of tables | See below. |
@@ -155,3 +156,18 @@ executable (the layout a bootstrap/release install produces). Without a
 TTY on stdin, or with `--yes`, the plan is applied without prompting;
 with a TTY and neither flag, it asks `y/N` first. `--os`/`--desktop` are
 hidden overrides for planning and tests — normal use auto-detects both.
+
+Selection: `--all` selects every module compatible with the platform.
+`--only id1,id2` selects exactly those (plus required modules; nothing
+else). With **neither** flag, the default selection is required modules
+plus every optional module with `default = true` for this platform's
+desktop (`domain.DefaultSelection`) — not every optional module. This
+mirrors what the three old scripts actually installed without any flags,
+so a plain `hatdots` run doesn't silently opt a machine into something
+new (see `starship`'s `default = false` above).
+
+The plan always prints a **"These files will be replaced (backup kept)"**
+section listing every destination that will go through
+`backup-then-link` (a real file or directory already there, not a
+symlink) before asking for confirmation, so an overwrite is never a
+surprise.

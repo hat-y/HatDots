@@ -149,6 +149,20 @@ func buildLinkAction(moduleID string, link Link, platform Platform, fs FSState) 
 	}, nil
 }
 
+// DefaultSelection returns the ids of every optional module that should
+// be pre-selected on platform without an explicit --all/--only (see
+// Module.IsDefaultFor), in manifest order. Required modules are not
+// included here: BuildPlan always adds them on its own.
+func DefaultSelection(manifest Manifest, platform Platform) []string {
+	var ids []string
+	for _, mod := range manifest.Modules {
+		if mod.IsDefaultFor(platform) {
+			ids = append(ids, mod.ID)
+		}
+	}
+	return ids
+}
+
 // resolveSelection validates selection against manifest and platform, and
 // returns the full set of module ids (selection plus every applicable
 // required module) that BuildPlan should materialize actions for.

@@ -294,6 +294,10 @@ id = "kde"
 name = "KDE Plasma"
 description = "KWin + KZones tiling config for a KDE Plasma desktop"
 default = true
+# Omarchy is Hyprland, not KDE Plasma — its own hypr module owns desktop
+# config there. Only default-select kde when no desktop was detected at
+# all (a plain, non-Omarchy Linux box), never on Omarchy.
+not_default_desktop = ["omarchy"]
 os = ["linux"]
 
   [[modules.links]]

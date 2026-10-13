@@ -105,15 +105,25 @@ func runInstall(args []string, stdin io.Reader, stdout, stderr io.Writer, isTTY 
 		return 1
 	}
 
+	only := parseOnly(*onlyFlag)
 	var selection []string
-	if *allFlag {
+	switch {
+	case *allFlag:
 		for _, mod := range a.Manifest.Modules {
 			if mod.SupportsPlatform(plat) {
 				selection = append(selection, mod.ID)
 			}
 		}
+	case len(only) > 0:
+		// explicit --only: nothing auto-selected beyond required modules.
+	default:
+		// No --all, no --only: pre-select exactly the modules the three
+		// old scripts installed by default on this platform (see
+		// domain.Module.IsDefaultFor/DefaultSelection), not every
+		// optional module.
+		selection = domain.DefaultSelection(a.Manifest, plat)
 	}
-	selection = append(selection, parseOnly(*onlyFlag)...)
+	selection = append(selection, only...)
 
 	plan, err := a.Plan(plat, selection)
 	if err != nil {

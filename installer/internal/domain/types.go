@@ -126,15 +126,30 @@ type Module struct {
 	Name        string
 	Description string
 	Required    bool
-	// Default marks whether this module should be pre-selected by an
-	// interactive picker (phase 4b). It never affects BuildPlan itself,
-	// which only honors an explicit selection plus required modules.
-	Default     bool
-	OS          []OS
-	Desktop     []Desktop
-	Packages    []PackageSpec
-	Links       []Link
-	PostInstall []PostInstall
+	// Default marks whether this module is pre-selected without an
+	// explicit --all/--only (see DefaultSelection) or by an interactive
+	// picker (phase 4b).
+	Default bool
+	// NotDefaultDesktop lists desktops where this module should NOT be
+	// default even though Default is true (e.g. a generic-desktop module
+	// like "kde" that must not auto-apply on Omarchy, which has its own
+	// desktop config). Empty means Default applies on every desktop.
+	NotDefaultDesktop []Desktop
+	OS                []OS
+	Desktop           []Desktop
+	Packages          []PackageSpec
+	Links             []Link
+	PostInstall       []PostInstall
+}
+
+// IsDefaultFor reports whether this module should be selected by default
+// on platform: it must be platform-compatible, have Default set, and not
+// be excluded for platform's desktop via NotDefaultDesktop.
+func (m Module) IsDefaultFor(p Platform) bool {
+	if !m.Default || !m.SupportsPlatform(p) {
+		return false
+	}
+	return !containsDesktop(m.NotDefaultDesktop, p.Desktop)
 }
 
 // SupportsOS reports whether the module declares support for the given OS

@@ -199,3 +199,57 @@ required = true
 		t.Errorf("non-interactive run did not create the link: %v", err)
 	}
 }
+
+func TestRun_NoFlagsSelectsDefaultModulesNotEveryOptionalOne(t *testing.T) {
+	repo := t.TempDir()
+	for _, dir := range []string{"common/nvim", "common/tmux", "common/starship"} {
+		if err := os.MkdirAll(filepath.Join(repo, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	manifestTOML := `
+[[modules]]
+id = "nvim"
+required = true
+
+  [[modules.links]]
+  src = "common/nvim"
+  dst = "~/.config/nvim"
+
+[[modules]]
+id = "tmux"
+default = true
+
+  [[modules.links]]
+  src = "common/tmux"
+  dst = "~/.config/tmux"
+
+[[modules]]
+id = "starship"
+default = false
+
+  [[modules.links]]
+  src = "common/starship"
+  dst = "~/.config/starship"
+`
+	if err := os.WriteFile(filepath.Join(repo, "modules.toml"), []byte(manifestTOML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"--repo", repo, "--yes", "--os", "linux", "--desktop", "none"}, &bytes.Buffer{}, &stdout, &stderr, false)
+	if code != 0 {
+		t.Fatalf("exit code = %d, stderr = %s", code, stderr.String())
+	}
+	if _, err := os.Lstat(filepath.Join(home, ".config", "nvim")); err != nil {
+		t.Errorf("required module nvim was not linked: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(home, ".config", "tmux")); err != nil {
+		t.Errorf("default=true module tmux was not linked: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(home, ".config", "starship")); !os.IsNotExist(err) {
+		t.Errorf("default=false module starship was linked without being asked for (err=%v)", err)
+	}
+}

@@ -37,6 +37,26 @@ required = true
 	}
 }
 
+func TestParse_NotDefaultDesktop(t *testing.T) {
+	data := []byte(`
+[[modules]]
+id = "kde"
+default = true
+not_default_desktop = ["omarchy"]
+`)
+	m, err := Parse(data)
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
+	mod := m.Modules[0]
+	if !mod.Default {
+		t.Error("mod.Default = false, want true")
+	}
+	if !reflectDesktopEqual(mod.NotDefaultDesktop, domain.Omarchy) {
+		t.Errorf("mod.NotDefaultDesktop = %v, want [omarchy]", mod.NotDefaultDesktop)
+	}
+}
+
 func TestParse_LinkOSAndDesktopFilters(t *testing.T) {
 	data := []byte(`
 [[modules]]
