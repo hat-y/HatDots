@@ -1,0 +1,81 @@
+# GoReleaser config for the HatDots installer CLI.
+#
+# The Go module lives in installer/ (installer/go.mod), not at the repo
+# root, so every build points `dir` there and `main` at the CLI package
+# relative to it. Structure checked against goreleaser's own docs
+# (https://goreleaser.com, fetched via the context7 MCP, 2026-10-12);
+# goreleaser itself is not installed in this environment, so this file is
+# UNVERIFIED by an actual `goreleaser check`/`goreleaser release --snapshot`
+# run — see installer/README.md and odd/tasks/hatdots-unify.md.
+version: 2
+
+project_name: hatdots
+
+builds:
+  - id: hatdots
+    dir: installer
+    main: ./cmd/hatdots
+    binary: hatdots
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      # Only the five targets the task asks for: windows/arm64 is not one
+      # of them.
+      - goos: windows
+        goarch: arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - id: hatdots
+    ids:
+      - hatdots
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: "Features"
+      regexp: '^.*feat[(\w)]*:+.*$'
+      order: 0
+    - title: "Fixes"
+      regexp: '^.*fix[(\w)]*:+.*$'
+      order: 10
+    - title: Other
+      order: 999
+
+release:
+  github:
+    owner: hat-y
+    name: HatDots
+  name_template: "hatdots {{ .Version }}"
