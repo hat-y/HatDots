@@ -77,7 +77,7 @@ Ver `common/herdr/README.md` para detalles completos y `os/linux/README.md` para
 curl -fsSL https://raw.githubusercontent.com/hat-y/HatDots/main/bootstrap.sh | sh
 ```
 
-`bootstrap.sh` clona el repo en `${HATDOTS_DIR:-$HOME/projects/HatDots}`, descarga el binario `hatdots` de la última release (verificando su sha256) y lo corre. Con una terminal real abre una TUI interactiva (detección → selección de módulos → preview con dry-run opcional → aplicar); no interactivo (`hatdots --all --yes`) para scripting. Ver `installer/README.md` y `SETUP.md` para el detalle completo, incluidos los overlays `~/.config/hatdots/os.*`/`omarchy.*`/`local.*`.
+`bootstrap.sh` clona el repo en `${HATDOTS_DIR:-$HOME/projects/HatDots}`, descarga el binario `hatdots` de la última release (verificando su sha256) y lo corre. Con una terminal real abre una TUI interactiva (detección → selección de módulos → preview → aplicar); en la preview, aplicar es siempre con `y` explícito (`enter` no hace nada), y el dry-run queda bloqueado en "on" si lo pasaste por `--dry-run` (`d` ya no puede apagarlo). No interactivo (`hatdots --all --yes`) para scripting. Ver `installer/README.md` y `SETUP.md` para el detalle completo, incluidos los overlays `~/.config/hatdots/os.*`/`omarchy.*`/`local.*`.
 
 Esto crea, entre otros:
 ```

@@ -47,7 +47,7 @@ One `[[modules]]` table per module:
 | `id` | string | Unique, used by `--only` and `list`. |
 | `name`, `description` | string | Shown by `list` and in the plan. |
 | `required` | bool | Always installed on every OS/desktop it supports (never has to be selected). |
-| `default` | bool | Whether the module is pre-selected (in addition to required modules) when neither `--all` nor `--only` is given, and by the future phase-4b TUI. See `Module.IsDefaultFor`/`domain.DefaultSelection`. |
+| `default` | bool | Whether the module is pre-selected (in addition to required modules) when neither `--all` nor `--only` is given, and by the TUI's select screen (its optional modules start checked exactly when `Module.IsDefaultFor` is true). See `Module.IsDefaultFor`/`domain.DefaultSelection`. |
 | `not_default_desktop` | list of `"omarchy"` | Desktops where this module should NOT be default even though `default = true` (e.g. `kde` must not auto-apply on Omarchy, which owns its own desktop config via the `hypr` module). |
 | `os` | list of `"linux"`/`"mac"`/`"windows"` | Which OSes the module applies to at all. Empty = every OS. |
 | `desktop` | list of `"omarchy"` | Which desktop environments the module needs. Empty = any (including none). |
@@ -196,12 +196,28 @@ the TUI suspends itself around them, see `internal/tui/exec.go`) ->
 **result** (created/replaced/backed-up/skipped/failed, with recovery
 hints for any failure).
 
+Applying is a distinct, explicit action: the preview screen's hint reads
+`y: apply · d: toggle dry run · esc: back`, and **`enter` is a no-op**
+there — only `y` starts applying, so browsing the preview (even bumping
+enter a few times) can never trigger it by accident
+(`updatePreview`/`TestRapidEnterFromDetect_NeverReachesApply`). When
+`--dry-run` was given on the command line, dry-run is authoritative:
+`tui.WithInitialDryRun(true)` also locks the toggle, so `d` on the
+preview screen can no longer turn it back off (shown as `Dry run: on
+(locked by --dry-run)`); without `--dry-run`, `d` still freely toggles.
+The apply and result screens label themselves truthfully for a dry run
+— titles gain `" (dry run)"` and the result screen's buckets say "Would
+create"/"Would replace"/"Would back up (backup kept)"/"Would run
+(packages / post-install)" instead of the real-apply past tense (see
+`resultLabels` in `screen_result.go`).
+
 `cmd/hatdots` launches the TUI (`shouldLaunchTUI` in `main.go`) when both
 stdin and stdout are real terminals and `--yes` was not given; `--dry-run`
-does **not** suppress the TUI (it seeds the preview screen's own dry-run
-toggle instead), so a dry run on a real terminal still gets the full
-interactive experience. `--all`/`--only` are ignored once the TUI takes
-over — module selection becomes the select screen's job.
+does **not** suppress the TUI (it seeds — and locks — the preview
+screen's own dry-run toggle instead), so a dry run on a real terminal
+still gets the full interactive experience. `--all`/`--only` are ignored
+once the TUI takes over — module selection becomes the select screen's
+job.
 
 Tests: `internal/tui/model_test.go` drives `Model.Update` directly against
 a fixed, synchronous fake `Port` (`fake_port_test.go`) for state

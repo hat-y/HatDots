@@ -124,10 +124,11 @@ download_and_run_release() {
 		return 1
 	fi
 
+	# hatdots_asset_pair only ever returns a linux_* or darwin_* pair on
+	# this POSIX-sh script (bootstrap.ps1 handles Windows separately), and
+	# .goreleaser.yaml archives both as tar.gz — unlike the windows_* zip
+	# archives, which this script never has to pick an extension for.
 	ext="tar.gz"
-	case "$pair" in
-	*windows*) ext="zip" ;;
-	esac
 
 	asset_url=$(release_asset_url "$release_json" "_${pair}.${ext}")
 	if [ -z "$asset_url" ]; then

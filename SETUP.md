@@ -33,11 +33,11 @@ irm https://raw.githubusercontent.com/hat-y/HatDots/main/bootstrap.ps1 | iex
 
 ### El binario `hatdots`
 
-Sin flags, con una terminal real (stdin y stdout son ambas una TTY) y sin `--yes`, `hatdots` abre una TUI interactiva (Bubbletea): pantalla de detección (OS/desktop/package manager/repo), selección de módulos (los requeridos aparecen bloqueados), preview del plan agrupado por módulo (con un toggle de dry-run) y aplicación con progreso en vivo.
+Sin flags, con una terminal real (stdin y stdout son ambas una TTY) y sin `--yes`, `hatdots` abre una TUI interactiva (Bubbletea): pantalla de detección (OS/desktop/package manager/repo), selección de módulos (los requeridos aparecen bloqueados), preview del plan agrupado por módulo y aplicación con progreso en vivo. En la preview, aplicar requiere la tecla `y` explícita — `enter` no hace nada, justamente para que un enter de más mientras mirás el plan no dispare la instalación por accidente. `d` alterna el dry-run, salvo que ya lo hayas pasado por `--dry-run`: en ese caso queda bloqueado en "on" (la preview lo muestra como `Dry run: on (locked by --dry-run)`) y `d` no puede volver a apagarlo.
 
 ```bash
 hatdots                         # TUI interactiva
-hatdots --dry-run                # TUI con el dry-run ya activado
+hatdots --dry-run                # TUI con el dry-run ya activado y bloqueado (d no lo puede apagar)
 hatdots --all --yes              # no interactivo: instala todos los módulos compatibles
 hatdots --only nvim,fish --yes   # no interactivo: solo esos módulos (+ los requeridos)
 hatdots list                     # lista los módulos disponibles, con su estado required/default
