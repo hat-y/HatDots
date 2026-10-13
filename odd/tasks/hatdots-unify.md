@@ -417,6 +417,95 @@ stop it.
   is implemented and tested but not yet threaded through
   `internal/app.Apply`'s package-install step, since no module needs
   an AUR-only package yet; a small follow-up if one ever does.
+- 2026-10-12: Live-machine fixes to phase 4a, HEAD `977e714`, 5 commits
+  (`3d416e6`, `e212e74`, `0d61dd7`, `4f84951`, `977e714`). A parent review
+  of `--all --dry-run` output on this real Omarchy machine found the
+  plan would have regressed the live setup; fixed before anything was
+  ever applied (this machine's `~/.config` was never actually touched —
+  see verification below).
+  - **hypr stale** (`3d416e6`): `os/omarchy/hypr/{bindings,autostart}.lua`
+    (May) predated Omarchy's switch to its current `o.bind`/
+    `o.exec_on_start` Lua API; the live files (June) already use it.
+    Imported the live files verbatim as the new repo versions; carried
+    the hat-news autostart over to the new API
+    (`o.exec_on_start("sleep 5 && hat-news")`) and flagged the amixer
+    lines as hardware-specific (this PC's ALSA card index 2) with a
+    comment. Found in passing: the old repo `bindings.lua` also had a
+    `SUPER+SHIFT+R` newsboat-launcher keybind with no live equivalent —
+    a second repo-unique behavior beyond hat-news, not carried over
+    (the live file is authoritative here); open for the user to decide
+    whether to re-add it. Verified with `luac -p` (syntax only).
+  - **launchers wrongly marked superseded** (`e212e74`): live
+    `~/.config/hypr/bindings.lua` still binds SUPER+RETURN to
+    `hatdots-launch-terminal` and SUPER+ALT+RETURN to
+    `hatdots-launch-terminal-tmux`, and `common/bin/ghostty-multiplexer-new`
+    still falls back to `tmux-session-layout` when herdr isn't on PATH.
+    Copied all three live scripts into `os/omarchy/bin/` (stripped a
+    stray trailing `SCRIPT` heredoc-artifact line from
+    `hatdots-launch-terminal`; otherwise byte-identical, confirmed by
+    diff), linked them from the `hypr` module, and moved their pairs
+    from `internal/parity`'s `linuxDropped` to `linuxOmarchyOnlyPairs`.
+    Noted, not changed: `hatdots-launch-terminal` still execs zsh while
+    tmux's own default-shell is fish (phase-2 decision) — flagging the
+    mismatch, not resolving it here.
+  - **starship made optional/default-off** (`0d61dd7`): this machine's
+    real `~/.config/starship.toml` is byte-identical to Omarchy's own
+    default (`~/.local/share/omarchy/config/starship.toml`, confirmed
+    with `diff`); `common/starship/starship.toml` is a Kanagawa variant
+    that was never actually active anywhere (only `link-windows.ps1`
+    ever linked it, for lack of any other prompt on Windows). Dropped
+    `required = true`, added `default = false`, reworded the
+    description. This directly resolves part of the open question
+    above: starship is no longer required.
+  - **kde default-selection per desktop** (`4f84951`): added
+    `Module.NotDefaultDesktop`/`IsDefaultFor` and
+    `domain.DefaultSelection(manifest, platform)`; wired the CLI so
+    "no `--all`, no `--only`" now selects required modules plus
+    `DefaultSelection`'s result (previously it selected only required
+    modules, which made `default = true` purely informational — a
+    second real gap this review caught). Set `kde`'s
+    `not_default_desktop = ["omarchy"]` so it only auto-selects on a
+    plain, non-Omarchy Linux desktop.
+  - **backup-warning section** (`977e714`): `printPlan` now collects
+    every `backup-then-link` destination and prints a
+    "These files will be replaced (backup kept):" section before the
+    y/N prompt (and in `--dry-run` output), so an overwrite is never
+    buried in a long action list.
+  RED/GREEN evidence (one per fix): hypr/launchers had no Go test (data
+  files), verified instead with `luac -p` and `bash -n`/content diff
+  against the live files. Launchers: moved the 3 pairs in
+  `parity_test.go` first, reran
+  `go test ./internal/parity/... -run TestParity_LinuxOmarchy`, saw it
+  fail "old-script pair not covered" for all three, then added the
+  hypr module links — GREEN. kde/default-selection: new domain tests
+  (`TestModule_IsDefaultFor*`, `TestDefaultSelection_PerDesktop`) and a
+  manifest test (`TestParse_NotDefaultDesktop`) failed to compile
+  (unknown field/undefined func) before the code existed; a new CLI
+  test (`TestRun_NoFlagsSelectsDefaultModulesNotEveryOptionalOne`)
+  failed at runtime (default module not linked) before the CLI wiring
+  — GREEN after each. Backup warning:
+  `TestPrintPlan_WarnsAboutFilesThatWillBeReplaced` failed (no such
+  section in stdout) before the change — GREEN after.
+  Full verification (all observed): `go vet ./...` clean; `gofmt -l .`
+  empty; `go test ./... -race -count=1` passes across all 8 packages;
+  `GOOS=darwin`, `GOOS=windows`, `GOARCH=arm64 GOOS=darwin` builds all
+  succeed. Two real dry-runs on this machine: `--all --dry-run --yes`
+  → 32 actions (includes `starship` and `kde`, since `--all` always
+  means every compatible module regardless of `default`), and a plain
+  `--dry-run --yes` with no `--all`/`--only` → 29 actions (no
+  `starship`, no `kde` — the actual default-selection behavior this
+  fix was for). Both print the new backup-warning section (8 real
+  files: `~/.config/ghostty`, `hypr/{bindings,autostart}.lua`, the 3
+  launcher scripts, `.p10k.zsh`, plus `~/.config/starship.toml` only in
+  the `--all` run). Before/after `ls -la ~/.config | md5sum` across
+  both dry runs: identical (`a429c7cf8226bb80bd1e1ec641143bb5`) —
+  confirmed nothing was ever touched. `git status --short` clean after
+  every commit.
+  Updated open question: the required set is now `{nvim, fish}`
+  (`fish` linux-only) — `starship` is resolved (optional, default-off,
+  per above); the user has not yet answered whether `{nvim, fish}` is
+  the final required set, or whether to re-add the dropped
+  newsboat-launcher hypr keybind.
 
 ## Phase 1 merge decisions
 
