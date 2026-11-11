@@ -123,11 +123,15 @@ os = ["linux", "mac"]
   desktop = ["omarchy"]
 
   [[modules.post_install]]
-  # Idempotent: only clones TPM when it isn't already there. Mirrors
-  # link-linux.sh's `[ ! -d "$tpm_dir/tpm" ] || git clone ...`; link-mac.sh
-  # never installed TPM (left as a manual `prefix + I` step there too, per
+  # Idempotent: only clones TPM when it isn't already there. The TPM repo
+  # itself is the `tpm` directory (its `tpm` entry is the executable
+  # script, a file), so the clone target is plugins/tpm and the presence
+  # check is its .git dir. The old link-linux.sh checked `-d tpm/tpm`,
+  # which is never true for a real clone, so a re-run always failed.
+  # common/tmux/tmux.conf runs this path first. link-mac.sh never
+  # installed TPM (left as a manual `prefix + I` step there too, per
   # os/mac/Brewfile's own comment that TPM plugins aren't brew formulas).
-  command = "mkdir -p ~/.config/tmux/plugins/tpm && [ -d ~/.config/tmux/plugins/tpm/tpm ] || git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm/tpm"
+  command = "mkdir -p ~/.config/tmux/plugins && { [ -d ~/.config/tmux/plugins/tpm/.git ] || git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm; }"
   os = ["linux"]
 
 [modules.packages]
