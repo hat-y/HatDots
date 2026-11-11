@@ -221,6 +221,17 @@ stop it.
       not p10k — it is Ghostty now loading the Omarchy theme overlay
       (`#1e1e2e`) instead of the static Gentleman background
       (`#06080f`), per P3-5.
+- [x] P5-6 Ghostty back to the black Gentleman background on Omarchy
+      (user decision 2026-11-11, partially reverses P3-5 for Ghostty
+      only; Neovim still follows the Omarchy theme). The
+      `omarchy.ghostty` overlay stays linked (manifest and parity
+      unchanged) but its theme include is commented out, with a
+      documented opt-in via that line or `local.ghostty`. Verified:
+      `ghostty +validate-config` exit 0; `+show-config` shows
+      `background = #06080f`, `palette = 0=#06080f`; parity tests
+      pass; running windows reloaded with SIGUSR2 (what
+      `omarchy-restart-terminal` sends on theme change, so a later
+      theme switch keeps the black background).
 - [ ] P5-3 Re-apply from the main checkout after the merge: symlinks
       currently point into the `unify` worktree.
 - [ ] P5-2 Merge to `main`; delete obsolete branches (user decision).

@@ -2,7 +2,9 @@
 # ~/.config/hatdots/omarchy.ghostty (desktop-layer overlay, only linked when
 # ~/.local/share/omarchy exists - see odd/tasks/hatdots-unify.md, task P3-5).
 #
-# Follows Omarchy's active theme instead of the static Gentleman Theme
-# palette common/ghostty/config otherwise ships. `omarchy-theme-set`
-# rewrites this file's target and sends ghostty SIGUSR2 to reload it.
-config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
+# Ghostty keeps the static Gentleman Theme palette (near-black background)
+# on Omarchy too (user decision 2026-11-11, task P5-6). To follow Omarchy's
+# active theme instead, uncomment the line below, or put it in
+# ~/.config/hatdots/local.ghostty to opt in on one machine only;
+# `omarchy-theme-set` then reloads ghostty with each theme change.
+# config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
