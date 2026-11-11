@@ -52,7 +52,7 @@ One `[[modules]]` table per module:
 | `os` | list of `"linux"`/`"mac"`/`"windows"` | Which OSes the module applies to at all. Empty = every OS. |
 | `desktop` | list of `"omarchy"` | Which desktop environments the module needs. Empty = any (including none). |
 | `[[modules.links]]` | array of tables | See below. |
-| `[modules.packages]` | table of `<manager> = [names...]` | Package names per manager: `pacman`, `aur`, `apt`, `dnf`, `zypper`, `brew`, `winget`, `scoop`. |
+| `[modules.packages]` | table of `<manager> = [names...]` | Package names per manager: `pacman`, `aur`, `apt`, `dnf`, `zypper`, `brew`, `winget`, `scoop`. For `pacman`/`aur`, names already satisfied (including through `provides`, e.g. `neovim-git` satisfies `neovim`) are skipped via `pacman -T` before anything is installed. |
 | `[modules.casks]` | table of `<manager> = [names...]` | Same shape as `packages`, but installed with Homebrew's `--cask` (only `brew` is meaningful here). |
 | `[[modules.post_install]]` | array of tables | A declarative, shown-in-the-plan command: `command` (either a path to a script tracked in the repo, resolved relative to the repo root, or a literal shell command), plus optional `os`/`desktop` filters. |
 

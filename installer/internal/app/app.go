@@ -126,6 +126,10 @@ type noopExecutor struct{}
 
 func (noopExecutor) Run(pkg.Command) error { return nil }
 
+// Probe reports every probed package as satisfied, so a dry-run never
+// shells out to a package manager.
+func (noopExecutor) Probe(pkg.Command) (string, int, error) { return "", 0, nil }
+
 // resolveManifest returns a copy of m with every link Src and every
 // repo-relative post-install script command made absolute against
 // repoRoot. A post-install Command is treated as a script path (and

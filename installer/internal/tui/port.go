@@ -48,6 +48,16 @@ type Port interface {
 type AppPort struct {
 	App  app.App
 	Plat domain.Platform
+	// Exec probes which packages are already provided before any install
+	// command is handed to the terminal. Nil means pkg.RealExecutor.
+	Exec pkg.Executor
+}
+
+func (p AppPort) executor() pkg.Executor {
+	if p.Exec == nil {
+		return pkg.RealExecutor{}
+	}
+	return p.Exec
 }
 
 // NewAppPort builds the real Port the CLI hands to the TUI.
@@ -76,7 +86,14 @@ func (p AppPort) ApplyAction(action domain.Action, dryRun bool) error {
 func (p AppPort) TerminalCommands(action domain.Action) []pkg.Command {
 	switch action.Kind {
 	case domain.ActionPackageInstall:
-		cmds, err := pkg.BuildCommands(action.Manager, action.Packages, action.Cask, p.Plat.AURHelper)
+		// Nothing missing (or the probe failed) returns nil: the apply
+		// screen then falls back to ApplyAction, which runs the same
+		// probe through pkg.Install and either no-ops or reports the error.
+		missing, err := pkg.Unsatisfied(p.executor(), action.Manager, action.Packages)
+		if err != nil || len(missing) == 0 {
+			return nil
+		}
+		cmds, err := pkg.BuildCommands(action.Manager, missing, action.Cask, p.Plat.AURHelper)
 		if err != nil {
 			return nil
 		}
