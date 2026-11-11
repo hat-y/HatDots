@@ -212,10 +212,17 @@ stop it.
       `gofmt`/`vet` clean, darwin/windows builds. Real TUI in an isolated
       tmux with `--only tmux,herdr`: select screen showed exactly nvim,
       fish (required), tmux, herdr checked.
-- [ ] P5-3 Open follow-ups from the real apply (user decisions): which `.p10k.zsh` is canonical
-      (live Pure-style vs repo's mac one — `zsh` module left unapplied
-      here); symlinks point into the `unify` worktree and must be
-      re-applied from the main checkout after the merge.
+- [x] P5-5 Canonical `.p10k.zsh` (user decision 2026-11-11): the live
+      Pure-style file (p10k wizard, 2026-06-15) replaces the repo's
+      previous one for every OS, macOS included. `zsh` module applied
+      here (backup byte-identical); interactive zsh loads
+      `context dir vcs command_execution_time newline virtualenv
+      prompt_char`. Note: the user's "colors went bluish" report was
+      not p10k — it is Ghostty now loading the Omarchy theme overlay
+      (`#1e1e2e`) instead of the static Gentleman background
+      (`#06080f`), per P3-5.
+- [ ] P5-3 Re-apply from the main checkout after the merge: symlinks
+      currently point into the `unify` worktree.
 - [ ] P5-2 Merge to `main`; delete obsolete branches (user decision).
 
 ## Progress
