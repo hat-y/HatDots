@@ -83,10 +83,12 @@ func hasBoolFlag(args []string, name string) bool {
 
 // runTUIMode resolves the repo and platform exactly like runInstall, then
 // hands off to the interactive TUI instead of printing a plan and
-// applying it directly. --all/--only are intentionally not parsed into a
-// selection here: module selection is the TUI's own select screen, not a
-// flag; they (and --yes) are still accepted so a user's muscle-memory
-// flags from the non-interactive CLI don't trip flag.ContinueOnError.
+// applying it directly. --all/--only mean exactly what they mean on the
+// non-interactive path (selectionFromFlags): they seed the select screen,
+// where the user can still adjust it. An unknown or incompatible --only id
+// fails here, before the TUI opens, with the same error as the CLI path.
+// --yes is still accepted (and ignored) so muscle-memory flags don't trip
+// flag.ContinueOnError.
 func runTUIMode(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("hatdots", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -94,8 +96,8 @@ func runTUIMode(args []string, stdout, stderr io.Writer) int {
 	dryRunFlag := fs.Bool("dry-run", false, "start the TUI with dry-run on and locked: the preview screen's \"d\" key cannot turn it back off")
 	osFlag := fs.String("os", "", "override the detected OS: linux, mac, or windows")
 	desktopFlag := fs.String("desktop", "", "override the detected desktop: omarchy or none")
-	_ = fs.Bool("all", false, "ignored in the TUI: select modules in the TUI's select screen instead")
-	_ = fs.String("only", "", "ignored in the TUI: select modules in the TUI's select screen instead")
+	allFlag := fs.Bool("all", false, "start the TUI with every compatible module selected")
+	onlyFlag := fs.String("only", "", "start the TUI with only these comma-separated module ids selected (plus required modules)")
 	_ = fs.Bool("yes", false, "ignored: shouldLaunchTUI already keeps --yes on the non-interactive path")
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -119,8 +121,20 @@ func runTUIMode(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
+	opts := []tui.Option{tui.WithInitialDryRun(*dryRunFlag)}
+	if only := parseOnly(*onlyFlag); *allFlag || len(only) > 0 {
+		selection := selectionFromFlags(a.Manifest, plat, *allFlag, only)
+		// Validate up front so a typo in --only fails loudly instead of
+		// opening a select screen that silently dropped it.
+		if _, err := a.Plan(plat, selection); err != nil {
+			fmt.Fprintln(stderr, "hatdots:", err)
+			return 1
+		}
+		opts = append(opts, tui.WithInitialSelection(selection))
+	}
+
 	port := tui.NewAppPort(a, plat)
-	if err := runTUIFunc(port, tui.WithInitialDryRun(*dryRunFlag)); err != nil {
+	if err := runTUIFunc(port, opts...); err != nil {
 		fmt.Fprintln(stderr, "hatdots:", err)
 		return 1
 	}
@@ -245,25 +259,7 @@ func runInstall(args []string, stdin io.Reader, stdout, stderr io.Writer, isTTY 
 		return 1
 	}
 
-	only := parseOnly(*onlyFlag)
-	var selection []string
-	switch {
-	case *allFlag:
-		for _, mod := range a.Manifest.Modules {
-			if mod.SupportsPlatform(plat) {
-				selection = append(selection, mod.ID)
-			}
-		}
-	case len(only) > 0:
-		// explicit --only: nothing auto-selected beyond required modules.
-	default:
-		// No --all, no --only: pre-select exactly the modules the three
-		// old scripts installed by default on this platform (see
-		// domain.Module.IsDefaultFor/DefaultSelection), not every
-		// optional module.
-		selection = domain.DefaultSelection(a.Manifest, plat)
-	}
-	selection = append(selection, only...)
+	selection := selectionFromFlags(a.Manifest, plat, *allFlag, parseOnly(*onlyFlag))
 
 	plan, err := a.Plan(plat, selection)
 	if err != nil {
@@ -388,6 +384,31 @@ func findRepoRoot(start string, executable func() (string, error)) (string, repo
 	}
 
 	return "", 0, fmt.Errorf("could not find a HatDots repo (a %s declaring schema = %q) above %s or next to the executable", app.ManifestFileName, manifest.Schema, start)
+}
+
+// selectionFromFlags turns --all/--only into the optional-module
+// selection both the non-interactive path and the TUI start from:
+//   - --all: every module compatible with plat;
+//   - --only: exactly those ids, nothing else auto-selected;
+//   - neither: domain.DefaultSelection, the modules the three old scripts
+//     installed by default on this platform (not every optional module).
+//
+// Required modules are always added later by domain.BuildPlan.
+func selectionFromFlags(m domain.Manifest, plat domain.Platform, all bool, only []string) []string {
+	var selection []string
+	switch {
+	case all:
+		for _, mod := range m.Modules {
+			if mod.SupportsPlatform(plat) {
+				selection = append(selection, mod.ID)
+			}
+		}
+	case len(only) > 0:
+		// explicit --only: nothing auto-selected beyond required modules.
+	default:
+		selection = domain.DefaultSelection(m, plat)
+	}
+	return append(selection, only...)
 }
 
 func parseOnly(s string) []string {

@@ -215,9 +215,11 @@ create"/"Would replace"/"Would back up (backup kept)"/"Would run
 stdin and stdout are real terminals and `--yes` was not given; `--dry-run`
 does **not** suppress the TUI (it seeds — and locks — the preview
 screen's own dry-run toggle instead), so a dry run on a real terminal
-still gets the full interactive experience. `--all`/`--only` are ignored
-once the TUI takes over — module selection becomes the select screen's
-job.
+still gets the full interactive experience. `--all`/`--only` seed the
+select screen with the same selection the non-interactive path would use
+(`selectionFromFlags`; `tui.WithInitialSelection`), and the user can still
+adjust it there. An unknown or incompatible `--only` id fails before the
+TUI opens, with the same error as the non-interactive path.
 
 Tests: `internal/tui/model_test.go` drives `Model.Update` directly against
 a fixed, synchronous fake `Port` (`fake_port_test.go`) for state

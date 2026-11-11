@@ -44,6 +44,9 @@ type Model struct {
 	items    []domain.Module // platform-compatible modules, manifest order
 	selected map[string]bool
 	cursor   int
+	// initialSelection, when non-nil, replaces Port.DefaultSelection as
+	// the seed for optional modules (see WithInitialSelection).
+	initialSelection []string
 
 	// preview/apply
 	dryRun       bool
@@ -88,6 +91,29 @@ func WithInitialDryRun(v bool) Option {
 	}
 }
 
+// WithInitialSelection seeds the select screen with exactly ids instead
+// of Port.DefaultSelection. The CLI uses this to carry --only/--all into
+// the TUI, so they mean the same thing as on the non-interactive path.
+// Required modules stay selected and locked regardless of ids; the user
+// can still toggle every optional module before applying.
+func WithInitialSelection(ids []string) Option {
+	return func(m *Model) {
+		m.initialSelection = append([]string{}, ids...)
+	}
+}
+
+// SelectedIDs returns the ids of every currently selected module, in
+// manifest order (required modules included).
+func (m Model) SelectedIDs() []string {
+	var out []string
+	for _, mod := range m.items {
+		if m.selected[mod.ID] {
+			out = append(out, mod.ID)
+		}
+	}
+	return out
+}
+
 // New builds the initial Model, on the detect screen, for port.
 func New(port Port, opts ...Option) Model {
 	m := Model{
@@ -106,7 +132,11 @@ func New(port Port, opts ...Option) Model {
 		opt(&m)
 	}
 	m.items = compatibleModules(m.manifest, m.platform)
-	m.selected = defaultSelected(m.items, port.DefaultSelection())
+	seed := m.initialSelection
+	if seed == nil {
+		seed = port.DefaultSelection()
+	}
+	m.selected = defaultSelected(m.items, seed)
 	return m
 }
 

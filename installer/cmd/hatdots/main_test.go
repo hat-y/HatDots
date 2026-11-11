@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -589,5 +590,114 @@ required = true
 	}
 	if _, err := os.Lstat(filepath.Join(home, ".config", "nvim")); err != nil {
 		t.Errorf("--yes should have applied the plan: %v", err)
+	}
+}
+
+// writeSelectionRepo writes a repo with one required module (nvim), one
+// default-on optional module (tmux) and one default-off optional module
+// (starship), so tests can tell --only/--all apart from the defaults.
+func writeSelectionRepo(t *testing.T) string {
+	t.Helper()
+	repo := t.TempDir()
+	for _, dir := range []string{"common/nvim", "common/tmux", "common/starship"} {
+		if err := os.MkdirAll(filepath.Join(repo, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	manifestTOML := `
+schema = "hatdots/v1"
+
+[[modules]]
+id = "nvim"
+required = true
+
+  [[modules.links]]
+  src = "common/nvim"
+  dst = "~/.config/nvim"
+
+[[modules]]
+id = "tmux"
+default = true
+
+  [[modules.links]]
+  src = "common/tmux"
+  dst = "~/.config/tmux"
+
+[[modules]]
+id = "starship"
+default = false
+
+  [[modules.links]]
+  src = "common/starship"
+  dst = "~/.config/starship"
+`
+	if err := os.WriteFile(filepath.Join(repo, "modules.toml"), []byte(manifestTOML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", t.TempDir())
+	return repo
+}
+
+// tuiSelection launches run() on a full TTY with a fake TUI and returns
+// the module ids the TUI's select screen would start with.
+func tuiSelection(t *testing.T, args ...string) (selected []string, called bool, code int, stderr string) {
+	t.Helper()
+	restore := runTUIFunc
+	runTUIFunc = func(port tui.Port, opts ...tui.Option) error {
+		called = true
+		selected = tui.New(port, opts...).SelectedIDs()
+		return nil
+	}
+	defer func() { runTUIFunc = restore }()
+
+	var stdout, errBuf bytes.Buffer
+	code = run(append(args, "--os", "linux", "--desktop", "none"), &bytes.Buffer{}, &stdout, &errBuf, true, true)
+	return selected, called, code, errBuf.String()
+}
+
+func TestRun_TUIModeKeepsDefaultSelectionWithoutFlags(t *testing.T) {
+	repo := writeSelectionRepo(t)
+	got, _, code, stderr := tuiSelection(t, "--repo", repo)
+	if code != 0 {
+		t.Fatalf("exit code = %d, stderr = %s", code, stderr)
+	}
+	if want := []string{"nvim", "tmux"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("TUI selection = %v, want %v", got, want)
+	}
+}
+
+func TestRun_TUIModeSeedsSelectionFromOnly(t *testing.T) {
+	repo := writeSelectionRepo(t)
+	got, _, code, stderr := tuiSelection(t, "--repo", repo, "--only", "starship")
+	if code != 0 {
+		t.Fatalf("exit code = %d, stderr = %s", code, stderr)
+	}
+	if want := []string{"nvim", "starship"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("TUI selection = %v, want %v (--only must replace the defaults, like the CLI path)", got, want)
+	}
+}
+
+func TestRun_TUIModeSeedsSelectionFromAll(t *testing.T) {
+	repo := writeSelectionRepo(t)
+	got, _, code, stderr := tuiSelection(t, "--repo", repo, "--all")
+	if code != 0 {
+		t.Fatalf("exit code = %d, stderr = %s", code, stderr)
+	}
+	if want := []string{"nvim", "tmux", "starship"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("TUI selection = %v, want %v", got, want)
+	}
+}
+
+func TestRun_TUIModeRejectsUnknownOnlyModuleBeforeLaunching(t *testing.T) {
+	repo := writeSelectionRepo(t)
+	_, called, code, stderr := tuiSelection(t, "--repo", repo, "--only", "bogus")
+	if code == 0 {
+		t.Fatal("exit code = 0, want a failure for an unknown --only module")
+	}
+	if called {
+		t.Error("the TUI must not launch when --only names an unknown module")
+	}
+	if !strings.Contains(stderr, "bogus") {
+		t.Errorf("stderr = %q, want it to name the unknown module", stderr)
 	}
 }

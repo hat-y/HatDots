@@ -203,8 +203,16 @@ stop it.
       already provided), `31a6675` (TPM clone/load path), `bf043dd`
       (newsboat key names). See the 2026-11-11 Progress entry.
 - [ ] P5-1 User verifies macOS and Windows.
-- [ ] P5-3 Open follow-ups from the real apply (user decisions): the TUI
-      silently ignores `--only`/`--all`; which `.p10k.zsh` is canonical
+- [x] P5-4 TUI honors `--only`/`--all` (split out of P5-3, user asked
+      2026-11-11). `selectionFromFlags` shared by both paths;
+      `tui.WithInitialSelection` seeds the select screen; unknown ids fail
+      before the TUI opens. RED: 3 CLI tests failed (`[nvim tmux]` instead
+      of the flag's selection; exit 0 for `--only bogus`) plus 2 TUI
+      compile failures; GREEN: `go test ./... -race` all 9 packages,
+      `gofmt`/`vet` clean, darwin/windows builds. Real TUI in an isolated
+      tmux with `--only tmux,herdr`: select screen showed exactly nvim,
+      fish (required), tmux, herdr checked.
+- [ ] P5-3 Open follow-ups from the real apply (user decisions): which `.p10k.zsh` is canonical
       (live Pure-style vs repo's mac one — `zsh` module left unapplied
       here); symlinks point into the `unify` worktree and must be
       re-applied from the main checkout after the merge.

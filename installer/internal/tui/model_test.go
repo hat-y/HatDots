@@ -2,6 +2,7 @@ package tui
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -51,6 +52,23 @@ func TestNew_DefaultSelectionLocksRequiredAndSeedsDefaults(t *testing.T) {
 	}
 	if m.selected["starship"] {
 		t.Error("non-default module starship should start unselected")
+	}
+}
+
+func TestNew_InitialSelectionReplacesDefaults(t *testing.T) {
+	// --only starship: the CLI seeds exactly that optional module, so the
+	// default-on tmux must start unselected; required nvim stays locked on.
+	m := New(newFixturePort(), WithoutAnimation(), WithInitialSelection([]string{"starship"}))
+
+	if got, want := m.SelectedIDs(), []string{"nvim", "starship"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("SelectedIDs() = %v, want %v", got, want)
+	}
+}
+
+func TestNew_SelectedIDsFollowsManifestOrder(t *testing.T) {
+	m := New(newFixturePort(), WithoutAnimation())
+	if got, want := m.SelectedIDs(), []string{"nvim", "tmux"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("SelectedIDs() = %v, want %v", got, want)
 	}
 }
 
