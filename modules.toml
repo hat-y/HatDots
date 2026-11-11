@@ -258,6 +258,15 @@ os = ["linux", "mac"]
   command = "os/mac/herdr/install.sh"
   os = ["mac"]
 
+  [[modules.post_install]]
+  # Herdr ships in Omarchy's own pacman repo (`omarchy`), not in the
+  # standard Arch repos, so it cannot be a plain `pacman` package here
+  # (packages have no desktop filter, and a non-Omarchy Arch would fail
+  # the whole apply). Skips when herdr is already on PATH, e.g. from cargo.
+  command = "command -v herdr >/dev/null 2>&1 || sudo pacman -S --needed herdr"
+  os = ["linux"]
+  desktop = ["omarchy"]
+
 [modules.packages]
 brew = ["herdr"]
 

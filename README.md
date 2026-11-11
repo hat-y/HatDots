@@ -49,11 +49,10 @@ No hace falta instalarlas a mano: cada módulo de `modules.toml` declara sus paq
 
 ### Multiplexor (opcional, recomendado)
 
-HatDots prefiere **Herdr** sobre Tmux cuando el binario `herdr` está en PATH, con Tmux como fallback automático. El wrapper `common/bin/ghostty-multiplexer-new` decide en cada arranque. Fish shell (`common/fish/config.fish`) y Zsh (`common/zsh/.zshrc`) aplican el mismo guard. El módulo `herdr` solo declara el paquete para `brew`, así que en Linux el instalador enlaza la config pero no instala el binario:
+HatDots prefiere **Herdr** sobre Tmux cuando el binario `herdr` está en PATH, con Tmux como fallback automático. El wrapper `common/bin/ghostty-multiplexer-new` decide en cada arranque. Fish shell (`common/fish/config.fish`) y Zsh (`common/zsh/.zshrc`) aplican el mismo guard. En Omarchy el módulo `herdr` lo instala solo desde el repo propio de Omarchy (`omarchy`), y se saltea si `herdr` ya está en el PATH. En macOS lo instala con `brew`. En otras distros enlaza la config pero no instala el binario:
 
 ```bash
-sudo pacman -S herdr      # Omarchy: viene en su propio repo (`omarchy`)
-cargo install herdr       # otras distros
+cargo install herdr       # Linux sin Omarchy
 ```
 
 ⚠️ **License caveat**: Herdr upstream publica con SPDX `NOASSERTION` (source-available, no OSS por defecto). Evaluá antes de uso comercial o redistribución.

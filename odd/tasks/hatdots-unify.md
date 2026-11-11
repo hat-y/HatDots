@@ -243,6 +243,17 @@ stop it.
       launchers, empty `hyprctl configerrors`). Caught and fixed two of
       my own wrong claims: herdr *is* packaged (Omarchy's `omarchy`
       repo, 0.9.5), and `ls | wc -l` broke under an `eza` alias.
+- [x] P5-8 Install herdr on Omarchy (user asked 2026-11-11). Packages
+      have no desktop filter and herdr is only in Omarchy's `omarchy`
+      repo, so it is an Omarchy-only `post_install`:
+      `command -v herdr >/dev/null 2>&1 || sudo pacman -S --needed herdr`.
+      RED: `TestRealManifest_HerdrInstalledFromPacmanOnOmarchy` saw no
+      install step; GREEN after the manifest change, plus
+      `TestRealManifest_HerdrNotInstalledOnPlainLinux`; `go test ./...
+      -race` all 9 packages. Dry-runs: omarchy plans the post-install,
+      `--desktop none` does not. Real run here exits 0 without sudo
+      (herdr 0.9.5 already present). Not exercised: the actual
+      `pacman -S herdr` branch on a machine without herdr.
 - [ ] P5-3 Re-apply from the main checkout after the merge: symlinks
       currently point into the `unify` worktree.
 - [ ] P5-2 Merge to `main`; delete obsolete branches (user decision).
