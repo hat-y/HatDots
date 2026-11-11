@@ -198,7 +198,16 @@ stop it.
 
 ### Phase 5 — Close
 
+- [x] P5-0 First real apply on this Omarchy machine (new task). Found and
+      fixed three defects on the way: `81a758c` (skip pacman packages
+      already provided), `31a6675` (TPM clone/load path), `bf043dd`
+      (newsboat key names). See the 2026-11-11 Progress entry.
 - [ ] P5-1 User verifies macOS and Windows.
+- [ ] P5-3 Open follow-ups from the real apply (user decisions): the TUI
+      silently ignores `--only`/`--all`; which `.p10k.zsh` is canonical
+      (live Pure-style vs repo's mac one — `zsh` module left unapplied
+      here); symlinks point into the `unify` worktree and must be
+      re-applied from the main checkout after the merge.
 - [ ] P5-2 Merge to `main`; delete obsolete branches (user decision).
 
 ## Progress
@@ -807,6 +816,36 @@ stop it.
   .. --dry-run --all --yes`: before/after `ls -la ~/.config | md5sum`
   identical (`78aaca9eaa275ef93639dde0ed1995e8`) — confirmed nothing
   was ever touched. `git status --short` clean after every commit.
+- 2026-11-11: First real apply on this Omarchy machine, selection
+  `--only tmux,ghostty,salesforce,newsboat,herdr,hypr,linux-cli-tools`
+  (plus required nvim, fish; `zsh` excluded so the live Pure-style
+  `.p10k.zsh` is kept). Run by the user with `--yes` (the TUI path
+  ignores `--only`). Defects found and fixed, one commit each:
+  1. `81a758c`: `pacman -S --needed` matches by name only, so
+     `neovim-git` would have been offered a replacement by `neovim`.
+     `pkg.Unsatisfied` now probes `pacman -T` (resolves provides) in
+     both the CLI and TUI paths. RED: `undefined: Unsatisfied` and
+     `unknown field Exec`; GREEN: `go test ./... -race` all 9 packages,
+     `gofmt`/`vet` clean, darwin/windows builds. Real probe:
+     `pacman -T neovim fish newsboat` -> only `newsboat`.
+  2. `31a6675`: TPM post-install checked `-d plugins/tpm/tpm` (the TPM
+     script, a file), so re-runs failed with exit 128 and aborted the
+     apply; tmux.conf loaded `~/.tmux/plugins/tpm` while the installer
+     cloned into `~/.config/tmux/plugins`. RED/GREEN with a real tmux
+     server against fake homes (fresh, empty -> clones, re-run, legacy
+     `~/.tmux`) and the real home: `TPM_MISSING` before, `TPM_LOADED`
+     after in every case.
+  3. `bf043dd`: newsboat 2.45 rejects `page_down`/`page_up`; now
+     `pagedown`/`pageup`. `newsboat -x print-unread` exits 0.
+  Verified live after apply: every planned link resolves into the
+  worktree; backups `*.hatdots-bak.20261111T1213*` for ghostty, hypr
+  `bindings.lua`/`autostart.lua` and the 3 launchers; re-plan shows
+  only no-op package/post-install actions; `ghostty +validate-config`
+  exit 0; tmux default-shell `/usr/bin/fish` with TPM loaded;
+  `hyprctl configerrors` empty; nvim headless `STARTUP_OK`, hatnotes
+  true, theme `aether`; `fish -n` OK and `~/.local/bin`/`hermes` on
+  PATH; `bash -n` OK on the 8 linked scripts; herdr config differs
+  from the previous one only in a comment.
 
 ## Phase 1 merge decisions
 
