@@ -232,6 +232,17 @@ stop it.
       pass; running windows reloaded with SIGUSR2 (what
       `omarchy-restart-terminal` sends on theme change, so a later
       theme switch keeps the black background).
+- [x] P5-7 README reinstall guide rewritten around the installer (user
+      asked 2026-11-11): dropped the manual heredoc steps that wrote
+      into now-symlinked files (ghostty config, launchers, zshrc
+      additions with a hardcoded home path), replaced them with a
+      what-gets-linked table, the Ghostty/Neovim theme notes, and an
+      alias-free checklist. Verified: every referenced repo path exists;
+      each checklist command run on this machine (nvim link, tmux
+      default-shell fish, `background = #06080f`, 52 shaders, 2
+      launchers, empty `hyprctl configerrors`). Caught and fixed two of
+      my own wrong claims: herdr *is* packaged (Omarchy's `omarchy`
+      repo, 0.9.5), and `ls | wc -l` broke under an `eza` alias.
 - [ ] P5-3 Re-apply from the main checkout after the merge: symlinks
       currently point into the `unify` worktree.
 - [ ] P5-2 Merge to `main`; delete obsolete branches (user decision).

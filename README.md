@@ -24,6 +24,8 @@ $env:HATNOTES_PATH = "C:\ruta\a\HatNotes" # PowerShell, antes de abrir nvim
 
 `hatdots` respalda cualquier archivo o directorio real que vaya a reemplazar (acción `backup-then-link`, con un nombre de backup libre de colisiones) antes de crear el symlink; un symlink ya apuntando al destino correcto se deja intacto (`link-skip-identical`). La preview (CLI o TUI) siempre lista qué se va a respaldar antes de aplicar nada.
 
+> **No edites a mano los archivos que HatDots enlaza.** `~/.config/nvim`, `~/.config/ghostty`, `~/.config/hypr/bindings.lua`, etc. son symlinks al repo: escribir en ellos (por ejemplo con un `cat > ... << EOF`) modifica el archivo versionado. Los cambios propios de una máquina van en `~/.config/hatdots/local.*`.
+
 ## Flujo completo: Omarchy fresco → HatDots
 
 Cuando reinstalés Omarchy o tengas un sistema limpio, seguí estos pasos en orden.
@@ -37,33 +39,26 @@ Cuando reinstalés Omarchy o tengas un sistema limpio, seguí estos pasos en ord
 # omarchy install
 ```
 
-Omarchy instala: Hyprland, Waybar, Walker, Mako, Ghostty, tmux, Alacritty, Kitty, Foot, Fastfetch, Btop, ~230 bin scripts.
+Omarchy instala: Hyprland, Waybar, Walker, Mako, Ghostty, tmux, Alacritty, Kitty, Foot, Fastfetch, Btop, ~230 bin scripts. También deja `TERMINAL=ghostty` en `~/.config/uwsm/default`, que es lo que HatDots espera.
 
 ---
 
-## 2. Instalar dependencias que Omarchy no incluye
+## 2. Dependencias
 
-```bash
-sudo pacman -S neovim tmux ghostty ghostty-shell-integration ghostty-terminfo eza zoxide fzf
-```
-
-- **nvim**: para el editor (LazyVim)
-- **ghostty + shell-integration + terminfo**: terminal (Omarchy ya instala ghostty pero verificá)
-- **eza, zoxide, fzf**: herramientas que zsh usa
-- **tmux**: sesiones (Omarchy lo incluye)
+No hace falta instalarlas a mano: cada módulo de `modules.toml` declara sus paquetes y `hatdots` los instala con `pacman` (o `apt`/`dnf`/`zypper`/`brew`/`winget`/`scoop`). Antes de instalar consulta `pacman -T`, así que un paquete ya provisto por otro (por ejemplo `neovim-git` en lugar de `neovim`) se saltea en vez de reemplazarse. Instalar un paquete faltante pide tu contraseña de `sudo`.
 
 ### Multiplexor (opcional, recomendado)
 
-HatDots prefiere **Herdr** sobre Tmux cuando el binario `herdr` está en PATH, con Tmux como fallback automático. El wrapper `common/bin/ghostty-multiplexer-new` decide en cada arranque. Fish shell (`common/fish/config.fish`) y Zsh (`common/zsh/.zshrc`) aplican el mismo guard.
+HatDots prefiere **Herdr** sobre Tmux cuando el binario `herdr` está en PATH, con Tmux como fallback automático. El wrapper `common/bin/ghostty-multiplexer-new` decide en cada arranque. Fish shell (`common/fish/config.fish`) y Zsh (`common/zsh/.zshrc`) aplican el mismo guard. El módulo `herdr` solo declara el paquete para `brew`, así que en Linux el instalador enlaza la config pero no instala el binario:
 
 ```bash
-brew install herdr        # Linuxbrew (Omarchy trae Homebrew)
-cargo install herdr       # alternativa Linux
+sudo pacman -S herdr      # Omarchy: viene en su propio repo (`omarchy`)
+cargo install herdr       # otras distros
 ```
 
 ⚠️ **License caveat**: Herdr upstream publica con SPDX `NOASSERTION` (source-available, no OSS por defecto). Evaluá antes de uso comercial o redistribución.
 
-⚠️ **Version warning**: testeado contra **v0.4.x**. Versiones más nuevas pueden haber renombrado config keys (e.g. `focus_agent` → `jump_to_agent`).
+⚠️ **Version warning**: la config se escribió contra **v0.4.x** y upstream es pre-1.0, así que versiones más nuevas pueden haber renombrado config keys (e.g. `focus_agent` → `jump_to_agent`).
 
 🪟 **Windows**: Herdr no tiene binario nativo. Usá WSL, o quedate en Tmux fallback.
 
@@ -77,234 +72,90 @@ Ver `common/herdr/README.md` para detalles completos y `os/linux/README.md` para
 curl -fsSL https://raw.githubusercontent.com/hat-y/HatDots/main/bootstrap.sh | sh
 ```
 
-`bootstrap.sh` clona el repo en `${HATDOTS_DIR:-$HOME/projects/HatDots}`, descarga el binario `hatdots` de la última release (verificando su sha256) y lo corre. Con una terminal real abre una TUI interactiva (detección → selección de módulos → preview → aplicar); en la preview, aplicar es siempre con `y` explícito (`enter` no hace nada), y el dry-run queda bloqueado en "on" si lo pasaste por `--dry-run` (`d` ya no puede apagarlo). No interactivo (`hatdots --all --yes`) para scripting. Ver `installer/README.md` y `SETUP.md` para el detalle completo, incluidos los overlays `~/.config/hatdots/os.*`/`omarchy.*`/`local.*`.
+`bootstrap.sh` clona el repo en `${HATDOTS_DIR:-$HOME/projects/HatDots}`, descarga el binario `hatdots` de la última release (verificando su sha256) y lo corre; si todavía no hay ninguna release publicada y tenés Go, cae a `go run ./installer/cmd/hatdots`. Con una terminal real abre una TUI interactiva (detección → selección de módulos → preview → aplicar); en la preview, aplicar es siempre con `y` explícito (`enter` no hace nada), y el dry-run queda bloqueado en "on" si lo pasaste por `--dry-run` (`d` ya no puede apagarlo). `--only`/`--all` preseleccionan los módulos de la TUI; con `--yes` se aplica sin TUI (`hatdots --all --yes`) para scripting. Ver `installer/README.md` y `SETUP.md` para el detalle completo, incluidos los overlays `~/.config/hatdots/os.*`/`omarchy.*`/`local.*`.
 
-Esto crea, entre otros:
-```
-~/.config/nvim              → ~/projects/HatDots/common/nvim
-~/.config/tmux/tmux.conf     → ~/projects/HatDots/common/tmux/tmux.conf
-```
-
-Tmux plugins (TPM): dentro de tmux → `Ctrl+Space + I`
-
----
-
-## 4. Ghostty — config fusionada
+Conviene mirar el plan antes de aplicar:
 
 ```bash
-cat > ~/.config/ghostty/config << EOF
-# ═══════════════════════════════════════════════════════════════════════════════
-# Ghostty — Fused with Omarchy + HatDots
-# Theme: Omarchy (dynamic) | Shader: HatDots | Tmux: HatDots auto-launch
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# ─── Theme (Omarchy dynamic) ───────────────────────────────────────────────
-config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
-
-# ─── Font ─────────────────────────────────────────────────────────────────
-font-family = "JetBrainsMono Nerd Font"
-font-style = Regular
-font-size = 9
-
-# ─── Window ────────────────────────────────────────────────────────────────
-window-theme = ghostty
-window-padding-x = 4
-window-padding-y = 4
-confirm-close-surface = false
-resize-overlay = never
-gtk-toolbar-style = flat
-gtk-single-instance = false
-
-# ─── Cursor ───────────────────────────────────────────────────────────────
-cursor-style = block
-cursor-style-blink = false
-
-# ─── Shell Integration ──────────────────────────────────────────────────────
-shell-integration-features = no-cursor,ssh-env
-
-# ─── Tmux auto-launch (HatDots) ────────────────────────────────────────────
-command = $HOME/.local/bin/tmux-session-layout main
-
-# ─── Shader: cursor_smear_gentleman (HatDots) ──────────────────────────────
-custom-shader = shaders/cursor_smear_gentleman.glsl
-
-# ─── Keyboard Bindings ──────────────────────────────────────────────────────
-keybind = shift+insert=paste_from_clipboard
-keybind = control+insert=copy_to_clipboard
-keybind = super+control+shift+alt+arrow_down=resize_split:down,100
-keybind = super+control+shift+alt+arrow_up=resize_split:up,100
-keybind = super+control+shift+alt+arrow_left=resize_split:left,100
-keybind = super+control+shift+alt+arrow_right=resize_split:right,100
-keybind = super+f=toggle_maximize
-keybind = alt+f4=close_window
-
-# ─── Performance ───────────────────────────────────────────────────────────
-async-backend = epoll
-mouse-scroll-multiplier = 0.95
-EOF
-
-# Shaders symlink
-ln -sfn ~/projects/HatDots/common/ghostty/shaders ~/.config/ghostty/shaders
+hatdots --dry-run
 ```
 
 ---
 
-## 5. Launcher scripts
+## 4. Qué deja instalado (Omarchy)
 
-```bash
-mkdir -p ~/.local/bin
+Con la selección por defecto en Omarchy, `hatdots` crea, entre otros, estos symlinks al repo (`~/projects/HatDots/...`):
 
-cat > ~/.local/bin/hatdots-launch-terminal << 'EOF'
-#!/bin/bash
-cwd="$(omarchy-cmd-terminal-cwd 2>/dev/null || pwd)"
-exec setsid uwsm-app -- ghostty -e bash -c "cd '$cwd' && exec zsh"
-EOF
+| Módulo     | Destino                                                    | Origen en el repo                          |
+|------------|------------------------------------------------------------|--------------------------------------------|
+| nvim       | `~/.config/nvim`                                           | `common/nvim`                              |
+| fish       | `~/.config/fish/config.fish`                               | `common/fish/config.fish`                  |
+| tmux       | `~/.config/tmux/tmux.conf`, `~/.config/hatdots/omarchy.tmux.conf` | `common/tmux/`, `os/omarchy/tmux/`  |
+| ghostty    | `~/.config/ghostty` (config, shaders, themes), `~/.config/hatdots/{os,omarchy}.ghostty` | `common/ghostty`, `os/linux/ghostty/`, `os/omarchy/ghostty/` |
+| herdr      | `~/.config/herdr/config.toml`                              | `common/herdr/config.toml`                 |
+| newsboat   | `~/.config/newsboat/{config,urls}`, `~/.local/bin/hat-news` | `common/newsboat/`, `os/omarchy/newsboat/` |
+| hypr       | `~/.config/hypr/{bindings,autostart}.lua`                  | `os/omarchy/hypr/`                         |
+| hypr       | `~/.local/bin/{hatdots-launch-terminal,hatdots-launch-terminal-tmux,tmux-session-layout}` | `os/omarchy/bin/` |
+| zsh        | `~/.p10k.zsh`                                              | `common/zsh/.p10k.zsh`                     |
 
-cat > ~/.local/bin/hatdots-launch-terminal-tmux << 'EOF'
-#!/bin/bash
-ws="Work"
-if command -v hyprctl &>/dev/null; then
-  ws_name=$(hyprctl activeworkspace -j 2>/dev/null | grep -oP '"name"\s*:\s*"\K[^"]+')
-  [[ -n "$ws_name" ]] && ws="ws-${ws_name}"
-fi
-cwd="$(omarchy-cmd-terminal-cwd 2>/dev/null || pwd)"
-exec setsid uwsm-app -- ghostty -e bash -c "cd '$cwd' && exec tmux-session-layout '$ws'"
-EOF
+Notas:
 
-cat > ~/.local/bin/tmux-session-layout << 'EOF'
-#!/bin/bash
-# tmux-session-layout — Create a tmux session with 3 windows:
-#   Window 1: nvim | Window 2: shell | Window 3: shell
-
-set -euo pipefail
-
-SESSION="${1:-main}"
-CWD="${2:-$(pwd)}"
-
-if tmux has-session -t "$SESSION" 2>/dev/null; then
-  exec tmux attach -t "$SESSION"
-fi
-
-tmux new-session -d -s "$SESSION" -c "$CWD" nvim
-tmux new-window -t "$SESSION" -c "$CWD"
-tmux new-window -t "$SESSION" -c "$CWD"
-tmux select-window -t "$SESSION:1"
-
-exec tmux attach -t "$SESSION"
-EOF
-
-chmod +x ~/.local/bin/hatdots-launch-terminal
-chmod +x ~/.local/bin/hatdots-launch-terminal-tmux
-chmod +x ~/.local/bin/tmux-session-layout
-```
+- **Ghostty** usa la paleta Gentleman (fondo `#06080f`) también en Omarchy. Para que siga el tema activo de Omarchy, descomentá la línea `config-file` de `os/omarchy/ghostty/omarchy.ghostty`, o ponela en `~/.config/hatdots/local.ghostty` para hacerlo en una sola máquina.
+- **Neovim** sí sigue el tema activo de Omarchy, con recarga en vivo.
+- **Hyprland**: `bindings.lua` deja `SUPER + RETURN` → `hatdots-launch-terminal` y `SUPER + ALT + RETURN` → `hatdots-launch-terminal-tmux`; `autostart.lua` corre `hat-news` al iniciar. Si Hyprland no los toma solo, `hyprctl reload`.
+- **Zsh en Linux**: solo se enlaza `~/.p10k.zsh`; tu `~/.zshrc` queda como está (el `.zshrc` del repo se enlaza únicamente en macOS).
+- **Tmux**: el post-install clona TPM en `~/.config/tmux/plugins/tpm`. Los plugins se instalan desde tmux con `Ctrl+Space` y después `I`.
 
 ---
 
-## 6. Hyprland bindings
-
-Editá `~/.config/hypr/bindings.lua` y buscá las líneas de terminal. Cambiar de `xdg-terminal-exec` / `ghostty` / `alacritty` a los scripts de HatDots:
-
-```lua
-o.bind("SUPER + RETURN", "Terminal (Ghostty)", "hatdots-launch-terminal")
-o.bind("SUPER + ALT + RETURN", "Tmux (workspace)", "hatdots-launch-terminal-tmux")
-```
-
-```bash
-hyprctl reload
-```
-
----
-
-## 7. uwsm — terminal default
-
-```bash
-# Editar ~/.config/uwsm/default
-export TERMINAL=ghostty
-```
-
----
-
-## 8. Zsh — fusionado sobre CachyOS
-
-El `.zshrc` ya existe en CachyOS. Solo agregar al final:
-
-```bash
-# HatDots additions (agregar al ~/.zshrc existente)
-
-# Vi mode
-bindkey -v
-export KEYTIMEOUT=1
-
-# zoxide
-command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
-
-# eza aliases
-alias ls='eza --icons=auto --group-directories-first --classify'
-alias ll='eza -lh --git --icons=auto --group-directories-first --classify'
-alias la='eza -lha --git --icons=auto --group-directories-first --classify'
-alias lt='eza --tree --level=2 --icons=auto --group-directories-first'
-
-# PATH
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="/home/hat/.opencode/bin:$PATH"
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-```
-
-Powerlevel10k custom:
-```bash
-cp ~/projects/HatDots/common/zsh/.p10k.zsh ~/.p10k.zsh
-```
-
----
-
-## 9. Nvim — primer arranque
+## 5. Nvim — primer arranque
 
 ```bash
 nvim  # Lazy instala todo automáticamente
-
-# Opcional: limpiar cache si hubo errores
-# mv ~/.local/share/nvim/lazy/lazy.nvim/.cache ~/.local/share/nvim/lazy/lazy.nvim/.cache.bak
-# mv ~/.local/state/nvim ~/.local/state/nvim.bak
 ```
 
-Cambiar theme: `:Lazy` → buscar theme → `...` → Reload
-
----
-
-## 10. Tmux — reload config
+`lazy-lock.json` es uno solo para todos los OS. Si los plugins en disco quedaron en otras versiones (por ejemplo, venías de otra config), alinealos con el lock del repo:
 
 ```bash
-tmux source-file ~/.config/tmux/tmux.conf
+nvim --headless '+Lazy! restore' +qa
 ```
 
-Verificar shell: `tmux show-options -g default-shell` → `/bin/zsh`
+Si hubo errores en el primer arranque, mové los caches y volvé a abrir:
+
+```bash
+mv ~/.local/share/nvim/lazy/lazy.nvim/.cache ~/.local/share/nvim/lazy/lazy.nvim/.cache.bak
+mv ~/.local/state/nvim ~/.local/state/nvim.bak
+```
 
 ---
 
 ## Checklist final
 
 ```bash
-# Verificaciones rápidas
-which ghostty                    # ghostty instalado
-which nvim                       # nvim instalado
-tmux show -g default-shell       # debe ser /bin/zsh
-cat ~/.config/uwsm/default       # TERMINAL=ghostty
-ls ~/.config/ghostty/shaders     # 52 shaders
-ls ~/.local/bin/hatdots*         # 2 launchers + tmux-session-layout
+readlink ~/.config/nvim                           # → .../HatDots/common/nvim
+tmux show -g default-shell                        # /usr/bin/fish (si fish está instalado)
+ghostty +validate-config                          # sin errores
+ghostty +show-config | rg '^background = '        # background = #06080f
+fd -e glsl . ~/.config/ghostty/shaders/ | wc -l   # 52 shaders
+command -v hatdots-launch-terminal hatdots-launch-terminal-tmux   # 2 launchers
+hyprctl configerrors                              # vacío
+fd -H -d 4 hatdots-bak ~/.config ~/.local/bin     # backups de lo que se reemplazó
 ```
 
 ---
 
 ## División HatDots ↔ Omarchy
 
-| Componente    | HatDots                              | Omarchy                              |
-|---------------|--------------------------------------|--------------------------------------|
-| Neovim        | LazyVim + aether + 20 themes         | —                                    |
-| Tmux          | TPM plugins + layout script           | Keybindings + status bar              |
-| Ghostty       | Shaders + config                     | Theme dinámico                       |
-| Zsh           | Vi-mode, zoxide, eza, p10k           | —                                    |
-| Hyprland      | Launcher scripts                     | Todo lo demás                        |
-| Waybar/Walker | —                                    | Todo                                |
+| Componente    | HatDots                                        | Omarchy                              |
+|---------------|------------------------------------------------|--------------------------------------|
+| Neovim        | LazyVim + sf.nvim + temas; sigue el tema activo | Tema activo                          |
+| Fish          | Config completa (shell por defecto de tmux)    | —                                    |
+| Tmux          | TPM plugins + layout script + overlay Omarchy  | Keybindings + status bar             |
+| Ghostty       | Config, shaders y paleta Gentleman             | Tema dinámico (opcional, desactivado) |
+| Herdr         | Config del multiplexor                         | —                                    |
+| Zsh           | `.p10k.zsh` (prompt estilo Pure)               | —                                    |
+| Hyprland      | Bindings, autostart y launcher scripts         | Todo lo demás                        |
+| Newsboat      | Config, feeds y notificador `hat-news`         | —                                    |
+| Waybar/Walker | —                                              | Todo                                 |
 
 Omarchy es la base, HatDots es la personalización del editor y terminal.
