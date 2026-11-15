@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 
 	"github.com/hat-y/HatDots/installer/internal/domain"
 	"github.com/hat-y/HatDots/installer/internal/linker"
@@ -104,13 +106,42 @@ func (a App) ApplyAction(action domain.Action, dryRun bool) error {
 // post-install step in a real terminal, without re-deciding the
 // path-vs-literal distinction itself.
 func PostInstallCommand(command string) pkg.Command {
+	return PostInstallCommandFor(runtime.GOOS, command)
+}
+
+// PostInstallCommandFor is PostInstallCommand with the target GOOS injected
+// so the Windows branch is testable anywhere. On "windows" there is no sh:
+// ".ps1" paths run via `powershell -NoProfile -ExecutionPolicy Bypass -File`,
+// other absolute paths run directly, and literals run via
+// `powershell -NoProfile -Command`. Every other GOOS behaves exactly as
+// before (absolute path directly, literal via `sh -c`).
+func PostInstallCommandFor(goos, command string) pkg.Command {
 	if command == "" {
 		return pkg.Command{}
+	}
+	if goos == "windows" {
+		if strings.HasSuffix(strings.ToLower(command), ".ps1") {
+			return pkg.Command{Name: "powershell", Args: []string{"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", command}}
+		}
+		if filepath.IsAbs(command) || isWindowsAbs(command) {
+			return pkg.Command{Name: command}
+		}
+		return pkg.Command{Name: "powershell", Args: []string{"-NoProfile", "-Command", command}}
 	}
 	if filepath.IsAbs(command) {
 		return pkg.Command{Name: command}
 	}
 	return pkg.Command{Name: "sh", Args: []string{"-c", command}}
+}
+
+// isWindowsAbs reports a drive-letter ("C:\x", "C:/x") or UNC path, so the
+// check also holds when the code runs on a non-Windows host (tests).
+func isWindowsAbs(p string) bool {
+	if strings.HasPrefix(p, `\\`) {
+		return true
+	}
+	return len(p) >= 3 && p[1] == ':' && (p[2] == '\\' || p[2] == '/') &&
+		(p[0]|0x20 >= 'a' && p[0]|0x20 <= 'z')
 }
 
 func runPostInstall(exec pkg.Executor, command string) error {

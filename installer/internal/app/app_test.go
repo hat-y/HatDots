@@ -3,6 +3,7 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/hat-y/HatDots/installer/internal/domain"
@@ -205,5 +206,42 @@ func TestPostInstallCommand_EmptyCommandReturnsZeroValue(t *testing.T) {
 	got := PostInstallCommand("")
 	if got.Name != "" {
 		t.Errorf("got %+v, want zero value", got)
+	}
+}
+
+func TestPostInstallCommandFor_UnixUnchanged(t *testing.T) {
+	for _, goos := range []string{"linux", "darwin"} {
+		abs := PostInstallCommandFor(goos, "/repo/os/mac/herdr/install.sh")
+		if abs.Name != "/repo/os/mac/herdr/install.sh" || len(abs.Args) != 0 {
+			t.Errorf("%s abs: got %+v", goos, abs)
+		}
+		lit := PostInstallCommandFor(goos, "echo hi")
+		if lit.Name != "sh" || !reflect.DeepEqual(lit.Args, []string{"-c", "echo hi"}) {
+			t.Errorf("%s literal: got %+v", goos, lit)
+		}
+		// A .ps1 is NOT special off Windows.
+		ps := PostInstallCommandFor(goos, "/repo/x.ps1")
+		if ps.Name != "/repo/x.ps1" || len(ps.Args) != 0 {
+			t.Errorf("%s ps1: got %+v", goos, ps)
+		}
+	}
+}
+
+func TestPostInstallCommandFor_WindowsPowerShell(t *testing.T) {
+	ps := PostInstallCommandFor("windows", `C:\repo\os\windows\scripts\install-gentle-shell.ps1`)
+	want := []string{"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", `C:\repo\os\windows\scripts\install-gentle-shell.ps1`}
+	if ps.Name != "powershell" || !reflect.DeepEqual(ps.Args, want) {
+		t.Errorf("ps1: got %+v", ps)
+	}
+	lit := PostInstallCommandFor("windows", "Write-Host hi")
+	if lit.Name != "powershell" || !reflect.DeepEqual(lit.Args, []string{"-NoProfile", "-Command", "Write-Host hi"}) {
+		t.Errorf("literal: got %+v", lit)
+	}
+	exe := PostInstallCommandFor("windows", `C:\tools\x.exe`)
+	if exe.Name != `C:\tools\x.exe` || len(exe.Args) != 0 {
+		t.Errorf("abs exe: got %+v", exe)
+	}
+	if z := PostInstallCommandFor("windows", ""); z.Name != "" {
+		t.Errorf("empty: got %+v", z)
 	}
 }
