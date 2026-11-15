@@ -353,7 +353,15 @@ Specs:
   the transcripts are (done in HatNotes 786a03a; local audio files kept).
 
 - [x] P7-1 HatNotes ignores `records/**/*.ogg` (HatNotes 786a03a). Route: inline.
-- [ ] P7-2 `hatnotes` module, S7-1..S7-3. Route: writer (context backstop).
+- [x] P7-2 `hatnotes` module, S7-1..S7-3. Route: writer. Commit ef36a5c.
+      RED parity `unknown module: hatnotes`; GREEN `go test ./... -race`.
+      Autosync tested on throwaway repos (clean, dirty->pushed commit, lock
+      held->skip, mkdir-lock fallback incl. stale reclaim, not-a-repo exit 1).
+      Applied here 2026-11-15: units now symlinks (backups
+      `*.hatdots-bak.20261115T022114Z`), clone skipped (vault present), timer
+      enabled; manual run ExecStart=~/.local/bin/hatnotes-autosync exit 0,
+      log `ok: nothing to commit`. Unverified: macOS LaunchAgent, both .ps1
+      (no pwsh/macOS here); systemd-analyze verify could not start.
 
 ## Progress
 
