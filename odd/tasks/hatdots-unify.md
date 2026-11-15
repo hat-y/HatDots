@@ -322,6 +322,39 @@ Specs:
 - [x] P6-4 CI macOS/Windows dry-run, S6-6. Commit bf89709; actionlint clean.
       Unverified until pushed: the runners themselves.
 
+### Phase 7 — HatNotes module (2026-11-15)
+
+User request (L7-1, verbatim): "Y Hatnotes como hacemos para sincronizarla con
+esto porque ocupamos bastante cosas de ahi ademas de que esa carpeta debe de
+commitearse de vez en cuando porque yo escribo y muchas veces me olvido de
+commitear y pushear"
+
+Decisions (L7-2): "Sí: clonar + autosync en los 3 OS"; "Ignorar .ogg,
+versionar solo el .md"; Windows autosync as "Versión PowerShell".
+
+Found: an autosync already runs on the Omarchy machine, installed by hand:
+`~/.config/systemd/user/hatnotes-autosync.{service,timer}` (every 15 min,
+`OnBootSec=3min`, `Persistent=true`) running
+`~/HatNotes/odd/hat-agent/templates/hatnotes-autosync.sh` (pull --rebase
+--autostash, add -A, commit `chore(vault): autosync <date -Iminutes>`, push
+origin HEAD, never --force, flock lock, notify-send on failure, log in
+`${XDG_STATE_HOME:-~/.local/state}/hatnotes-autosync.log`). Linux-only.
+
+Specs:
+- S7-1 A `hatnotes` module (default on, linux/mac/windows) clones
+  `https://github.com/hat-y/HatNotes.git` into `${HATNOTES_PATH:-~/HatNotes}`
+  only when that directory is missing; never touches an existing vault.
+- S7-2 The autosync script lives in HatDots with the same behavior as the
+  existing one, portable to macOS (no hard `flock` dependency; `osascript`
+  notification) and ported to PowerShell for Windows.
+- S7-3 Autosync is scheduled every 15 minutes: systemd user timer on Linux,
+  LaunchAgent on macOS, Task Scheduler task on Windows.
+- S7-4 meet-rec audio (`records/**/*.ogg`) is not versioned in HatNotes; only
+  the transcripts are (done in HatNotes 786a03a; local audio files kept).
+
+- [x] P7-1 HatNotes ignores `records/**/*.ogg` (HatNotes 786a03a). Route: inline.
+- [ ] P7-2 `hatnotes` module, S7-1..S7-3. Route: writer (context backstop).
+
 ## Progress
 
 - 2026-10-12: Plan approved; phase 0 started.
