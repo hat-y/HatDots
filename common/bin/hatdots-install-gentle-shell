@@ -1,0 +1,21 @@
+#!/bin/sh
+# Install Gentle Shell (https://github.com/Gentleman-Programming/gentle-shell)
+# via its upstream browser installer. Skips when `gentle-shell` is on PATH.
+# The installer opens a wizard on 127.0.0.1 and changes nothing until you
+# confirm. Idempotent: reuses the cached checkout with `git pull --ff-only`.
+set -eu
+
+if command -v gentle-shell >/dev/null 2>&1; then
+  echo "gentle-shell already on PATH; skipping"
+  exit 0
+fi
+
+dir="${XDG_CACHE_HOME:-$HOME/.cache}/hatdots/gentle-shell"
+if [ -d "$dir/.git" ]; then
+  git -C "$dir" pull --ff-only
+else
+  mkdir -p "$(dirname "$dir")"
+  git clone --depth=1 https://github.com/Gentleman-Programming/gentle-shell.git "$dir"
+fi
+cd "$dir"
+sh scripts/bootstrap.sh

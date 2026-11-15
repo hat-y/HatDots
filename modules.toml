@@ -420,12 +420,15 @@ os = ["windows"]
 [[modules]]
 id = "windows-core-tools"
 name = "Windows core tools"
-description = "Tools link-windows.ps1 always installs: git, ripgrep, fd, lazygit"
+# Starship.Starship is the binary only: it gives a fresh Windows install a
+# prompt without touching the `starship` module's default (its config link
+# stays opt-in; see the comment on that module).
+description = "Tools link-windows.ps1 always installs: git, ripgrep, fd, lazygit, plus the starship binary"
 default = true
 os = ["windows"]
 
 [modules.packages]
-winget = ["Git.Git", "BurntSushi.ripgrep.MSVC", "sharkdp.fd", "JesseDuffield.lazygit"]
+winget = ["Git.Git", "BurntSushi.ripgrep.MSVC", "sharkdp.fd", "JesseDuffield.lazygit", "Starship.Starship"]
 
 [[modules]]
 id = "windows-optional-tools"
@@ -435,3 +438,19 @@ os = ["windows"]
 
 [modules.packages]
 winget = ["Zig.Zig", "LLVM.LLVM", "eza-community.eza", "ajeetdsouza.zoxide"]
+
+# ─── Optional on every OS ──────────────────────────────────────────────────
+
+[[modules]]
+id = "gentle-shell"
+name = "Gentle Shell"
+description = "Gentle Shell (Gentleman-Programming/gentle-shell) via its upstream browser installer; skipped if already on PATH"
+default = false
+
+  [[modules.post_install]]
+  command = "common/bin/hatdots-install-gentle-shell"
+  os = ["linux", "mac"]
+
+  [[modules.post_install]]
+  command = "os/windows/scripts/install-gentle-shell.ps1"
+  os = ["windows"]
