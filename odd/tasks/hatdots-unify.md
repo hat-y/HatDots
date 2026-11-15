@@ -254,9 +254,21 @@ stop it.
       `--desktop none` does not. Real run here exits 0 without sudo
       (herdr 0.9.5 already present). Not exercised: the actual
       `pacman -S herdr` branch on a machine without herdr.
-- [ ] P5-3 Re-apply from the main checkout after the merge: symlinks
-      currently point into the `unify` worktree.
-- [ ] P5-2 Merge to `main`; delete obsolete branches (user decision).
+- [x] P5-3 Re-applied from the main checkout (2026-11-15): selection
+      `tmux,ghostty,salesforce,newsboat,herdr,hypr,linux-cli-tools,zsh,meet-rec`
+      (+ required nvim, fish). 0 symlinks left into the worktree; only
+      `~/.local/bin/meet-rec` was a real file (backup
+      `meet-rec.hatdots-bak.20261115T020053Z`). Checks: `ghostty
+      +validate-config` 0, `fish -n` 0, nvim config resolves to
+      `~/projects/HatDots/common/nvim`, `meet-rec status` OK. Worktree removed.
+      Note: the herdr post-install needs `~/.local/bin` on PATH (herdr lives
+      there); a first run from a shell without it tried sudo and aborted.
+- [x] P5-2 `unify` fast-forwarded into `main` (8d6f687..07c0052, user
+      decision 2026-11-15); CI green on main incl. macOS/Windows dry-run
+      (run 43665423100). Tags `pre-unify/*` pushed; deleted local `unify`,
+      `backup/pre-unify-wip`, `work/linux-salesforce-herdr` and remote
+      `unify`, `backup/pre-unify-wip`, `feat/harmac-config`,
+      `omarchy-config-merge`, `origin/omarchy-config-merge`.
 
 ### Phase 6 — Portable extras (audit 2026-11-14)
 
