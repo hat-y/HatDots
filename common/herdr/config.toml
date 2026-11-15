@@ -48,3 +48,6 @@ focus_agent = "prefix+alt+1..9"
 
 [ui.toast]
 delivery = "system"
+
+[ui.sound]
+enabled = true
