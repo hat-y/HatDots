@@ -258,6 +258,48 @@ stop it.
       currently point into the `unify` worktree.
 - [ ] P5-2 Merge to `main`; delete obsolete branches (user decision).
 
+### Phase 6 — Portable extras (audit 2026-11-14)
+
+User request (L6-1, verbatim): "Bueno estoy intentando unificar para poder
+instalar mis configuraciones tanto en Windows, Linux, Mac, en este caso uso
+Omarchy asi que tambien se deberia adecuar a eso. Me gustaria que hagas una
+auditoria para poder hacerlo mejor digamos. Tambien ahora agregue algo para
+grabar las conversaciones que tengo pero no se si es lo mas adecuado porque me
+gustaria tambien llevarlo a mac, porque es algo de omarchy. Podriamos hacerlo
+en el hatdots para tambien instalarlo si hace falta? Me gustaria tambien que te
+pregunte si quiero instalar el gentle shell que es parte de mi setup tambien
+por el momento, eso tambien se podria verdad?"
+
+Decisions (L6-2, 2026-11-14): "Dale arranquemos con eso" approving the audit
+plan; Gentle Shell offered on Linux, macOS and Windows, install command taken
+from the upstream README; meet-rec on macOS uses BlackHole; commit the herdr
+sound change, discard the redundant fish Hermes PATH line in the old checkout.
+
+Specs:
+- S6-1 `meet-rec` (today untracked at `~/.local/bin/meet-rec`) lives in the
+  repo and is installed by a `meet-rec` module on Linux and macOS. Same CLI
+  (`start [title]`, `stop`, `toggle [title]`, `status`, `transcribe BASE`),
+  same env vars and Markdown output.
+- S6-2 Audio capture is platform-specific: Linux keeps pulse/pactl
+  (mic + default sink `.monitor`); macOS uses ffmpeg `avfoundation` with the
+  mic and a BlackHole loopback device; notifications via `notify-send` on
+  Linux and `osascript` on macOS.
+- S6-3 The module installs ffmpeg + whisper.cpp (pacman/brew), the
+  `blackhole-2ch` cask on macOS, and downloads the two whisper models only
+  when missing.
+- S6-4 Gentle Shell is an optional module (`default = false`, so the TUI asks
+  by showing it unchecked) on Linux, macOS and Windows; it is skipped when
+  `gentle-shell` is already on PATH and otherwise runs the upstream installer.
+- S6-5 Windows gets a prompt again on a fresh install (starship binary).
+- S6-6 CI exercises the installer on macOS and Windows runners (dry-run).
+
+- [x] P6-1 Commit herdr `[ui.sound]` (6c9ac05); fish Hermes line discarded in
+      the old checkout. Route: inline.
+- [ ] P6-2 `meet-rec` module, S6-1..S6-3. Route: writer (context backstop).
+- [ ] P6-3 `gentle-shell` module + Windows post-install shell + starship on
+      Windows, S6-4..S6-5. Route: writer.
+- [ ] P6-4 CI macOS/Windows dry-run, S6-6. Route: with P6-3.
+
 ## Progress
 
 - 2026-10-12: Plan approved; phase 0 started.

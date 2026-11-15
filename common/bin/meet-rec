@@ -1,0 +1,341 @@
+#!/usr/bin/env python3
+"""meet-rec: record a meeting as two audio tracks and transcribe it to Markdown.
+
+The microphone (you) and the desktop output (everyone else) are recorded as
+separate tracks, so every transcript line is reliably labelled "Yo" or "Otros".
+
+Usage:
+  meet-rec start [title]   Start recording.
+  meet-rec stop            Stop recording and transcribe in the background.
+  meet-rec toggle [title]  Start if idle, stop if recording (for a keybinding).
+  meet-rec status          Show whether a recording is running.
+  meet-rec transcribe BASE Re-transcribe an existing recording (path without suffix).
+
+Env:
+  MEET_REC_DIR      Output root (default: ~/HatNotes/records)
+  MEET_REC_MODEL    whisper.cpp model (default: ~/.local/share/whisper/ggml-large-v3-turbo-q5_0.bin)
+  MEET_REC_VAD      Silero VAD model (default: ~/.local/share/whisper/ggml-silero-v5.1.2.bin)
+  MEET_REC_LANG     Language code or "auto" (default: auto)
+  MEET_REC_THREADS  Transcription threads (default: 8)
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import difflib
+import json
+import os
+import re
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+import unicodedata
+from dataclasses import dataclass
+from pathlib import Path
+
+HOME = Path.home()
+OUT_ROOT = Path(os.environ.get("MEET_REC_DIR", HOME / "HatNotes" / "records"))
+WHISPER_DIR = HOME / ".local" / "share" / "whisper"
+MODEL = Path(os.environ.get("MEET_REC_MODEL", WHISPER_DIR / "ggml-large-v3-turbo-q5_0.bin"))
+VAD_MODEL = Path(os.environ.get("MEET_REC_VAD", WHISPER_DIR / "ggml-silero-v5.1.2.bin"))
+LANG = os.environ.get("MEET_REC_LANG", "auto")
+THREADS = os.environ.get("MEET_REC_THREADS", "8")
+RUNTIME = Path(os.environ.get("XDG_RUNTIME_DIR", tempfile.gettempdir()))
+STATE = RUNTIME / "meet-rec.json"
+LOG = RUNTIME / "meet-rec.log"
+
+ME, OTHERS = "Yo", "Otros"
+MERGE_GAP_MS = 2000
+ECHO_SIMILARITY = 0.6
+
+
+# --------------------------------------------------------------------------
+# Pure logic (unit tested)
+# --------------------------------------------------------------------------
+
+@dataclass
+class Segment:
+    start: int  # milliseconds
+    end: int
+    speaker: str
+    text: str
+
+
+def parse_whisper_json(data: dict, speaker: str) -> list[Segment]:
+    """Convert whisper-cli `-oj` output into segments, dropping empty text."""
+    segments = []
+    for item in data.get("transcription", []):
+        text = " ".join(item.get("text", "").split())
+        if not text or _is_noise(text):
+            continue
+        off = item.get("offsets", {})
+        segments.append(Segment(int(off.get("from", 0)), int(off.get("to", 0)), speaker, text))
+    return segments
+
+
+def _is_noise(text: str) -> bool:
+    """Whisper markers like [MÚSICA], (risas) or [BLANK_AUDIO] carry no speech."""
+    return bool(re.fullmatch(r"[\[\(\*♪].*[\]\)\*♪]", text)) or text in {"...", "-"}
+
+
+def _normalize(text: str) -> str:
+    text = unicodedata.normalize("NFKD", text.lower())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return re.sub(r"[^\w\s]", "", text).strip()
+
+
+def drop_echo(mine: list[Segment], others: list[Segment]) -> list[Segment]:
+    """Remove mic segments that are just the speakers leaking into the mic.
+
+    A mic segment is echo when it overlaps in time with a desktop segment and
+    their text is similar.
+    """
+    kept = []
+    for seg in mine:
+        echo = False
+        for o in others:
+            if o.start < seg.end and seg.start < o.end:
+                ratio = difflib.SequenceMatcher(None, _normalize(seg.text), _normalize(o.text)).ratio()
+                if ratio >= ECHO_SIMILARITY:
+                    echo = True
+                    break
+        if not echo:
+            kept.append(seg)
+    return kept
+
+
+def merge_segments(segments: list[Segment], gap_ms: int = MERGE_GAP_MS) -> list[Segment]:
+    """Sort by time and join consecutive segments of the same speaker."""
+    merged: list[Segment] = []
+    for seg in sorted(segments, key=lambda s: (s.start, s.end)):
+        last = merged[-1] if merged else None
+        if last and last.speaker == seg.speaker and seg.start - last.end <= gap_ms:
+            last.end = max(last.end, seg.end)
+            last.text = f"{last.text} {seg.text}"
+        else:
+            merged.append(Segment(seg.start, seg.end, seg.speaker, seg.text))
+    return merged
+
+
+def fmt_ts(ms: int) -> str:
+    s = max(ms, 0) // 1000
+    return f"{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}"
+
+
+def fmt_duration(seconds: float) -> str:
+    minutes = round(seconds / 60)
+    if minutes < 60:
+        return f"{minutes} min"
+    return f"{minutes // 60} h {minutes % 60:02d} min"
+
+
+def render_markdown(title: str, started: dt.datetime, duration_s: float,
+                    audio: dict[str, str], segments: list[Segment]) -> str:
+    lines = [
+        "---",
+        "type: meeting",
+        f"date: {started:%Y-%m-%d}",
+        f"time: \"{started:%H:%M}\"",
+        f"duration: {fmt_duration(duration_s)}",
+        "tags: [record]",
+        "---",
+        "",
+        f"# {title} — {started:%Y-%m-%d %H:%M}",
+        "",
+        f"- **Duración:** {fmt_duration(duration_s)}",
+        f"- **Audio:** [{ME}]({audio[ME]}) · [{OTHERS}]({audio[OTHERS]})",
+        "",
+        "## Transcripción",
+        "",
+    ]
+    if not segments:
+        lines.append("_No se detectó habla._")
+    for seg in segments:
+        lines.append(f"**[{fmt_ts(seg.start)}] {seg.speaker}:** {seg.text}")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def slugify(text: str) -> str:
+    text = unicodedata.normalize("NFKD", text.lower())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")[:40]
+
+
+# --------------------------------------------------------------------------
+# Side effects
+# --------------------------------------------------------------------------
+
+def notify(msg: str, urgency: str = "normal") -> None:
+    print(msg)
+    if shutil.which("notify-send"):
+        subprocess.run(["notify-send", "-u", urgency, "-t", "4000", "Meet Rec", msg], check=False)
+
+
+def load_state() -> dict | None:
+    try:
+        state = json.loads(STATE.read_text())
+    except (OSError, ValueError):
+        return None
+    if any(_alive(pid) for pid in state.get("pids", [])):
+        return state
+    return state | {"stale": True}
+
+
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def _pactl(*args: str) -> str:
+    return subprocess.run(["pactl", *args], capture_output=True, text=True, check=True).stdout.strip()
+
+
+def _record(source: str, out: Path) -> int:
+    cmd = ["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-f", "pulse", "-i", source,
+           "-ac", "1", "-ar", "16000", "-c:a", "libopus", "-b:a", "24k", str(out)]
+    log = LOG.open("a")
+    return subprocess.Popen(cmd, stdout=log, stderr=log, start_new_session=True).pid
+
+
+def cmd_start(title: str | None) -> int:
+    state = load_state()
+    if state and not state.get("stale"):
+        notify("Ya hay una grabación en curso.")
+        return 1
+    now = dt.datetime.now()
+    day_dir = OUT_ROOT / f"{now:%Y-%m-%d}"
+    day_dir.mkdir(parents=True, exist_ok=True)
+    title = title or "Meet"
+    base = day_dir / f"{now:%H%M}-{slugify(title) or 'meet'}"
+    mic = _pactl("get-default-source")
+    monitor = _pactl("get-default-sink") + ".monitor"
+    tracks = {ME: f"{base}-yo.ogg", OTHERS: f"{base}-otros.ogg"}
+    pids = [_record(mic, Path(tracks[ME])), _record(monitor, Path(tracks[OTHERS]))]
+    time.sleep(1)
+    if not all(_alive(p) for p in pids):
+        for p in pids:
+            _kill(p)
+        notify(f"No se pudo iniciar la grabación. Revisá {LOG}", "critical")
+        return 1
+    STATE.write_text(json.dumps({"pids": pids, "base": str(base), "title": title,
+                                 "started": now.isoformat(), "tracks": tracks}))
+    notify(f"Grabando: {title}")
+    return 0
+
+
+def _kill(pid: int, timeout: float = 10) -> None:
+    try:
+        os.kill(pid, signal.SIGINT)  # ffmpeg finalizes the file on SIGINT
+    except OSError:
+        return
+    deadline = time.time() + timeout
+    while _alive(pid) and time.time() < deadline:
+        time.sleep(0.2)
+    if _alive(pid):
+        os.kill(pid, signal.SIGKILL)
+
+
+def cmd_stop() -> int:
+    state = load_state()
+    if not state:
+        notify("No hay ninguna grabación en curso.")
+        return 1
+    for pid in state["pids"]:
+        _kill(pid)
+    STATE.unlink(missing_ok=True)
+    duration = (dt.datetime.now() - dt.datetime.fromisoformat(state["started"])).total_seconds()
+    meta = Path(state["base"] + ".json")
+    meta.write_text(json.dumps(state | {"duration": duration}))
+    log = LOG.open("a")
+    subprocess.Popen([sys.executable, __file__, "transcribe", state["base"]],
+                     stdout=log, stderr=log, start_new_session=True)
+    notify(f"Grabación detenida ({fmt_duration(duration)}). Transcribiendo…")
+    return 0
+
+
+def _whisper_bin() -> str:
+    for name in ("whisper-cli", "whisper-cpp", "whisper.cpp"):
+        if path := shutil.which(name):
+            return path
+    raise SystemExit("whisper.cpp no está instalado (sudo pacman -S whisper-cpp).")
+
+
+def transcribe_track(audio: Path, speaker: str) -> list[Segment]:
+    if not audio.exists() or audio.stat().st_size < 1024:
+        return []
+    with tempfile.TemporaryDirectory() as tmp:
+        wav = Path(tmp) / "audio.wav"
+        subprocess.run(["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-i", str(audio),
+                        "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", str(wav)], check=True)
+        cmd = [_whisper_bin(), "-m", str(MODEL), "-f", str(wav), "-l", LANG, "-t", THREADS,
+               "-oj", "-of", str(Path(tmp) / "out"), "-np"]
+        if VAD_MODEL.exists():
+            cmd += ["--vad", "-vm", str(VAD_MODEL)]
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+        data = json.loads((Path(tmp) / "out.json").read_text())
+    return parse_whisper_json(data, speaker)
+
+
+def cmd_transcribe(base: str) -> int:
+    base_path = Path(base)
+    meta_file = base_path.with_name(base_path.name + ".json")
+    meta = json.loads(meta_file.read_text()) if meta_file.exists() else {}
+    if not MODEL.exists():
+        notify(f"Falta el modelo de Whisper: {MODEL}", "critical")
+        return 1
+    tracks = {ME: Path(f"{base}-yo.ogg"), OTHERS: Path(f"{base}-otros.ogg")}
+    try:
+        mine = transcribe_track(tracks[ME], ME)
+        others = transcribe_track(tracks[OTHERS], OTHERS)
+    except (subprocess.CalledProcessError, SystemExit) as exc:
+        notify(f"Falló la transcripción: {exc}", "critical")
+        return 1
+    segments = merge_segments(drop_echo(mine, others) + others)
+    started = dt.datetime.fromisoformat(meta["started"]) if "started" in meta else dt.datetime.now()
+    md = render_markdown(meta.get("title", "Meet"), started, meta.get("duration", 0),
+                         {k: v.name for k, v in tracks.items()}, segments)
+    out = Path(base + ".md")
+    out.write_text(md)
+    notify(f"Transcripción lista: {out.name}")
+    return 0
+
+
+def cmd_status() -> int:
+    state = load_state()
+    if state and not state.get("stale"):
+        print(f"Grabando '{state['title']}' desde {state['started'][11:16]} → {state['base']}")
+        return 0
+    print("Sin grabación en curso.")
+    return 1
+
+
+def main(argv: list[str]) -> int:
+    if not argv or argv[0] in {"-h", "--help", "help"}:
+        print(__doc__)
+        return 0
+    cmd, rest = argv[0], argv[1:]
+    title = " ".join(rest) or None
+    if cmd == "start":
+        return cmd_start(title)
+    if cmd == "stop":
+        return cmd_stop()
+    if cmd == "toggle":
+        state = load_state()
+        return cmd_stop() if state and not state.get("stale") else cmd_start(title)
+    if cmd == "status":
+        return cmd_status()
+    if cmd == "transcribe" and rest:
+        return cmd_transcribe(rest[0])
+    print(__doc__)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
