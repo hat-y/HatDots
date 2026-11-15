@@ -30,6 +30,7 @@ o.bind("SUPER + SHIFT + ALT + X", "X Post", { webapp = "https://x.com/compose/po
 
 -- Add extra bindings below.
 -- o.bind("SUPER + SHIFT + R", "SSH", "alacritty -e ssh your-server")
+o.bind("SUPER + ALT + R", "Meet recording (toggle)", "meet-rec toggle")
 
 -- Overwrite existing bindings with hl.unbind() first if needed.
 -- hl.unbind("SUPER + SPACE")

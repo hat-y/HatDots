@@ -17,6 +17,19 @@ Env:
   MEET_REC_VAD      Silero VAD model (default: ~/.local/share/whisper/ggml-silero-v5.1.2.bin)
   MEET_REC_LANG     Language code or "auto" (default: auto)
   MEET_REC_THREADS  Transcription threads (default: 8)
+
+Platforms:
+  Linux  ffmpeg + pulse: mic = pactl default source, others = default sink ".monitor".
+         Notifications via notify-send.
+  macOS  ffmpeg + avfoundation. Needs the BlackHole loopback driver:
+           brew install --cask blackhole-2ch
+         and a Multi-Output Device (speakers + BlackHole 2ch) set as output in
+         Audio MIDI Setup, so the desktop audio reaches BlackHole.
+         Notifications via osascript.
+         MEET_REC_MAC_MIC       Mic device name or index (default: "default", i.e.
+                                ffmpeg avfoundation ":default" = system default input)
+         MEET_REC_MAC_LOOPBACK  Loopback device name (default: "BlackHole 2ch")
+  Other platforms are not supported.
 """
 
 from __future__ import annotations
@@ -166,13 +179,84 @@ def slugify(text: str) -> str:
 
 
 # --------------------------------------------------------------------------
+# Platform seam (pure; selected by sys.platform)
+# --------------------------------------------------------------------------
+
+DEFAULT_MAC_MIC = "default"
+DEFAULT_MAC_LOOPBACK = "BlackHole 2ch"
+
+
+def _unsupported(platform: str) -> SystemExit:
+    return SystemExit(f"Plataforma no soportada: {platform} (solo Linux y macOS).")
+
+
+def capture_sources(platform: str, env, pactl=None) -> tuple[str, str]:
+    """Return (mic, others) ffmpeg input specs for the platform."""
+    if platform.startswith("linux"):
+        pactl = pactl or _pactl
+        return pactl("get-default-source"), pactl("get-default-sink") + ".monitor"
+    if platform == "darwin":
+        mic = env.get("MEET_REC_MAC_MIC") or DEFAULT_MAC_MIC
+        loop = env.get("MEET_REC_MAC_LOOPBACK") or DEFAULT_MAC_LOOPBACK
+        return f":{mic}", f":{loop}"
+    raise _unsupported(platform)
+
+
+def ffmpeg_record_argv(platform: str, source: str, out: Path) -> list[str]:
+    if platform.startswith("linux"):
+        fmt = "pulse"
+    elif platform == "darwin":
+        fmt = "avfoundation"
+    else:
+        raise _unsupported(platform)
+    return ["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-f", fmt, "-i", source,
+            "-ac", "1", "-ar", "16000", "-c:a", "libopus", "-b:a", "24k", str(out)]
+
+
+def notifier_argv(platform: str, msg: str, urgency: str = "normal") -> list[str]:
+    if platform.startswith("linux"):
+        return ["notify-send", "-u", urgency, "-t", "4000", "Meet Rec", msg]
+    if platform == "darwin":
+        esc = msg.replace("\\", "\\\\").replace('"', '\\"')
+        return ["osascript", "-e", f'display notification "{esc}" with title "Meet Rec"']
+    raise _unsupported(platform)
+
+
+def check_loopback(device_listing: str, loopback_input: str) -> str | None:
+    """Return a Spanish error if the macOS loopback device is not listed, else None."""
+    name = loopback_input.lstrip(":")
+    if name.isdigit() or name in device_listing:
+        return None
+    return (f"No se encontró el dispositivo de loopback '{name}'. Instalá BlackHole con "
+            "`brew install --cask blackhole-2ch` y creá un Dispositivo de salida múltiple "
+            "(Multi-Output Device) con tus altavoces + BlackHole 2ch en Audio MIDI Setup; "
+            "luego usalo como salida de sonido.")
+
+
+def whisper_hint(platform: str) -> str:
+    cmd = "brew install whisper-cpp" if platform == "darwin" else "sudo pacman -S whisper-cpp"
+    return f"whisper.cpp no está instalado ({cmd})."
+
+
+# --------------------------------------------------------------------------
 # Side effects
 # --------------------------------------------------------------------------
 
 def notify(msg: str, urgency: str = "normal") -> None:
     print(msg)
-    if shutil.which("notify-send"):
-        subprocess.run(["notify-send", "-u", urgency, "-t", "4000", "Meet Rec", msg], check=False)
+    try:
+        argv = notifier_argv(sys.platform, msg, urgency)
+    except SystemExit:
+        return
+    if shutil.which(argv[0]):
+        subprocess.run(argv, check=False)
+
+
+def _avfoundation_devices() -> str:
+    """ffmpeg prints the avfoundation device list on stderr (and exits non-zero)."""
+    proc = subprocess.run(["ffmpeg", "-hide_banner", "-f", "avfoundation", "-list_devices", "true",
+                           "-i", ""], capture_output=True, text=True, check=False)
+    return proc.stderr + proc.stdout
 
 
 def load_state() -> dict | None:
@@ -198,8 +282,7 @@ def _pactl(*args: str) -> str:
 
 
 def _record(source: str, out: Path) -> int:
-    cmd = ["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-f", "pulse", "-i", source,
-           "-ac", "1", "-ar", "16000", "-c:a", "libopus", "-b:a", "24k", str(out)]
+    cmd = ffmpeg_record_argv(sys.platform, source, out)
     log = LOG.open("a")
     return subprocess.Popen(cmd, stdout=log, stderr=log, start_new_session=True).pid
 
@@ -214,8 +297,15 @@ def cmd_start(title: str | None) -> int:
     day_dir.mkdir(parents=True, exist_ok=True)
     title = title or "Meet"
     base = day_dir / f"{now:%H%M}-{slugify(title) or 'meet'}"
-    mic = _pactl("get-default-source")
-    monitor = _pactl("get-default-sink") + ".monitor"
+    try:
+        mic, monitor = capture_sources(sys.platform, os.environ)
+    except SystemExit as exc:
+        notify(str(exc.code), "critical")
+        return 1
+    if sys.platform == "darwin":
+        if error := check_loopback(_avfoundation_devices(), monitor):
+            notify(error, "critical")
+            return 1
     tracks = {ME: f"{base}-yo.ogg", OTHERS: f"{base}-otros.ogg"}
     pids = [_record(mic, Path(tracks[ME])), _record(monitor, Path(tracks[OTHERS]))]
     time.sleep(1)
@@ -264,7 +354,7 @@ def _whisper_bin() -> str:
     for name in ("whisper-cli", "whisper-cpp", "whisper.cpp"):
         if path := shutil.which(name):
             return path
-    raise SystemExit("whisper.cpp no está instalado (sudo pacman -S whisper-cpp).")
+    raise SystemExit(whisper_hint(sys.platform))
 
 
 def transcribe_track(audio: Path, speaker: str) -> list[Segment]:
