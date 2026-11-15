@@ -270,6 +270,32 @@ os = ["linux", "mac"]
 [modules.packages]
 brew = ["herdr"]
 
+[[modules]]
+id = "meet-rec"
+name = "Meet recorder"
+# Records mic + desktop output and transcribes them with whisper.cpp.
+# Linux captures through PipeWire/Pulse; macOS needs the BlackHole loopback
+# cask plus a Multi-Output Device set up once in Audio MIDI Setup (see
+# `meet-rec --help`). The Omarchy SUPER+ALT+R toggle lives in the hypr module.
+description = "Meeting recorder + whisper.cpp transcription to Markdown"
+default = true
+os = ["linux", "mac"]
+
+  [[modules.links]]
+  src = "common/bin/meet-rec"
+  dst = "~/.local/bin/meet-rec"
+
+  [[modules.post_install]]
+  # Idempotent: downloads the two models only when missing (~550 MB).
+  command = "common/bin/hatdots-fetch-whisper-models"
+
+[modules.packages]
+pacman = ["ffmpeg", "whisper-cpp", "python"]
+brew = ["ffmpeg", "whisper-cpp"]
+
+[modules.casks]
+brew = ["blackhole-2ch"]
+
 # ─── Linux (Omarchy) ───────────────────────────────────────────────────────
 
 [[modules]]

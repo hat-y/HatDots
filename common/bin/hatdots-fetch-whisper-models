@@ -1,0 +1,24 @@
+#!/bin/sh
+# Download the whisper.cpp models meet-rec uses, only when they are missing.
+# Targets match meet-rec's defaults (~/.local/share/whisper); the model is
+# about 550 MB, the Silero VAD model under 1 MB.
+set -eu
+
+dir="${XDG_DATA_HOME:-$HOME/.local/share}/whisper"
+mkdir -p "$dir"
+
+fetch() {
+  name=$1 url=$2
+  if [ -s "$dir/$name" ]; then
+    echo "whisper model present: $dir/$name"
+    return 0
+  fi
+  echo "downloading $name ..."
+  curl -fL --retry 3 -o "$dir/$name.part" "$url"
+  mv "$dir/$name.part" "$dir/$name"
+}
+
+fetch ggml-large-v3-turbo-q5_0.bin \
+  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin
+fetch ggml-silero-v5.1.2.bin \
+  https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v5.1.2.bin

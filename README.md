@@ -4,7 +4,7 @@
 
 HatDots contiene configuraciones de editor y terminal; **HatNotes** es el vault de Obsidian separado. HatDots no clona, enlaza ni respalda HatNotes.
 
-La instalación corre a través de un único instalador Go + Bubbletea (`hatdots`, ver `installer/README.md`) manejado por `modules.toml`. Para ver qué módulos aplican a cada plataforma, correé `hatdots list` o mirá ese manifest directamente. El módulo opcional `gentle-shell` (Linux, macOS y Windows; aparece desmarcado, así que el TUI pregunta) corre el instalador oficial de Gentle Shell y se saltea si `gentle-shell` ya está en el PATH. En Windows, el módulo `windows-core-tools` instala además el binario de Starship para tener prompt en una instalación nueva.
+La instalación corre a través de un único instalador Go + Bubbletea (`hatdots`, ver `installer/README.md`) manejado por `modules.toml`. Para ver qué módulos aplican a cada plataforma, correé `hatdots list` o mirá ese manifest directamente. El módulo opcional `gentle-shell` (Linux, macOS y Windows; aparece desmarcado, así que el TUI pregunta) corre el instalador oficial de Gentle Shell y se saltea si `gentle-shell` ya está en el PATH. En Windows, el módulo `windows-core-tools` instala además el binario de Starship para tener prompt en una instalación nueva. El módulo `meet-rec` (Linux y macOS) instala la grabadora de reuniones (`meet-rec toggle`, en Omarchy `SUPER + ALT + R`) con ffmpeg y whisper.cpp, y baja los modelos de Whisper (~550 MB) solo si faltan; en macOS además instala BlackHole y requiere crear una vez un "Multi-Output Device" en Audio MIDI Setup.
 
 ### Vault de Obsidian
 
