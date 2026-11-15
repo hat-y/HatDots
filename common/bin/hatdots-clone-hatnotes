@@ -1,0 +1,14 @@
+#!/bin/sh
+# Clone the HatNotes vault into ${HATNOTES_PATH:-$HOME/HatNotes}, only when
+# that path does not exist. An existing vault is never touched.
+set -eu
+
+dest="${HATNOTES_PATH:-$HOME/HatNotes}"
+
+if [ -e "$dest" ]; then
+  echo "HatNotes already present at $dest; skipping clone"
+  exit 0
+fi
+
+mkdir -p "$(dirname "$dest")"
+git clone https://github.com/hat-y/HatNotes.git "$dest"

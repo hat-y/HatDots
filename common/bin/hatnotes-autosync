@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# One git writer for HatNotes. Pull --rebase, commit if dirty, push.
+# Never --force. On rebase failure, log + notify and exit.
+# Portable Linux/macOS: flock when available, else an atomic mkdir lock;
+# notify-send on Linux, osascript on macOS, silent otherwise.
+set -euo pipefail
+
+VAULT="${HATNOTES_PATH:-$HOME/HatNotes}"
+LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}"
+LOG="$LOG_DIR/hatnotes-autosync.log"
+LOCK="$LOG_DIR/hatnotes-autosync.lock"
+mkdir -p "$LOG_DIR"
+
+stamp() { date +%Y-%m-%dT%H:%M%z; }
+
+log() {
+  printf '%s %s\n' "$(date +%Y-%m-%dT%H:%M:%S%z)" "$*" >>"$LOG"
+}
+
+notify() {
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send --app-name=HatNotes "HatNotes autosync" "$1" || true
+  elif command -v osascript >/dev/null 2>&1; then
+    osascript -e 'on run argv' \
+      -e 'display notification (item 1 of argv) with title "HatNotes autosync"' \
+      -e 'end run' "$1" >/dev/null 2>&1 || true
+  fi
+}
+
+if [[ ! -d "$VAULT/.git" ]]; then
+  log "ERROR: not a git repo: $VAULT"
+  notify "No es un repo git: $VAULT"
+  exit 1
+fi
+
+release_lockdir() {
+  rm -f "$LOCKDIR/pid"
+  rmdir "$LOCKDIR" 2>/dev/null || true
+}
+
+if command -v flock >/dev/null 2>&1; then
+  exec 9>"$LOCK"
+  if ! flock -n 9; then
+    log "skip: already running"
+    exit 0
+  fi
+else
+  LOCKDIR="$LOCK.d"
+  if ! mkdir "$LOCKDIR" 2>/dev/null; then
+    # Reclaim the lock only if its owner is gone (e.g. killed with SIGKILL).
+    owner="$(cat "$LOCKDIR/pid" 2>/dev/null || true)"
+    if [[ -n "$owner" ]] && kill -0 "$owner" 2>/dev/null; then
+      log "skip: already running"
+      exit 0
+    fi
+    release_lockdir
+    if ! mkdir "$LOCKDIR" 2>/dev/null; then
+      log "skip: already running"
+      exit 0
+    fi
+  fi
+  echo "$$" >"$LOCKDIR/pid"
+  trap release_lockdir EXIT
+fi
+
+cd "$VAULT"
+
+if ! git pull --rebase --autostash; then
+  log "ERROR: git pull --rebase failed in $VAULT"
+  notify "Falló git pull --rebase. Revisá HatNotes a mano."
+  git rebase --abort >/dev/null 2>&1 || true
+  exit 1
+fi
+
+git add -A
+if git diff --cached --quiet; then
+  log "ok: nothing to commit"
+  exit 0
+fi
+
+if ! git commit -m "chore(vault): autosync $(stamp)"; then
+  log "ERROR: git commit failed"
+  notify "Falló git commit de autosync."
+  exit 1
+fi
+
+if ! git push origin HEAD; then
+  log "ERROR: git push failed"
+  notify "Falló git push de autosync."
+  exit 1
+fi
+
+log "ok: committed and pushed"

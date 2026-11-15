@@ -296,6 +296,52 @@ brew = ["ffmpeg", "whisper-cpp"]
 [modules.casks]
 brew = ["blackhole-2ch"]
 
+[[modules]]
+id = "hatnotes"
+name = "HatNotes vault"
+# Clones the vault when missing (never touches an existing one) and keeps it
+# committed and pushed: the vault is written to often and forgetting to
+# commit loses work. One autosync script, scheduled every 15 minutes by the
+# native scheduler of each OS (systemd user timer / LaunchAgent / Task
+# Scheduler). Nothing is packaged here: git is a prerequisite of hatdots.
+description = "Clones the HatNotes vault if missing and autosyncs it (commit + push) every 15 minutes"
+default = true
+
+  [[modules.links]]
+  src = "common/bin/hatnotes-autosync"
+  dst = "~/.local/bin/hatnotes-autosync"
+  os = ["linux", "mac"]
+
+  [[modules.links]]
+  src = "os/linux/systemd/hatnotes-autosync.service"
+  dst = "~/.config/systemd/user/hatnotes-autosync.service"
+  os = ["linux"]
+
+  [[modules.links]]
+  src = "os/linux/systemd/hatnotes-autosync.timer"
+  dst = "~/.config/systemd/user/hatnotes-autosync.timer"
+  os = ["linux"]
+
+  [[modules.post_install]]
+  # Order matters: clone first so the first autosync run has a vault.
+  command = "common/bin/hatdots-clone-hatnotes"
+  os = ["linux", "mac"]
+
+  [[modules.post_install]]
+  # Skips with a message (exit 0) when there is no systemd user bus, e.g. in
+  # a container or a bare ssh session.
+  command = 'if ! systemctl --user show-environment >/dev/null 2>&1; then echo "systemctl --user unavailable (no user bus); skipping hatnotes-autosync timer"; else systemctl --user daemon-reload && systemctl --user enable --now hatnotes-autosync.timer; fi'
+  os = ["linux"]
+
+  [[modules.post_install]]
+  command = "os/mac/hatnotes/install.sh"
+  os = ["mac"]
+
+  [[modules.post_install]]
+  # Clones if missing (same rule) and registers the scheduled task.
+  command = "os/windows/scripts/install-hatnotes.ps1"
+  os = ["windows"]
+
 # ─── Linux (Omarchy) ───────────────────────────────────────────────────────
 
 [[modules]]

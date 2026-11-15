@@ -1,0 +1,8 @@
+[Unit]
+Description=HatNotes git autosync (pull --rebase, commit, push)
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/hatnotes-autosync
+WorkingDirectory=%h

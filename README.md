@@ -2,13 +2,31 @@
 
 ## Alcance y portabilidad
 
-HatDots contiene configuraciones de editor y terminal; **HatNotes** es el vault de Obsidian separado. HatDots no clona, enlaza ni respalda HatNotes.
+HatDots contiene configuraciones de editor y terminal; **HatNotes** es el vault de Obsidian separado. HatDots no enlaza ni respalda HatNotes; el módulo `hatnotes` solo lo clona si falta y lo mantiene sincronizado (ver abajo).
 
 La instalación corre a través de un único instalador Go + Bubbletea (`hatdots`, ver `installer/README.md`) manejado por `modules.toml`. Para ver qué módulos aplican a cada plataforma, correé `hatdots list` o mirá ese manifest directamente. El módulo opcional `gentle-shell` (Linux, macOS y Windows; aparece desmarcado, así que el TUI pregunta) corre el instalador oficial de Gentle Shell y se saltea si `gentle-shell` ya está en el PATH. En Windows, el módulo `windows-core-tools` instala además el binario de Starship para tener prompt en una instalación nueva. El módulo `meet-rec` (Linux y macOS) instala la grabadora de reuniones (`meet-rec toggle`, en Omarchy `SUPER + ALT + R`) con ffmpeg y whisper.cpp, y baja los modelos de Whisper (~550 MB) solo si faltan; en macOS además instala BlackHole y requiere crear una vez un "Multi-Output Device" en Audio MIDI Setup.
 
 ### Vault de Obsidian
 
-HatNotes es un compañero **requerido solo para los comandos de creación de Obsidian/Neovim**. Antes de usarlos, cloná o sincronizá HatNotes y verificá que las diez plantillas estén en `$HATNOTES_PATH/7-Tmpl`; el resto de los dotfiles de HatDots sigue siendo usable sin HatNotes.
+El módulo `hatnotes` (activo por defecto en Linux, macOS y Windows) clona `https://github.com/hat-y/HatNotes.git` en `$HATNOTES_PATH` (o `~/HatNotes`) **solo si esa ruta no existe**; un vault existente nunca se toca. Los comandos de creación de Obsidian/Neovim necesitan las diez plantillas en `$HATNOTES_PATH/7-Tmpl`.
+
+Además instala `hatnotes-autosync`, un único escritor git que cada 15 minutos hace `git pull --rebase --autostash`, `git add -A`, commit `chore(vault): autosync <fecha>` y `git push origin HEAD` (nunca `--force`; si el rebase falla lo aborta y avisa con una notificación). Se programa con el planificador de cada OS:
+
+- Linux: timer de usuario de systemd (`hatnotes-autosync.timer`). Si no hay bus de usuario (`systemctl --user` no disponible), el paso se saltea con un mensaje.
+- macOS: LaunchAgent `com.user.hatnotes-autosync` (`os/mac/hatnotes/install.sh`).
+- Windows: tarea programada "HatNotes autosync" (`os/windows/scripts/install-hatnotes.ps1`).
+
+El log está en `${XDG_STATE_HOME:-~/.local/state}/hatnotes-autosync.log` (Linux/macOS) o `%LOCALAPPDATA%\hatnotes\hatnotes-autosync.log` (Windows).
+
+```bash
+tail -f ~/.local/state/hatnotes-autosync.log
+systemctl --user disable --now hatnotes-autosync.timer      # Linux: desactivar
+launchctl bootout gui/$(id -u)/com.user.hatnotes-autosync   # macOS: desactivar
+```
+
+```powershell
+Unregister-ScheduledTask -TaskName "HatNotes autosync" -Confirm:$false   # Windows: desactivar
+```
 
 Las configuraciones de Neovim en Linux y Windows usan `HATNOTES_PATH` si está definido; si no, Neovim expande `~/HatNotes`. El módulo compartido vive en `common/nvim/lua/hatnotes/` (parte de la config unificada desde Phase 3, ya no un `shared/nvim` aparte).
 

@@ -1,0 +1,11 @@
+[Unit]
+Description=HatNotes git autosync every 15 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=15min
+Persistent=true
+Unit=hatnotes-autosync.service
+
+[Install]
+WantedBy=timers.target
