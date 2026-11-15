@@ -295,10 +295,20 @@ Specs:
 
 - [x] P6-1 Commit herdr `[ui.sound]` (6c9ac05); fish Hermes line discarded in
       the old checkout. Route: inline.
-- [ ] P6-2 `meet-rec` module, S6-1..S6-3. Route: writer (context backstop).
-- [ ] P6-3 `gentle-shell` module + Windows post-install shell + starship on
-      Windows, S6-4..S6-5. Route: writer.
-- [ ] P6-4 CI macOS/Windows dry-run, S6-6. Route: with P6-3.
+- [x] P6-2 `meet-rec` module, S6-1..S6-3. Route: writer (seam + tests) + inline
+      (manifest). Commits 33c02a3 (track as-is), 43bbdec (macOS avfoundation +
+      BlackHole seam, 16 unittests, Omarchy SUPER+ALT+R; Omarchy defaults only
+      use SUPER+CTRL+ALT+R), 0114f92 (module: link, pacman/brew packages,
+      blackhole-2ch cask, idempotent model fetcher). RED: parity `unknown
+      module: meet-rec`; GREEN: `go test ./... -race` 9 packages; fetcher run
+      here skipped both present models. Unverified: macOS capture never run.
+- [x] P6-3 `gentle-shell` module + Windows post-install shell + starship on
+      Windows, S6-4..S6-5. Route: writer. Commits ce2b7ef (PowerShell
+      post-install on Windows; linux/mac unchanged, regression test),
+      1b99b71 (optional module on all OSes, Starship.Starship in
+      windows-core-tools). Unverified: .ps1 and real bootstrap (no pwsh).
+- [x] P6-4 CI macOS/Windows dry-run, S6-6. Commit bf89709; actionlint clean.
+      Unverified until pushed: the runners themselves.
 
 ## Progress
 
